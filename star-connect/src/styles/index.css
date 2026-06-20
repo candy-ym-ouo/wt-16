@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: Georgia, 'Times New Roman', serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-space-800/80 backdrop-blur-md border border-white/10 rounded-2xl;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-nebula-purple to-nebula-cyan 
+           text-white font-semibold rounded-xl shadow-lg 
+           hover:shadow-nebula-purple/30 active:scale-95 
+           transition-all duration-200;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-space-700/60 border border-white/10
+           text-white/80 rounded-xl hover:bg-space-600/60 
+           active:scale-95 transition-all duration-200;
+  }
+  
+  .icon-btn {
+    @apply w-12 h-12 flex items-center justify-center rounded-full
+           bg-space-700/60 border border-white/10 text-white/80
+           hover:bg-space-600/80 hover:text-white active:scale-90
+           transition-all duration-200;
+  }
+  
+  .card-hover {
+    @apply hover:border-nebula-purple/50 hover:shadow-lg 
+           hover:shadow-nebula-purple/20 transition-all duration-300;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 91, 255, 0.4) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(107, 91, 255, 0.4);
+    border-radius: 3px;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r 
+           from-star-gold via-nebula-cyan to-nebula-purple;
+  }
+}
