@@ -2,6 +2,7 @@ import { useGameStore } from '../stores/gameStore'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { getAchievementById } from '../data/achievements'
 import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../data/seasonPlan'
+import { ROUTE_TYPES } from '../data/starRoute'
 import { formatDate } from '../utils/math'
 
 export default function ObservationLog() {
@@ -202,6 +203,99 @@ export default function ObservationLog() {
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
                 消耗 {log.cost} 积分
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'route_start') {
+      const routeType = ROUTE_TYPES[log.routeType]
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-emerald-400/20 bg-emerald-400/5"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400
+                          flex items-center justify-center text-lg">
+              {routeType?.icon || '🗺️'}
+            </div>
+            <div>
+              <div className="font-display text-emerald-300 text-sm">
+                启程 · {log.routeName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                共 {log.totalSteps} 个探索目标
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'route_complete') {
+      const routeType = ROUTE_TYPES[log.routeType]
+      return (
+        <div
+          key={index}
+          className={`p-4 rounded-xl border transition-all ${
+            log.perfect
+              ? 'border-star-gold/30 bg-star-gold/5'
+              : 'border-nebula-purple/30 bg-nebula-purple/5'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+              log.perfect
+                ? 'bg-gradient-to-br from-star-gold to-nebula-orange'
+                : 'bg-gradient-to-br from-nebula-purple to-nebula-cyan'
+            }`}>
+              {log.perfect ? '🏆' : (routeType?.icon || '✨')}
+            </div>
+            <div>
+              <div className={`font-display text-sm ${
+                log.perfect ? 'text-star-gold' : 'text-nebula-cyan'
+              }`}>
+                完成路线 · {log.routeName}
+                {log.perfect && <span className="ml-1">💎 全完美!</span>}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                完成 {log.completedSteps} 步
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'route_abandon') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-white/10 bg-space-700/20"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-space-600/50
+                          flex items-center justify-center text-lg">
+              ⤫
+            </div>
+            <div>
+              <div className="font-display text-white/60 text-sm">
+                放弃路线 · {log.routeName}
+              </div>
+              <div className="text-[11px] text-white/40 mt-0.5">
+                已完成 {log.completedSteps}/{log.totalSteps} 步
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}

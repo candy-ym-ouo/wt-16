@@ -1568,7 +1568,7 @@ export const useGameStore = create(
         const state = get()
         const newlyUnlocked = []
 
-        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS]
+        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS, ...ROUTE_ACHIEVEMENTS]
 
         allAchievements.forEach((achievement) => {
           if (state.unlockedAchievements.includes(achievement.id)) return
@@ -1641,6 +1641,19 @@ export const useGameStore = create(
               break
             case 'quiz_exchange':
               unlocked = (state.quiz?.redeemedRewards?.length || 0) >= value
+              break
+            case 'route_complete':
+              unlocked = state.starRoute?.totalRoutesCompleted >= value
+              break
+            case 'route_type_complete': {
+              const completedOfType = state.starRoute?.routeHistory?.filter(
+                r => r.status === 'completed' && r.type === value
+              ).length || 0
+              unlocked = completedOfType >= 1
+              break
+            }
+            case 'route_perfect':
+              unlocked = state.starRoute?.perfectRoutes >= value
               break
           }
 
@@ -3146,6 +3159,8 @@ export const useGameStore = create(
         const stepIndex = route.steps.findIndex(s => s.constellationId === constellationId)
         if (stepIndex === -1) return null
 
+        if (stepIndex !== route.currentStepIndex) return null
+
         const step = route.steps[stepIndex]
         if (step.status === 'completed') return null
 
@@ -3286,7 +3301,7 @@ export const useGameStore = create(
 
       getProgress: () => {
         const state = get()
-        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length
+        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length
         return {
           constellations: state.discoveredConstellations.length,
           totalConstellations: CONSTELLATIONS.length,
@@ -3297,7 +3312,9 @@ export const useGameStore = create(
           totalSeasonRewards: Object.keys(SEASONS).length * Object.keys(SEASON_PHASES).length,
           quizPoints: state.quiz?.points || 0,
           quizCompleted: state.quiz?.totalCompleted || 0,
-          quizCorrect: state.quiz?.totalCorrect || 0
+          quizCorrect: state.quiz?.totalCorrect || 0,
+          routesCompleted: state.starRoute?.totalRoutesCompleted || 0,
+          perfectRoutes: state.starRoute?.perfectRoutes || 0
         }
       },
 
