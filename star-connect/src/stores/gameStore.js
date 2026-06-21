@@ -1054,10 +1054,18 @@ export const useGameStore = create(
             stardustEarned += checkinRecord.rewards?.reduce((sum, r) => sum + (r.amount || 0), 0) || 10
           }
 
-          const dayDiscoveries = dateLogs.observationLogs.filter(l => l.type === 'discovery').length
-          const dayReobservations = dateLogs.observationLogs.filter(l => l.type === 'reobservation').length
-          const dayPerfect = dateLogs.observationLogs.filter(l => l.perfect).length
-          
+          const sysDiscoveries = dateLogs.observationLogs.filter(l => l.type === 'discovery').length
+          const sysReobservations = dateLogs.observationLogs.filter(l => l.type === 'reobservation').length
+          const sysPerfect = dateLogs.observationLogs.filter(l => l.perfect).length
+
+          const customDiscoveries = dateLogs.customLogs.filter(l => l.type === 'discovery').length
+          const customObservations = dateLogs.customLogs.filter(l => l.type === 'observation').length
+          const customPerfect = dateLogs.customLogs.filter(l => l.type === 'discovery' || l.type === 'observation').filter(l => l.perfect).length
+
+          const dayDiscoveries = sysDiscoveries + customDiscoveries
+          const dayReobservations = sysReobservations + customObservations
+          const dayPerfect = sysPerfect + customPerfect
+
           discoveryCount += dayDiscoveries
           reobservationCount += dayReobservations
           perfectCount += dayPerfect
@@ -1087,6 +1095,15 @@ export const useGameStore = create(
           if (logDate.getFullYear() === year && logDate.getMonth() === month) {
             uniqueConstellationsThisMonth.add(log.constellationId)
           }
+        })
+        Object.entries(oc.customLogs).forEach(([dateKey, logs]) => {
+          const d = new Date(dateKey)
+          if (d.getFullYear() !== year || d.getMonth() !== month) return
+          logs.forEach(log => {
+            if (log.constellationId) {
+              uniqueConstellationsThisMonth.add(log.constellationId)
+            }
+          })
         })
 
         return {

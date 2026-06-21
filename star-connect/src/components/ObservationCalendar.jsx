@@ -459,19 +459,22 @@ export default function ObservationCalendar() {
           <div className="grid grid-cols-4 gap-2 text-center">
             <div className="p-2 rounded-lg bg-space-800/40">
               <div className="text-sm font-bold text-nebula-purple">
-                {logs.observationLogs.filter(l => l.type === 'discovery').length}
+                {logs.observationLogs.filter(l => l.type === 'discovery').length +
+                 logs.customLogs.filter(l => l.type === 'discovery').length}
               </div>
               <div className="text-[9px] text-white/40">新发现</div>
             </div>
             <div className="p-2 rounded-lg bg-space-800/40">
               <div className="text-sm font-bold text-nebula-cyan">
-                {logs.observationLogs.filter(l => l.type === 'reobservation').length}
+                {logs.observationLogs.filter(l => l.type === 'reobservation').length +
+                 logs.customLogs.filter(l => l.type === 'observation').length}
               </div>
               <div className="text-[9px] text-white/40">再观测</div>
             </div>
             <div className="p-2 rounded-lg bg-space-800/40">
               <div className="text-sm font-bold text-star-gold">
-                {logs.observationLogs.filter(l => l.perfect).length}
+                {logs.observationLogs.filter(l => l.perfect).length +
+                 logs.customLogs.filter(l => (l.type === 'discovery' || l.type === 'observation') && l.perfect).length}
               </div>
               <div className="text-[9px] text-white/40">完美</div>
             </div>
@@ -788,7 +791,7 @@ export default function ObservationCalendar() {
   }
 
   const MonthlyTopConstellations = ({ year, month }) => {
-    const { observationLogs } = useGameStore()
+    const { observationLogs, observationCalendar } = useGameStore()
     const counts = {}
     observationLogs.forEach(log => {
       if (!log.timestamp || !log.constellationId) return
@@ -796,6 +799,15 @@ export default function ObservationCalendar() {
       const d = new Date(log.timestamp)
       if (d.getFullYear() !== year || d.getMonth() !== month) return
       counts[log.constellationId] = (counts[log.constellationId] || 0) + 1
+    })
+    Object.entries(observationCalendar.customLogs).forEach(([dateKey, logs]) => {
+      const d = new Date(dateKey)
+      if (d.getFullYear() !== year || d.getMonth() !== month) return
+      logs.forEach(log => {
+        if (!log.constellationId) return
+        if (log.type !== 'discovery' && log.type !== 'observation') return
+        counts[log.constellationId] = (counts[log.constellationId] || 0) + 1
+      })
     })
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
     const maxCount = sorted[0]?.[1] || 1

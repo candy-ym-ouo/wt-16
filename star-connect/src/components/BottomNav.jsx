@@ -74,6 +74,11 @@ export default function BottomNav() {
       label: '成就',
       icon: '🏆',
       badge: unlockedAchievements.length > 0 ? unlockedAchievements.length.toString() : null
+    },
+    {
+      id: 'settings',
+      label: '设置',
+      icon: '⚙️'
     }
   ]
 
