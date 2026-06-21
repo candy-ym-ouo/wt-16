@@ -86,6 +86,12 @@ import {
   isAllSeasonsComplete,
   getChapterCount
 } from '../data/storyChapters'
+import {
+  generateReport,
+  exportReportAsText,
+  shareReport,
+  REPORT_TYPES
+} from '../data/observationReport'
 
 let autoSaveEnabled = true
 
@@ -3556,6 +3562,47 @@ export const useGameStore = create(
         }
 
         return newlyUnlocked
+      },
+
+      generateWeeklyReport: (date = new Date()) => {
+        const state = get()
+        return generateReport(REPORT_TYPES.WEEKLY, date, state)
+      },
+
+      generateMonthlyReport: (date = new Date()) => {
+        const state = get()
+        return generateReport(REPORT_TYPES.MONTHLY, date, state)
+      },
+
+      exportReportAsText: (report) => {
+        return exportReportAsText(report)
+      },
+
+      shareReport: (report, templateId = 'explorer') => {
+        return shareReport(report, templateId)
+      },
+
+      copyReportToClipboard: async (report) => {
+        const text = exportReportAsText(report)
+        try {
+          await navigator.clipboard.writeText(text)
+          return { success: true }
+        } catch (e) {
+          return { success: false, error: e }
+        }
+      },
+
+      downloadReportAsText: (report) => {
+        const text = exportReportAsText(report)
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${report.title}_${report.subtitle.replace(/\s/g, '_')}.txt`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       },
 
       isConstellationComplete: (constellationId) =>

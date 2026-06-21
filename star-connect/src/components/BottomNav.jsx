@@ -138,6 +138,12 @@ export default function BottomNav() {
       icon: '🎨'
     },
     {
+      id: 'report',
+      label: '报告',
+      icon: '📊',
+      badge: null
+    },
+    {
       id: 'settings',
       label: '设置',
       icon: '⚙️'
