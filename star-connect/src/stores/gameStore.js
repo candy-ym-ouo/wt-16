@@ -59,6 +59,15 @@ import {
   updatePhoto,
   deletePhoto
 } from '../data/starGallery'
+import {
+  TUTORIAL_STEPS,
+  ADVANCED_TASKS,
+  TUTORIAL_REWARDS,
+  getTutorialStepById,
+  getAdvancedTaskById,
+  calculateTutorialProgress,
+  getErrorHint
+} from '../data/tutorial'
 
 let autoSaveEnabled = true
 
@@ -121,7 +130,8 @@ export const useGameStore = create(
             nightExpedition: state.nightExpedition,
             observationCalendar: state.observationCalendar,
             quiz: state.quiz,
-            starGallery: state.starGallery
+            starGallery: state.starGallery,
+            tutorial: state.tutorial
           },
           version: 0
         }
@@ -1235,6 +1245,7 @@ export const useGameStore = create(
           mistakes: 0,
           perfectRun: true
         })
+        get().checkTutorialProgress()
       },
 
       connectStar: (starId) => {
@@ -1268,6 +1279,11 @@ export const useGameStore = create(
               perfectRun: false
             })
 
+            if (state.tutorial.started && !state.tutorial.completed) {
+              get().recordTutorialMistake()
+              get().showTutorialError('wrong_connection')
+            }
+
             if (inExpedition) {
               const result = get().recordExpeditionMistake()
               if (result === 'failed') return false
@@ -1287,6 +1303,8 @@ export const useGameStore = create(
 
         get().checkConstellationComplete()
         get().checkAchievements()
+        get().checkTutorialProgress()
+        get().checkAdvancedTasks()
         return true
       },
 
@@ -2735,6 +2753,327 @@ export const useGameStore = create(
       setActiveAtlasPanel: (panel) => set({ activeAtlasPanel: panel }),
       setSelectedConstellationDetail: (constellationId) => set({ selectedConstellationDetail: constellationId }),
 
+      tutorial: {
+        started: false,
+        completed: false,
+        currentStepId: null,
+        completedSteps: [],
+        advancedTasksCompleted: [],
+        rewardsClaimed: [],
+        mistakesDuringTutorial: 0,
+        startedAt: null,
+        completedAt: null,
+        panelsVisited: [],
+        lastErrorHint: null,
+        lastErrorTime: null
+      },
+
+      startTutorial: () => {
+        const firstStep = TUTORIAL_STEPS[0]
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            started: true,
+            currentStepId: firstStep.id,
+            completedSteps: [],
+            advancedTasksCompleted: [],
+            rewardsClaimed: [],
+            mistakesDuringTutorial: 0,
+            startedAt: Date.now(),
+            completedAt: null,
+            panelsVisited: [],
+            lastErrorHint: null,
+            lastErrorTime: null
+          }
+        }))
+        return firstStep
+      },
+
+      resetTutorial: () => {
+        set({
+          tutorial: {
+            started: false,
+            completed: false,
+            currentStepId: null,
+            completedSteps: [],
+            advancedTasksCompleted: [],
+            rewardsClaimed: [],
+            mistakesDuringTutorial: 0,
+            startedAt: null,
+            completedAt: null,
+            panelsVisited: [],
+            lastErrorHint: null,
+            lastErrorTime: null
+          }
+        })
+      },
+
+      completeTutorialStep: (stepId) => {
+        const state = get()
+        const step = getTutorialStepById(stepId)
+        if (!step) return null
+
+        const currentIndex = TUTORIAL_STEPS.findIndex(s => s.id === stepId)
+        const nextStep = TUTORIAL_STEPS[currentIndex + 1]
+
+        const newCompletedSteps = state.tutorial.completedSteps.includes(stepId)
+          ? state.tutorial.completedSteps
+          : [...state.tutorial.completedSteps, stepId]
+
+        const isCompleted = step.isFinal || !nextStep
+
+        set((s) => ({
+          tutorial: {
+            ...s.tutorial,
+            completedSteps: newCompletedSteps,
+            currentStepId: isCompleted ? null : nextStep?.id || null,
+            completed: isCompleted,
+            completedAt: isCompleted ? Date.now() : s.tutorial.completedAt
+          }
+        }))
+
+        if (isCompleted) {
+          get().addLog({
+            type: 'tutorial_complete',
+            timestamp: Date.now()
+          })
+        }
+
+        get().checkAdvancedTasks()
+        return nextStep || null
+      },
+
+      setCurrentTutorialStep: (stepId) => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            currentStepId: stepId
+          }
+        }))
+      },
+
+      recordTutorialPanelVisit: (panelId) => {
+        set((state) => {
+          if (state.tutorial.panelsVisited.includes(panelId)) {
+            return state
+          }
+          return {
+            tutorial: {
+              ...state.tutorial,
+              panelsVisited: [...state.tutorial.panelsVisited, panelId]
+            }
+          }
+        })
+        get().checkTutorialProgress()
+      },
+
+      showTutorialError: (errorType) => {
+        const hint = getErrorHint(errorType)
+        if (!hint) return
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            lastErrorHint: hint,
+            lastErrorTime: Date.now()
+          }
+        }))
+      },
+
+      clearTutorialError: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            lastErrorHint: null,
+            lastErrorTime: null
+          }
+        }))
+      },
+
+      recordTutorialMistake: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            mistakesDuringTutorial: state.tutorial.mistakesDuringTutorial + 1
+          }
+        }))
+      },
+
+      checkTutorialProgress: () => {
+        const state = get()
+        if (!state.tutorial.started || state.tutorial.completed) return
+
+        const currentStep = getTutorialStepById(state.tutorial.currentStepId)
+        if (!currentStep) return
+
+        const validation = currentStep.validation
+        if (!validation) return
+
+        let shouldAdvance = false
+
+        switch (validation.type) {
+          case 'target_selected':
+            shouldAdvance = !!state.currentTargetConstellation
+            break
+          case 'star_connected':
+            shouldAdvance = state.connectionPath.length >= (validation.count || 1)
+            break
+          case 'constellation_complete':
+            shouldAdvance = state.observationLogs.length > 0 &&
+              ['discovery', 'reobservation'].includes(state.observationLogs[0].type)
+            break
+          case 'perfect_observation': {
+            const hasPerfect = Object.keys(state.perfectObservations).length > 0
+            shouldAdvance = hasPerfect
+            break
+          }
+          case 'panel_opened':
+            shouldAdvance = state.tutorial.panelsVisited.includes(validation.panel)
+            break
+        }
+
+        if (shouldAdvance) {
+          get().completeTutorialStep(currentStep.id)
+        }
+      },
+
+      checkAdvancedTasks: () => {
+        const state = get()
+        const newlyCompleted = []
+
+        ADVANCED_TASKS.forEach((task) => {
+          if (state.tutorial.advancedTasksCompleted.includes(task.id)) return
+
+          const { type, value } = task.condition
+          let completed = false
+
+          switch (type) {
+            case 'discover_count':
+              completed = state.discoveredConstellations.length >= value
+              break
+            case 'perfect_count':
+              completed = Object.keys(state.perfectObservations).length >= value
+              break
+            case 'log_count':
+              completed = state.observationLogs.filter(
+                l => l.type === 'discovery' || l.type === 'reobservation'
+              ).length >= value
+              break
+            case 'checkin_count':
+              completed = state.observationCalendar.totalCheckinDays >= value
+              break
+          }
+
+          if (completed) {
+            newlyCompleted.push(task)
+          }
+        })
+
+        if (newlyCompleted.length > 0) {
+          set((state) => ({
+            tutorial: {
+              ...state.tutorial,
+              advancedTasksCompleted: [
+                ...state.tutorial.advancedTasksCompleted,
+                ...newlyCompleted.map(t => t.id)
+              ]
+            }
+          }))
+
+          newlyCompleted.forEach((task) => {
+            if (task.reward?.stardust) {
+              get().addStardust(task.reward.stardust, `进阶任务：${task.name}`)
+            }
+            get().addLog({
+              type: 'tutorial_advanced_task',
+              taskId: task.id,
+              taskName: task.name,
+              reward: task.reward,
+              timestamp: Date.now()
+            })
+          })
+        }
+
+        return newlyCompleted
+      },
+
+      claimTutorialReward: (rewardKey) => {
+        const state = get()
+        const reward = TUTORIAL_REWARDS[rewardKey]
+        if (!reward) return { success: false, reason: 'reward_not_found' }
+
+        if (state.tutorial.rewardsClaimed.includes(reward.id)) {
+          return { success: false, reason: 'already_claimed' }
+        }
+
+        let canClaim = false
+        switch (rewardKey) {
+          case 'completion':
+            canClaim = state.tutorial.completed
+            break
+          case 'perfect':
+            canClaim = state.tutorial.completed && state.tutorial.mistakesDuringTutorial === 0
+            break
+          case 'advanced':
+            canClaim = state.tutorial.advancedTasksCompleted.length === ADVANCED_TASKS.length
+            break
+        }
+
+        if (!canClaim) {
+          return { success: false, reason: 'not_eligible' }
+        }
+
+        if (reward.stardust) {
+          get().addStardust(reward.stardust, `结业奖励：${reward.name}`)
+        }
+
+        set((s) => ({
+          tutorial: {
+            ...s.tutorial,
+            rewardsClaimed: [...s.tutorial.rewardsClaimed, reward.id]
+          }
+        }))
+
+        get().addLog({
+          type: 'tutorial_reward',
+          rewardId: reward.id,
+          rewardName: reward.name,
+          timestamp: Date.now()
+        })
+
+        return { success: true, reward }
+      },
+
+      getTutorialProgress: () => {
+        const state = get()
+        return calculateTutorialProgress(state.tutorial.completedSteps)
+      },
+
+      getTutorialStats: () => {
+        const state = get()
+        const t = state.tutorial
+        const progress = calculateTutorialProgress(t.completedSteps)
+        const allAdvancedCompleted = t.advancedTasksCompleted.length === ADVANCED_TASKS.length
+        const isPerfect = t.completed && t.mistakesDuringTutorial === 0
+
+        return {
+          started: t.started,
+          completed: t.completed,
+          progress,
+          currentStepId: t.currentStepId,
+          completedStepsCount: t.completedSteps.length,
+          totalSteps: TUTORIAL_STEPS.length,
+          mistakesDuringTutorial: t.mistakesDuringTutorial,
+          advancedTasksCompleted: t.advancedTasksCompleted.length,
+          totalAdvancedTasks: ADVANCED_TASKS.length,
+          allAdvancedCompleted,
+          isPerfect,
+          rewardsClaimed: t.rewardsClaimed.length,
+          totalRewards: Object.keys(TUTORIAL_REWARDS).length,
+          startedAt: t.startedAt,
+          completedAt: t.completedAt
+        }
+      },
+
       isConstellationComplete: (constellationId) =>
         get().discoveredConstellations.includes(constellationId),
 
@@ -2885,6 +3224,20 @@ export const useGameStore = create(
               search: '',
               sortBy: 'featured'
             }
+          },
+          tutorial: {
+            started: false,
+            completed: false,
+            currentStepId: null,
+            completedSteps: [],
+            advancedTasksCompleted: [],
+            rewardsClaimed: [],
+            mistakesDuringTutorial: 0,
+            startedAt: null,
+            completedAt: null,
+            panelsVisited: [],
+            lastErrorHint: null,
+            lastErrorTime: null
           }
         })
     }),
@@ -2910,7 +3263,8 @@ export const useGameStore = create(
         observationCalendar: state.observationCalendar,
         quiz: state.quiz,
         team: state.team,
-        starGallery: state.starGallery
+        starGallery: state.starGallery,
+        tutorial: state.tutorial
       })
     }
   )

@@ -3,7 +3,7 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo, tutorial, getTutorialProgress, recordTutorialPanelVisit } = useGameStore()
   const progress = getProgress()
   const familyProgress = getFamilyProgress()
   const currentSeason = getCurrentSeason()
@@ -12,6 +12,7 @@ export default function BottomNav() {
   const totalSeasonRewards = Object.keys(SEASONS).length * 3
   const todayCheckinStatus = getCheckinStatus(new Date())
   const streakInfo = getStreakInfo()
+  const tutorialProgress = getTutorialProgress()
 
   const items = [
     {
@@ -95,6 +96,19 @@ export default function BottomNav() {
       badgeColor: progress.quizPoints > 0 ? 'bg-star-gold text-space-900' : null
     },
     {
+      id: 'tutorial',
+      label: '训练营',
+      icon: '🎓',
+      badge: !tutorial.started
+        ? 'NEW'
+        : !tutorial.completed && tutorial.currentStepId
+        ? `${tutorialProgress.percentage}%`
+        : tutorial.completed && tutorial.rewardsClaimed.length < 3
+        ? '🎁'
+        : null,
+      badgeColor: !tutorial.started ? 'bg-star-gold text-space-900 animate-pulse' : null
+    },
+    {
       id: 'settings',
       label: '设置',
       icon: '⚙️'
@@ -124,8 +138,13 @@ export default function BottomNav() {
       setActivePanel(null)
     } else if (panelId === 'atlas') {
       openAtlasList()
+      if (!isClosing) recordTutorialPanelVisit('atlas')
     } else {
+      const willOpen = activePanel !== panelId
       setActivePanel(activePanel === panelId ? null : panelId)
+      if (willOpen && panelId) {
+        recordTutorialPanelVisit(panelId)
+      }
     }
   }
 
