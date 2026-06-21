@@ -2,13 +2,15 @@ import * as THREE from 'three'
 import { getConstellationById } from '../data/constellations'
 import { GRAPHICS_OPTIONS } from '../data/constants'
 import { clamp, randomRange } from '../utils/math'
+import { audioManager } from './AudioManager'
 
 export class NightSkyRenderer {
-  constructor(container, settings, onStarClick, onCanvasEvent) {
+  constructor(container, settings, onStarClick, onCanvasEvent, onConnectResult) {
     this.container = container
     this.settings = settings
     this.onStarClick = onStarClick
     this.onCanvasEvent = onCanvasEvent
+    this.onConnectResult = onConnectResult
 
     this.scene = null
     this.camera = null
@@ -22,6 +24,7 @@ export class NightSkyRenderer {
     this.raycaster = new THREE.Raycaster()
     this.mouse = new THREE.Vector2()
     this.hoveredStar = null
+    this.starLabelEl = null
 
     this.targetConstellationId = null
     this.connectionPath = []
@@ -50,6 +53,8 @@ export class NightSkyRenderer {
 
     this.time = 0
 
+    this.nebulasCreated = false
+
     this.init()
   }
 
@@ -75,14 +80,66 @@ export class NightSkyRenderer {
     this.renderer.setClearColor(0x05060f, 1)
     this.container.appendChild(this.renderer.domElement)
 
-    this.createStarField(quality.starCount, quality.particleSize)
+    this.createStarLabel()
+
+    const baseCount = quality.starCount
+    const adjustedCount = Math.round(baseCount * this.settings.starDensity)
+    this.createStarField(adjustedCount, quality.particleSize)
 
     if (this.settings.showNebula) {
       this.createNebulae()
+      this.nebulasCreated = true
     }
+
+    audioManager.setVolume(this.settings.volume)
+    audioManager.setSfxVolume(this.settings.sfxVolume)
 
     this.animate()
     this.bindEvents()
+  }
+
+  createStarLabel() {
+    this.starLabelEl = document.createElement('div')
+    this.starLabelEl.className = 'star-label'
+    this.starLabelEl.style.cssText = `
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+      padding: 4px 10px;
+      background: rgba(10, 14, 31, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      border-radius: 8px;
+      color: #ffd700;
+      font-family: Georgia, serif;
+      font-size: 12px;
+      white-space: nowrap;
+      transform: translate(-50%, -140%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      box-shadow: 0 2px 12px rgba(255, 215, 0, 0.2);
+    `
+    this.container.appendChild(this.starLabelEl)
+  }
+
+  updateStarLabel(show, starData, clientX, clientY) {
+    if (!this.starLabelEl || !this.settings.showLabels) {
+      if (this.starLabelEl) this.starLabelEl.style.opacity = '0'
+      return
+    }
+
+    if (show && starData) {
+      const rect = this.container.getBoundingClientRect()
+      this.starLabelEl.innerHTML = `
+        <div style="font-weight: bold; color: #ffd700;">${starData.starName || '未知'}</div>
+        ${starData.starId ? `<div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;">${starData.starId}</div>` : ''}
+      `
+      this.starLabelEl.style.left = `${clientX - rect.left}px`
+      this.starLabelEl.style.top = `${clientY - rect.top}px`
+      this.starLabelEl.style.opacity = '1'
+    } else {
+      this.starLabelEl.style.opacity = '0'
+    }
   }
 
   createBackgroundGradient() {
@@ -153,6 +210,20 @@ export class NightSkyRenderer {
     this.scene.add(this.starField)
   }
 
+  rebuildStarField() {
+    if (this.starField) {
+      this.scene.remove(this.starField)
+      if (this.starField.geometry) this.starField.geometry.dispose()
+      if (this.starField.material) this.starField.material.dispose()
+      this.starField = null
+    }
+
+    const quality = GRAPHICS_OPTIONS[this.settings.graphicsQuality] || GRAPHICS_OPTIONS.high
+    const baseCount = quality.starCount
+    const adjustedCount = Math.round(baseCount * this.settings.starDensity)
+    this.createStarField(adjustedCount, quality.particleSize)
+  }
+
   createNebulae() {
     const nebulaConfigs = [
       { x: -8, y: 5, z: -10, color: 0x6b5bff, scale: 6, opacity: 0.08 },
@@ -175,6 +246,25 @@ export class NightSkyRenderer {
       this.scene.add(nebula)
       this.nebulas.push(nebula)
     })
+  }
+
+  removeNebulae() {
+    this.nebulas.forEach((nebula) => {
+      this.scene.remove(nebula)
+      if (nebula.geometry) nebula.geometry.dispose()
+      if (nebula.material) nebula.material.dispose()
+    })
+    this.nebulas = []
+    this.nebulasCreated = false
+  }
+
+  setNebulaeVisible(show) {
+    if (show && !this.nebulasCreated) {
+      this.createNebulae()
+      this.nebulasCreated = true
+    } else if (!show && this.nebulasCreated) {
+      this.removeNebulae()
+    }
   }
 
   loadConstellation(constellationId) {
@@ -366,7 +456,7 @@ export class NightSkyRenderer {
   onPointerMove(e) {
     if (e.pointerType === 'mouse') {
       this.updateMouse(e)
-      this.checkHover()
+      this.checkHover(e.clientX, e.clientY)
     }
 
     if (this.isDragging && !this.isPinching) {
@@ -400,12 +490,25 @@ export class NightSkyRenderer {
       this.updateMouse(e)
       const star = this.pickStar()
       if (star) {
+        audioManager.playClick()
         this.onStarClick && this.onStarClick(star.userData.starId)
       }
     }
 
     this.isDragging = false
     this.clearTempLine()
+  }
+
+  notifyConnectResult(success, isComplete = false) {
+    if (success) {
+      if (isComplete) {
+        audioManager.playConstellationComplete()
+      } else {
+        audioManager.playConnectSuccess()
+      }
+    } else {
+      audioManager.playConnectFail()
+    }
   }
 
   onPointerCancel() {
@@ -475,7 +578,7 @@ export class NightSkyRenderer {
     return null
   }
 
-  checkHover() {
+  checkHover(clientX, clientY) {
     const star = this.pickStar()
     if (star !== this.hoveredStar) {
       if (this.hoveredStar) {
@@ -488,9 +591,15 @@ export class NightSkyRenderer {
         const connected = this.connectionPath.includes(star.userData.starId)
         const scale = star.userData.baseScale * (connected ? 2.2 : 1.6)
         star.scale.set(scale, scale, 1)
+        audioManager.playStarHover()
+        this.updateStarLabel(true, star.userData, clientX, clientY)
+      } else {
+        this.updateStarLabel(false)
       }
       this.hoveredStar = star
       this.onCanvasEvent && this.onCanvasEvent({ type: 'hover', star: star ? star.userData : null })
+    } else if (star && clientX && clientY) {
+      this.updateStarLabel(true, star.userData, clientX, clientY)
     }
   }
 
@@ -550,12 +659,56 @@ export class NightSkyRenderer {
   }
 
   updateSettings(newSettings) {
+    const oldSettings = { ...this.settings }
     this.settings = { ...this.settings, ...newSettings }
+
+    if (newSettings.volume !== undefined) {
+      audioManager.setVolume(newSettings.volume)
+    }
+
+    if (newSettings.sfxVolume !== undefined) {
+      audioManager.setSfxVolume(newSettings.sfxVolume)
+    }
+
+    if (newSettings.starDensity !== undefined &&
+        newSettings.starDensity !== oldSettings.starDensity) {
+      this.rebuildStarField()
+    }
+
+    if (newSettings.showNebula !== undefined &&
+        newSettings.showNebula !== oldSettings.showNebula) {
+      this.setNebulaeVisible(newSettings.showNebula)
+    }
+
+    if (newSettings.showLabels !== undefined) {
+      if (!newSettings.showLabels && this.starLabelEl) {
+        this.starLabelEl.style.opacity = '0'
+      }
+    }
+
+    if (newSettings.animationSpeed !== undefined) {
+    }
+
+    if (newSettings.graphicsQuality !== undefined &&
+        newSettings.graphicsQuality !== oldSettings.graphicsQuality) {
+      const quality = GRAPHICS_OPTIONS[newSettings.graphicsQuality] || GRAPHICS_OPTIONS.high
+      if (this.renderer) {
+        this.renderer.setPixelRatio(quality.antialias
+          ? Math.min(window.devicePixelRatio, 2)
+          : 1)
+      }
+      this.rebuildStarField()
+    }
   }
 
   dispose() {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId)
+    }
+
+    if (this.starLabelEl && this.starLabelEl.parentNode) {
+      this.starLabelEl.parentNode.removeChild(this.starLabelEl)
+      this.starLabelEl = null
     }
 
     window.removeEventListener('resize', () => this.onResize())

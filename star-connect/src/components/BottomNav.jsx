@@ -1,4 +1,5 @@
 import { useGameStore } from '../stores/gameStore'
+import { audioManager } from '../modules/AudioManager'
 
 export default function BottomNav() {
   const { activePanel, setActivePanel, getProgress, unlockedAchievements, observationLogs } = useGameStore()
@@ -38,6 +39,17 @@ export default function BottomNav() {
     }
   ]
 
+  const handleNavClick = (panelId) => {
+    audioManager.ensureContext()
+    const isClosing = activePanel === panelId || (panelId === null && activePanel === null)
+    if (isClosing && panelId !== null) {
+      audioManager.playPanelClose()
+    } else {
+      audioManager.playPanelOpen()
+    }
+    setActivePanel(activePanel === panelId ? null : panelId)
+  }
+
   return (
     <div className="absolute left-0 right-0 bottom-0 z-20 p-4 pb-safe pointer-events-none">
       <div className="max-w-md mx-auto pointer-events-auto">
@@ -47,7 +59,7 @@ export default function BottomNav() {
             return (
               <button
                 key={item.label}
-                onClick={() => setActivePanel(item.id)}
+                onClick={() => handleNavClick(item.id)}
                 className={`relative flex flex-col items-center justify-center rounded-xl px-3 py-2
                           transition-all duration-200 min-w-[52px] ${
                   isActive

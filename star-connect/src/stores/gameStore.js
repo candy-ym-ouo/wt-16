@@ -1,19 +1,64 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { ACHIEVEMENTS } from '../data/achievements'
 import { DEFAULT_SETTINGS, STORAGE_KEYS } from '../data/constants'
+
+let autoSaveEnabled = true
+
+const conditionalStorage = {
+  ...createJSONStorage(() => localStorage),
+  setItem: (name, value) => {
+    if (autoSaveEnabled) {
+      return localStorage.setItem(name, value)
+    }
+  },
+  getItem: (name) => {
+    const value = localStorage.getItem(name)
+    if (value) {
+      try {
+        const parsed = JSON.parse(value)
+        if (parsed.state?.settings?.autoSave !== undefined) {
+          autoSaveEnabled = parsed.state.settings.autoSave
+        }
+      } catch (e) {}
+    }
+    return value
+  }
+}
 
 export const useGameStore = create(
   persist(
     (set, get) => ({
       settings: { ...DEFAULT_SETTINGS },
       updateSettings: (newSettings) =>
-        set((state) => ({
-          settings: { ...state.settings, ...newSettings }
-        })),
+        set((state) => {
+          const newState = {
+            settings: { ...state.settings, ...newSettings }
+          }
+          if (newSettings.autoSave !== undefined) {
+            autoSaveEnabled = newSettings.autoSave
+          }
+          return newState
+        }),
       resetSettings: () =>
         set({ settings: { ...DEFAULT_SETTINGS } }),
+
+      manualSave: () => {
+        const state = get()
+        const persistConfig = {
+          state: {
+            settings: state.settings,
+            discoveredConstellations: state.discoveredConstellations,
+            discoveredStars: state.discoveredStars,
+            observationLogs: state.observationLogs,
+            unlockedAchievements: state.unlockedAchievements,
+            totalMistakes: state.totalMistakes
+          },
+          version: 0
+        }
+        localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(persistConfig))
+      },
 
       discoveredConstellations: [],
       discoveredStars: [],
@@ -227,6 +272,7 @@ export const useGameStore = create(
     }),
     {
       name: STORAGE_KEYS.PROGRESS,
+      storage: conditionalStorage,
       partialize: (state) => ({
         settings: state.settings,
         discoveredConstellations: state.discoveredConstellations,

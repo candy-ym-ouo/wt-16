@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { getAchievementById } from '../data/achievements'
+import { audioManager } from '../modules/AudioManager'
 
 export default function AchievementToast() {
   const [toast, setToast] = useState(null)
@@ -15,6 +16,8 @@ export default function AchievementToast() {
       const achievement = getAchievementById(newOnes[0])
       if (achievement) {
         setToast(achievement)
+        audioManager.ensureContext()
+        audioManager.playAchievement()
         setTimeout(() => setToast(null), 3500)
       }
     }
