@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { getConstellationById } from '../data/constellations'
-import { GRAPHICS_OPTIONS } from '../data/constants'
+import { GRAPHICS_OPTIONS, BACKGROUND_STYLES, CONNECTION_EFFECTS, DEFAULT_SETTINGS } from '../data/constants'
 import { clamp, randomRange } from '../utils/math'
 import { audioManager } from './AudioManager'
 
@@ -63,6 +63,10 @@ export class NightSkyRenderer {
     this.meteorShowerActive = false
     this.specialAstroActive = false
 
+    this.currentBackgroundStyle = null
+    this.currentConnectionEffect = null
+    this.connectionParticles = []
+
     this.init()
   }
 
@@ -71,9 +75,14 @@ export class NightSkyRenderer {
     const height = this.container.clientHeight
     const quality = GRAPHICS_OPTIONS[this.settings.graphicsQuality] || GRAPHICS_OPTIONS.high
 
+    const workshop = this.settings.workshop || DEFAULT_SETTINGS.workshop
+    this.currentBackgroundStyle = workshop.backgroundStyle
+    this.currentConnectionEffect = workshop.connectionEffect
+
     this.scene = new THREE.Scene()
-    this.scene.background = this.createBackgroundGradient()
-    this.scene.fog = new THREE.FogExp2(0x05060f, 0.015)
+    this.scene.background = this.createBackgroundGradient(workshop.backgroundStyle)
+    const bgStyle = BACKGROUND_STYLES[workshop.backgroundStyle] || BACKGROUND_STYLES.cosmic
+    this.scene.fog = new THREE.FogExp2(0x05060f, bgStyle.fogDensity)
 
     this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000)
     this.camera.position.set(0, 0, this.cameraZ)
@@ -150,23 +159,42 @@ export class NightSkyRenderer {
     }
   }
 
-  createBackgroundGradient() {
+  createBackgroundGradient(styleId = 'cosmic') {
+    const style = BACKGROUND_STYLES[styleId] || BACKGROUND_STYLES.cosmic
     const canvas = document.createElement('canvas')
     canvas.width = 512
     canvas.height = 512
     const ctx = canvas.getContext('2d')
 
     const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 512)
-    gradient.addColorStop(0, '#0f1530')
-    gradient.addColorStop(0.4, '#0a0e1f')
-    gradient.addColorStop(1, '#05060f')
+    gradient.addColorStop(0, style.colors[0])
+    gradient.addColorStop(0.4, style.colors[1])
+    gradient.addColorStop(1, style.colors[2])
 
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, 512, 512)
 
+    if (styleId === 'aurora') {
+      this.addAuroraEffect(ctx, canvas.width, canvas.height)
+    }
+
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
     return texture
+  }
+
+  addAuroraEffect(ctx, width, height) {
+    const time = Date.now() * 0.001
+    for (let i = 0; i < 5; i++) {
+      const y = height * 0.3 + i * 40
+      const gradient = ctx.createLinearGradient(0, y - 30, 0, y + 30)
+      const hue = 150 + i * 20 + Math.sin(time + i) * 10
+      gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 0)`)
+      gradient.addColorStop(0.5, `hsla(${hue}, 80%, 60%, ${0.03 + Math.sin(time * 0.5 + i) * 0.01})`)
+      gradient.addColorStop(1, `hsla(${hue}, 80%, 60%, 0)`)
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, y - 30, width, 60)
+    }
   }
 
   createStarField(count, particleSize) {
@@ -233,12 +261,11 @@ export class NightSkyRenderer {
   }
 
   createNebulae() {
-    const nebulaConfigs = [
-      { x: -8, y: 5, z: -10, color: 0x6b5bff, scale: 6, opacity: 0.08 },
-      { x: 7, y: -4, z: -8, color: 0x4ff0d9, scale: 5, opacity: 0.06 },
-      { x: 2, y: 8, z: -12, color: 0xff8a5b, scale: 7, opacity: 0.05 },
-      { x: -5, y: -7, z: -6, color: 0xff6b9d, scale: 4, opacity: 0.07 }
-    ]
+    const workshop = this.settings.workshop || DEFAULT_SETTINGS.workshop
+    const bgStyle = BACKGROUND_STYLES[workshop.backgroundStyle] || BACKGROUND_STYLES.cosmic
+    const baseOpacity = bgStyle.nebulaOpacity
+
+    const nebulaConfigs = this.getNebulaConfigsForStyle(workshop.backgroundStyle, baseOpacity)
 
     nebulaConfigs.forEach((config) => {
       const geometry = new THREE.SphereGeometry(config.scale, 32, 32)
@@ -254,6 +281,48 @@ export class NightSkyRenderer {
       this.scene.add(nebula)
       this.nebulas.push(nebula)
     })
+  }
+
+  getNebulaConfigsForStyle(styleId, baseOpacity) {
+    const styles = {
+      cosmic: [
+        { x: -8, y: 5, z: -10, color: 0x6b5bff, scale: 6, opacity: baseOpacity },
+        { x: 7, y: -4, z: -8, color: 0x4ff0d9, scale: 5, opacity: baseOpacity * 0.75 },
+        { x: 2, y: 8, z: -12, color: 0xff8a5b, scale: 7, opacity: baseOpacity * 0.6 },
+        { x: -5, y: -7, z: -6, color: 0xff6b9d, scale: 4, opacity: baseOpacity * 0.9 }
+      ],
+      aurora: [
+        { x: -10, y: 6, z: -12, color: 0x4ff0d9, scale: 8, opacity: baseOpacity },
+        { x: 8, y: -3, z: -10, color: 0xa8ff60, scale: 6, opacity: baseOpacity * 0.8 },
+        { x: 0, y: 10, z: -14, color: 0x6b5bff, scale: 9, opacity: baseOpacity * 0.7 },
+        { x: -7, y: -8, z: -8, color: 0x8ec5ff, scale: 5, opacity: baseOpacity }
+      ],
+      sunset: [
+        { x: -9, y: 4, z: -11, color: 0xff8a5b, scale: 7, opacity: baseOpacity },
+        { x: 6, y: -5, z: -9, color: 0xff6b9d, scale: 5, opacity: baseOpacity * 0.85 },
+        { x: 3, y: 7, z: -13, color: 0xffd700, scale: 6, opacity: baseOpacity * 0.65 },
+        { x: -4, y: -6, z: -7, color: 0xff4444, scale: 4, opacity: baseOpacity * 0.9 }
+      ],
+      ocean: [
+        { x: -8, y: 5, z: -10, color: 0x4fc3f7, scale: 6, opacity: baseOpacity },
+        { x: 7, y: -4, z: -8, color: 0x29b6f6, scale: 5, opacity: baseOpacity * 0.7 },
+        { x: 2, y: 8, z: -12, color: 0x81d4fa, scale: 7, opacity: baseOpacity * 0.5 },
+        { x: -5, y: -7, z: -6, color: 0x4dd0e1, scale: 4, opacity: baseOpacity * 0.8 }
+      ],
+      forest: [
+        { x: -8, y: 5, z: -10, color: 0x66bb6a, scale: 6, opacity: baseOpacity },
+        { x: 7, y: -4, z: -8, color: 0x81c784, scale: 5, opacity: baseOpacity * 0.75 },
+        { x: 2, y: 8, z: -12, color: 0xa5d6a7, scale: 7, opacity: baseOpacity * 0.55 },
+        { x: -5, y: -7, z: -6, color: 0xa8ff60, scale: 4, opacity: baseOpacity * 0.85 }
+      ],
+      rose: [
+        { x: -8, y: 5, z: -10, color: 0xff6b9d, scale: 6, opacity: baseOpacity },
+        { x: 7, y: -4, z: -8, color: 0xf8bbd0, scale: 5, opacity: baseOpacity * 0.8 },
+        { x: 2, y: 8, z: -12, color: 0xff8a80, scale: 7, opacity: baseOpacity * 0.6 },
+        { x: -5, y: -7, z: -6, color: 0xea80fc, scale: 4, opacity: baseOpacity * 0.9 }
+      ]
+    }
+    return styles[styleId] || styles.cosmic
   }
 
   removeNebulae() {
@@ -706,16 +775,109 @@ export class NightSkyRenderer {
   }
 
   createConnectionLine(start, end, color = 0xffd700) {
+    const effect = CONNECTION_EFFECTS[this.currentConnectionEffect] || CONNECTION_EFFECTS.glow
     const points = [start.clone(), end.clone()]
     const geometry = new THREE.BufferGeometry().setFromPoints(points)
-    const material = new THREE.LineBasicMaterial({
-      color,
-      transparent: true,
-      opacity: 0.85,
-      linewidth: 2,
-      blending: THREE.AdditiveBlending
-    })
-    return new THREE.Line(geometry, material)
+
+    let material
+    if (effect.gradient) {
+      const colors = new Float32Array([
+        new THREE.Color(effect.gradient[0]).r, new THREE.Color(effect.gradient[0]).g, new THREE.Color(effect.gradient[0]).b,
+        new THREE.Color(effect.gradient[effect.gradient.length - 1]).r, new THREE.Color(effect.gradient[effect.gradient.length - 1]).g, new THREE.Color(effect.gradient[effect.gradient.length - 1]).b
+      ])
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+      material = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: effect.opacity,
+        linewidth: effect.lineWidth,
+        blending: THREE.AdditiveBlending
+      })
+    } else {
+      material = new THREE.LineBasicMaterial({
+        color: effect.color ? new THREE.Color(effect.color) : color,
+        transparent: true,
+        opacity: effect.opacity,
+        linewidth: effect.lineWidth,
+        blending: THREE.AdditiveBlending
+      })
+    }
+
+    const line = new THREE.Line(geometry, material)
+    line.userData.effectType = this.currentConnectionEffect
+    line.userData.startTime = Date.now()
+
+    if (effect.dotted) {
+      line.userData.isDotted = true
+    }
+
+    if (effect.glow) {
+      line.userData.hasGlow = true
+    }
+
+    if (effect.particles) {
+      this.createConnectionParticles(start, end, effect)
+    }
+
+    return line
+  }
+
+  createConnectionParticles(start, end, effect) {
+    const particleCount = 5
+    for (let i = 0; i < particleCount; i++) {
+      const geometry = new THREE.SphereGeometry(0.03, 8, 8)
+      const material = new THREE.MeshBasicMaterial({
+        color: effect.color ? new THREE.Color(effect.color) : 0xffffff,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+      })
+      const particle = new THREE.Mesh(geometry, material)
+      particle.position.copy(start.clone().lerp(end, 0))
+      particle.userData = {
+        type: 'connectionParticle',
+        start: start.clone(),
+        end: end.clone(),
+        progress: i / particleCount,
+        speed: 0.005 + Math.random() * 0.005
+      }
+      this.scene.add(particle)
+      this.connectionParticles.push(particle)
+    }
+  }
+
+  updateConnectionParticles() {
+    for (let i = this.connectionParticles.length - 1; i >= 0; i--) {
+      const particle = this.connectionParticles[i]
+      if (particle.userData.type !== 'connectionParticle') continue
+
+      particle.userData.progress += particle.userData.speed
+      if (particle.userData.progress > 1) {
+        particle.userData.progress = 0
+      }
+
+      particle.position.lerpVectors(
+        particle.userData.start,
+        particle.userData.end,
+        particle.userData.progress
+      )
+
+      const opacity = 0.3 + Math.sin(particle.userData.progress * Math.PI) * 0.7
+      particle.material.opacity = opacity
+      particle.scale.setScalar(0.5 + opacity * 1.5)
+    }
+  }
+
+  clearConnectionParticles() {
+    for (let i = this.connectionParticles.length - 1; i >= 0; i--) {
+      const particle = this.connectionParticles[i]
+      if (particle.userData.type === 'connectionParticle') {
+        this.scene.remove(particle)
+        if (particle.geometry) particle.geometry.dispose()
+        if (particle.material) particle.material.dispose()
+        this.connectionParticles.splice(i, 1)
+      }
+    }
   }
 
   setTempLine(fromStarId, toWorldPos) {
@@ -752,6 +914,7 @@ export class NightSkyRenderer {
     this.connectionLines.forEach((line) => this.scene.remove(line))
     this.connectionLines.clear()
     this.clearTempLine()
+    this.clearConnectionParticles()
     this.starMeshes = []
     this.targetConstellationId = null
     this.connectionPath = []
@@ -991,8 +1154,47 @@ export class NightSkyRenderer {
     this.updateMeteors()
 
     this.updateEventEffects()
+    this.updateConnectionParticles()
+    this.updateConnectionLineAnimations()
 
     this.renderer.render(this.scene, this.camera)
+  }
+
+  updateConnectionLineAnimations() {
+    const effect = CONNECTION_EFFECTS[this.currentConnectionEffect] || CONNECTION_EFFECTS.glow
+    if (!effect.animate) return
+
+    this.connectionLines.forEach((line) => {
+      if (line.userData.isDotted) {
+        const time = Date.now() * 0.005
+        line.material.opacity = effect.opacity * (0.5 + Math.sin(time) * 0.5)
+      }
+
+      if (line.userData.hasGlow) {
+        const time = Date.now() * 0.003
+        line.material.opacity = effect.opacity * (0.7 + Math.sin(time) * 0.3)
+      }
+
+      if (effect.gradient && line.geometry.attributes.color) {
+        const time = Date.now() * 0.002
+        const hue = (time * 0.1) % 1
+        const colors = line.geometry.attributes.color.array
+        const color1 = new THREE.Color().setHSL(hue, 0.8, 0.6)
+        const color2 = new THREE.Color().setHSL((hue + 0.3) % 1, 0.8, 0.6)
+        colors[0] = color1.r
+        colors[1] = color1.g
+        colors[2] = color1.b
+        colors[3] = color2.r
+        colors[4] = color2.g
+        colors[5] = color2.b
+        line.geometry.attributes.color.needsUpdate = true
+      }
+    })
+
+    if (this.tempLine) {
+      const time = Date.now() * 0.005
+      this.tempLine.material.opacity = 0.3 + Math.sin(time) * 0.2
+    }
   }
 
   setZoom(level) {
@@ -1049,6 +1251,64 @@ export class NightSkyRenderer {
       }
       this.rebuildStarField()
     }
+
+    if (newSettings.workshop !== undefined) {
+      const oldWorkshop = oldSettings.workshop || DEFAULT_SETTINGS.workshop
+      const newWorkshop = newSettings.workshop
+
+      if (newWorkshop.backgroundStyle !== undefined &&
+          newWorkshop.backgroundStyle !== oldWorkshop.backgroundStyle) {
+        this.updateBackgroundStyle(newWorkshop.backgroundStyle)
+      }
+
+      if (newWorkshop.starDensity !== undefined &&
+          newWorkshop.starDensity !== oldWorkshop.starDensity) {
+        this.updateWorkshopStarDensity(newWorkshop.starDensity)
+      }
+
+      if (newWorkshop.connectionEffect !== undefined &&
+          newWorkshop.connectionEffect !== oldWorkshop.connectionEffect) {
+        this.updateConnectionEffect(newWorkshop.connectionEffect)
+      }
+    }
+  }
+
+  updateBackgroundStyle(styleId) {
+    this.currentBackgroundStyle = styleId
+    if (this.scene) {
+      this.scene.background = this.createBackgroundGradient(styleId)
+      const bgStyle = BACKGROUND_STYLES[styleId] || BACKGROUND_STYLES.cosmic
+      this.scene.fog = new THREE.FogExp2(0x05060f, bgStyle.fogDensity)
+
+      if (this.settings.showNebula && this.nebulasCreated) {
+        this.removeNebulae()
+        this.createNebulae()
+        this.nebulasCreated = true
+      }
+    }
+  }
+
+  updateWorkshopStarDensity(density) {
+    const quality = GRAPHICS_OPTIONS[this.settings.graphicsQuality] || GRAPHICS_OPTIONS.high
+    const baseCount = quality.starCount
+    const adjustedCount = Math.round(baseCount * density)
+
+    if (this.starField) {
+      this.scene.remove(this.starField)
+      if (this.starField.geometry) this.starField.geometry.dispose()
+      if (this.starField.material) this.starField.material.dispose()
+    }
+
+    this.createStarField(adjustedCount, quality.particleSize)
+  }
+
+  updateConnectionEffect(effectId) {
+    this.currentConnectionEffect = effectId
+    this.clearConnectionParticles()
+
+    if (this.connectionPath.length > 1 && this.targetConstellationId) {
+      this.updateConnectionPath(this.connectionPath)
+    }
   }
 
   dispose() {
@@ -1072,6 +1332,7 @@ export class NightSkyRenderer {
 
     this.clearConstellation()
     this.clearAllEventEffects()
+    this.clearConnectionParticles()
 
     if (this.scene) {
       this.scene.traverse((obj) => {

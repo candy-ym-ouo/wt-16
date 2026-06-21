@@ -24,6 +24,7 @@ import ObservationDashboard from './components/ObservationDashboard'
 import StarShop from './components/StarShop'
 import ConstellationChallenge from './components/ConstellationChallenge'
 import OfflineStatusBadge from './components/OfflineStatusBadge'
+import StarWorkshop from './components/StarWorkshop'
 import { useGameStore } from './stores/gameStore'
 import { offlineManager } from './modules/offline/OfflineManager.js'
 import { useOffline } from './modules/offline/useOffline.js'
@@ -211,6 +212,7 @@ export default function App() {
       {activePanel === 'dashboard' && <ObservationDashboard />}
       {activePanel === 'shop' && <StarShop />}
       {activePanel === 'challenge' && <ConstellationChallenge />}
+      {activePanel === 'workshop' && <StarWorkshop />}
 
       {showNightSkyEvents && (
         <NightSkyEvents onClose={() => setShowNightSkyEvents(false)} />

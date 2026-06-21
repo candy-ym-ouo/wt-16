@@ -9,8 +9,239 @@ export const DEFAULT_SETTINGS = {
   theme: 'dark',
   hapticFeedback: true,
   autoSave: true,
-  language: 'zh-CN'
+  language: 'zh-CN',
+  workshop: {
+    backgroundStyle: 'cosmic',
+    starDensity: 1.0,
+    connectionEffect: 'glow',
+    panelStyle: 'glass',
+    customColors: {
+      primary: '#6b5bff',
+      secondary: '#4ff0d9',
+      accent: '#ffd700'
+    }
+  }
 }
+
+export const BACKGROUND_STYLES = {
+  cosmic: {
+    id: 'cosmic',
+    name: '深邃宇宙',
+    description: '经典的深蓝色宇宙背景，带有渐变光晕',
+    colors: ['#0f1530', '#0a0e1f', '#05060f'],
+    icon: '🌌',
+    nebulaOpacity: 0.08,
+    fogDensity: 0.015
+  },
+  aurora: {
+    id: 'aurora',
+    name: '极光之夜',
+    description: '梦幻的极光渐变，充满神秘色彩',
+    colors: ['#0a1f2e', '#052e2b', '#051a20'],
+    icon: '🌌',
+    nebulaOpacity: 0.12,
+    fogDensity: 0.01
+  },
+  sunset: {
+    id: 'sunset',
+    name: '黄昏暮色',
+    description: '温暖的日落渐变，带来浪漫氛围',
+    colors: ['#2d1b4e', '#3d2a5e', '#1a0f2e'],
+    icon: '🌅',
+    nebulaOpacity: 0.1,
+    fogDensity: 0.012
+  },
+  ocean: {
+    id: 'ocean',
+    name: '深海星空',
+    description: '沉静的深海蓝调，宁静而深邃',
+    colors: ['#0a1628', '#051020', '#020a14'],
+    icon: '🌊',
+    nebulaOpacity: 0.06,
+    fogDensity: 0.02
+  },
+  forest: {
+    id: 'forest',
+    name: '森林秘境',
+    description: '神秘的森林绿光，自然而清新',
+    colors: ['#0d1f1a', '#0a1a15', '#050f0d'],
+    icon: '🌲',
+    nebulaOpacity: 0.07,
+    fogDensity: 0.018
+  },
+  rose: {
+    id: 'rose',
+    name: '玫瑰星云',
+    description: '浪漫的玫瑰色调，温柔而梦幻',
+    colors: ['#2d1a2e', '#1f1220', '#100810'],
+    icon: '🌹',
+    nebulaOpacity: 0.1,
+    fogDensity: 0.01
+  }
+}
+
+export const STAR_DENSITY_OPTIONS = {
+  sparse: { id: 'sparse', name: '稀疏', value: 0.5, description: '约1250颗星星' },
+  normal: { id: 'normal', name: '适中', value: 1.0, description: '约2500颗星星' },
+  dense: { id: 'dense', name: '密集', value: 1.5, description: '约3750颗星星' },
+  galaxy: { id: 'galaxy', name: '银河', value: 2.0, description: '约5000颗星星' }
+}
+
+export const CONNECTION_EFFECTS = {
+  glow: {
+    id: 'glow',
+    name: '星光连线',
+    description: '经典的金色发光连线',
+    color: '#ffd700',
+    opacity: 0.85,
+    lineWidth: 2,
+    animate: true
+  },
+  neon: {
+    id: 'neon',
+    name: '霓虹流光',
+    description: '彩虹渐变的霓虹效果',
+    gradient: ['#ff6b9d', '#6b5bff', '#4ff0d9'],
+    opacity: 0.9,
+    lineWidth: 2.5,
+    animate: true
+  },
+  firefly: {
+    id: 'firefly',
+    name: '萤火闪烁',
+    description: '像萤火虫一样的闪烁效果',
+    color: '#a8ff60',
+    opacity: 0.7,
+    lineWidth: 1.5,
+    animate: true,
+    dotted: true
+  },
+  crystal: {
+    id: 'crystal',
+    name: '水晶透明',
+    description: '如水晶般清澈的连线',
+    color: '#8ec5ff',
+    opacity: 0.6,
+    lineWidth: 1,
+    animate: false
+  },
+  laser: {
+    id: 'laser',
+    name: '激光束',
+    description: '科技感十足的激光效果',
+    color: '#ff4444',
+    opacity: 0.95,
+    lineWidth: 3,
+    animate: true,
+    glow: true
+  },
+  starlight: {
+    id: 'starlight',
+    name: '星光粒子',
+    description: '流动的星尘粒子连线',
+    color: '#ffffff',
+    opacity: 0.8,
+    lineWidth: 2,
+    animate: true,
+    particles: true
+  }
+}
+
+export const PANEL_STYLES = {
+  glass: {
+    id: 'glass',
+    name: '玻璃拟态',
+    description: '半透明毛玻璃效果',
+    backdropBlur: 'backdrop-blur-xl',
+    bgClass: 'bg-white/10',
+    borderClass: 'border-white/20',
+    shadowClass: 'shadow-2xl'
+  },
+  dark: {
+    id: 'dark',
+    name: '深空暗调',
+    description: '深邃的太空暗色风格',
+    backdropBlur: 'backdrop-blur-md',
+    bgClass: 'bg-space-800/90',
+    borderClass: 'border-white/10',
+    shadowClass: 'shadow-xl'
+  },
+  cosmic: {
+    id: 'cosmic',
+    name: '星云紫调',
+    description: '神秘的紫色星云风格',
+    backdropBlur: 'backdrop-blur-xl',
+    bgClass: 'bg-nebula-purple/10',
+    borderClass: 'border-nebula-purple/30',
+    shadowClass: 'shadow-2xl'
+  },
+  aurora: {
+    id: 'aurora',
+    name: '极光青蓝',
+    description: '清新的极光青色调',
+    backdropBlur: 'backdrop-blur-xl',
+    bgClass: 'bg-nebula-cyan/10',
+    borderClass: 'border-nebula-cyan/30',
+    shadowClass: 'shadow-2xl'
+  },
+  gold: {
+    id: 'gold',
+    name: '黄金奢华',
+    description: '尊贵的金色边框风格',
+    backdropBlur: 'backdrop-blur-lg',
+    bgClass: 'bg-star-gold/5',
+    borderClass: 'border-star-gold/30',
+    shadowClass: 'shadow-2xl'
+  }
+}
+
+export const PRESET_THEMES = [
+  {
+    id: 'default',
+    name: '默认星空',
+    backgroundStyle: 'cosmic',
+    starDensity: 1.0,
+    connectionEffect: 'glow',
+    panelStyle: 'glass',
+    icon: '⭐'
+  },
+  {
+    id: 'romantic',
+    name: '浪漫之夜',
+    backgroundStyle: 'sunset',
+    starDensity: 1.5,
+    connectionEffect: 'starlight',
+    panelStyle: 'glass',
+    icon: '💕'
+  },
+  {
+    id: 'cyberpunk',
+    name: '赛博朋克',
+    backgroundStyle: 'cosmic',
+    starDensity: 2.0,
+    connectionEffect: 'neon',
+    panelStyle: 'dark',
+    icon: '🌃'
+  },
+  {
+    id: 'nature',
+    name: '自然秘境',
+    backgroundStyle: 'forest',
+    starDensity: 1.0,
+    connectionEffect: 'firefly',
+    panelStyle: 'aurora',
+    icon: '🍃'
+  },
+  {
+    id: 'ocean',
+    name: '深海之梦',
+    backgroundStyle: 'ocean',
+    starDensity: 1.5,
+    connectionEffect: 'crystal',
+    panelStyle: 'aurora',
+    icon: '🐚'
+  }
+]
 
 export const GRAPHICS_OPTIONS = {
   low: {

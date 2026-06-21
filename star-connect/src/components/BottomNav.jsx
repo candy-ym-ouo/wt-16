@@ -133,6 +133,11 @@ export default function BottomNav() {
       badgeColor: !tutorial.started ? 'bg-star-gold text-space-900 animate-pulse' : null
     },
     {
+      id: 'workshop',
+      label: '工坊',
+      icon: '🎨'
+    },
+    {
       id: 'settings',
       label: '设置',
       icon: '⚙️'

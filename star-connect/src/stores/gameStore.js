@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { ACHIEVEMENTS } from '../data/achievements'
-import { DEFAULT_SETTINGS, STORAGE_KEYS } from '../data/constants'
+import { DEFAULT_SETTINGS, STORAGE_KEYS, PRESET_THEMES } from '../data/constants'
 import {
   SEASONS,
   SEASON_PHASES,
@@ -107,6 +107,45 @@ export const useGameStore = create(
         }),
       resetSettings: () =>
         set({ settings: { ...DEFAULT_SETTINGS } }),
+
+      updateWorkshopSettings: (newWorkshopSettings) =>
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            workshop: {
+              ...state.settings.workshop,
+              ...newWorkshopSettings
+            }
+          }
+        })),
+
+      applyPresetTheme: (presetId) => {
+        const preset = PRESET_THEMES.find(p => p.id === presetId)
+        if (preset) {
+          set((state) => ({
+            settings: {
+              ...state.settings,
+              workshop: {
+                ...state.settings.workshop,
+                backgroundStyle: preset.backgroundStyle,
+                starDensity: preset.starDensity,
+                connectionEffect: preset.connectionEffect,
+                panelStyle: preset.panelStyle
+              }
+            }
+          }))
+          return true
+        }
+        return false
+      },
+
+      resetWorkshopSettings: () =>
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            workshop: { ...DEFAULT_SETTINGS.workshop }
+          }
+        })),
 
       manualSave: () => {
         const state = get()
