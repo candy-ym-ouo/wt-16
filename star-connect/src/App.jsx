@@ -11,6 +11,7 @@ import AchievementToast from './components/AchievementToast'
 import FamilyMode from './components/FamilyMode'
 import NightExpedition from './components/NightExpedition'
 import ObservationCalendar from './components/ObservationCalendar'
+import StarQuiz from './components/StarQuiz'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
       {activePanel === 'family' && <FamilyMode />}
       {activePanel === 'expedition' && <NightExpedition />}
       {activePanel === 'calendar' && <ObservationCalendar />}
+      {activePanel === 'quiz' && <StarQuiz />}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />

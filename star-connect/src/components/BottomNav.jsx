@@ -76,6 +76,13 @@ export default function BottomNav() {
       badge: unlockedAchievements.length > 0 ? unlockedAchievements.length.toString() : null
     },
     {
+      id: 'quiz',
+      label: '百科',
+      icon: '📚',
+      badge: progress.quizPoints > 0 ? `${progress.quizPoints}` : null,
+      badgeColor: progress.quizPoints > 0 ? 'bg-star-gold text-space-900' : null
+    },
+    {
       id: 'settings',
       label: '设置',
       icon: '⚙️'

@@ -130,6 +130,88 @@ export default function ObservationLog() {
       )
     }
 
+    if (log.type === 'quiz_complete') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-nebula-cyan/20 bg-nebula-cyan/5"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-nebula-purple to-nebula-cyan
+                          flex items-center justify-center text-lg">
+              📚
+            </div>
+            <div>
+              <div className="font-display text-nebula-cyan text-sm">
+                星座百科 · 完成答题
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                答对 {log.correct}/{log.total} 题 · 获得 +{log.points} 积分
+                {log.isPerfect && <span className="text-star-gold ml-1">💯全对!</span>}
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'quiz_perfect') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-star-gold/20 bg-star-gold/5"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-star-gold to-nebula-orange
+                          flex items-center justify-center text-lg">
+              💯
+            </div>
+            <div>
+              <div className="font-display text-star-gold text-sm">
+                完美通关 · {log.questions}题全对！
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                额外奖励 +{log.bonusPoints} 积分
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'quiz_exchange') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-pink-400/20 bg-pink-400/5"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-nebula-purple
+                          flex items-center justify-center text-lg">
+              🎁
+            </div>
+            <div>
+              <div className="font-display text-pink-300 text-sm">
+                积分兑换 · {log.rewardName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                消耗 {log.cost} 积分
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return null
   }
 

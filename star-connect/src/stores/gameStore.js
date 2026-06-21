@@ -34,6 +34,13 @@ import {
   isSameDay,
   getDaysInMonth,
 } from '../data/observationCalendar'
+import {
+  generateQuizSet,
+  QUIZ_ACHIEVEMENTS,
+  getQuizAchievementById,
+  REWARD_ITEMS,
+  getRewardById
+} from '../data/quiz'
 
 let autoSaveEnabled = true
 
@@ -94,7 +101,8 @@ export const useGameStore = create(
             favoriteConstellations: state.favoriteConstellations,
             familyMode: state.familyMode,
             nightExpedition: state.nightExpedition,
-            observationCalendar: state.observationCalendar
+            observationCalendar: state.observationCalendar,
+            quiz: state.quiz
           },
           version: 0
         }
@@ -1459,7 +1467,7 @@ export const useGameStore = create(
         const state = get()
         const newlyUnlocked = []
 
-        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS]
+        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS]
 
         allAchievements.forEach((achievement) => {
           if (state.unlockedAchievements.includes(achievement.id)) return
@@ -1517,6 +1525,22 @@ export const useGameStore = create(
             case 'expedition_stardust':
               unlocked = state.nightExpedition.totalStardustEarned >= value
               break
+            case 'quiz_complete':
+              unlocked = (state.quiz?.totalCompleted || 0) >= value
+              break
+            case 'quiz_perfect':
+              const perfectRuns = state.quiz?.history?.filter(h => h.correct === h.total && h.total >= value).length || 0
+              unlocked = perfectRuns >= 1
+              break
+            case 'quiz_streak':
+              unlocked = (state.quiz?.bestStreak || 0) >= value
+              break
+            case 'quiz_correct':
+              unlocked = (state.quiz?.totalCorrect || 0) >= value
+              break
+            case 'quiz_exchange':
+              unlocked = (state.quiz?.redeemedRewards?.length || 0) >= value
+              break
           }
 
           if (unlocked) {
@@ -1545,6 +1569,269 @@ export const useGameStore = create(
 
       showAchievementToast: null,
       setShowAchievementToast: (id) => set({ showAchievementToast: id }),
+
+      quiz: {
+        points: 0,
+        totalCompleted: 0,
+        totalCorrect: 0,
+        totalWrong: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        history: [],
+        redeemedRewards: [],
+        unlockedThemes: [],
+        unlockedBadges: [],
+        hints: 0,
+        activeQuiz: null
+      },
+
+      startQuiz: (questionCount = 5) => {
+        const state = get()
+        const questions = generateQuizSet(
+          state.discoveredConstellations,
+          state.observationLogs,
+          state.unlockedAchievements,
+          questionCount
+        )
+        if (questions.length === 0) return null
+
+        const activeQuiz = {
+          questions,
+          currentIndex: 0,
+          answers: [],
+          startTime: Date.now(),
+          earnedPoints: 0
+        }
+        set((s) => ({
+          quiz: { ...s.quiz, activeQuiz }
+        }))
+        return activeQuiz
+      },
+
+      answerQuestion: (questionId, selectedAnswer) => {
+        const state = get()
+        const activeQuiz = state.quiz.activeQuiz
+        if (!activeQuiz) return null
+
+        const { questions, currentIndex } = activeQuiz
+        const question = questions[currentIndex]
+        if (!question || question.id !== questionId) return null
+
+        const isCorrect = selectedAnswer === question.correctAnswer
+        const earnedPoints = isCorrect ? question.points : 0
+
+        const answerRecord = {
+          questionId: question.id,
+          question: question.question,
+          selectedAnswer,
+          correctAnswer: question.correctAnswer,
+          isCorrect,
+          points: earnedPoints,
+          type: question.type,
+          constellationId: question.constellationId || null
+        }
+
+        const newAnswers = [...activeQuiz.answers, answerRecord]
+        const newEarnedPoints = activeQuiz.earnedPoints + earnedPoints
+
+        set((s) => {
+          const newCurrentStreak = isCorrect ? s.quiz.currentStreak + 1 : 0
+          const newBestStreak = Math.max(s.quiz.bestStreak, newCurrentStreak)
+          return {
+            quiz: {
+              ...s.quiz,
+              activeQuiz: {
+                ...activeQuiz,
+                currentIndex: currentIndex + 1,
+                answers: newAnswers,
+                earnedPoints: newEarnedPoints
+              },
+              currentStreak: newCurrentStreak,
+              bestStreak: newBestStreak,
+              totalCorrect: s.quiz.totalCorrect + (isCorrect ? 1 : 0),
+              totalWrong: s.quiz.totalWrong + (isCorrect ? 0 : 1)
+            }
+          }
+        })
+
+        return {
+          isCorrect,
+          earnedPoints,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          isLast: currentIndex + 1 >= questions.length
+        }
+      },
+
+      finishQuiz: () => {
+        const state = get()
+        const activeQuiz = state.quiz.activeQuiz
+        if (!activeQuiz) return null
+
+        const { questions, answers, earnedPoints, startTime } = activeQuiz
+        const correctCount = answers.filter(a => a.isCorrect).length
+        const totalQuestions = questions.length
+        const isPerfect = correctCount === totalQuestions
+        const perfectBonus = isPerfect ? totalQuestions * 10 : 0
+        const totalPoints = earnedPoints + perfectBonus
+        const duration = Date.now() - startTime
+
+        const record = {
+          id: `quiz_${Date.now()}`,
+          questions: totalQuestions,
+          correct: correctCount,
+          wrong: totalQuestions - correctCount,
+          accuracy: totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0,
+          isPerfect,
+          points: totalPoints,
+          perfectBonus,
+          duration,
+          timestamp: Date.now(),
+          answers
+        }
+
+        set((s) => ({
+          quiz: {
+            ...s.quiz,
+            points: s.quiz.points + totalPoints,
+            totalCompleted: s.quiz.totalCompleted + 1,
+            history: [record, ...s.quiz.history].slice(0, 100),
+            activeQuiz: null
+          }
+        }))
+
+        get().addLog({
+          type: 'quiz_complete',
+          quizId: record.id,
+          correct: correctCount,
+          total: totalQuestions,
+          points: totalPoints,
+          isPerfect,
+          timestamp: Date.now()
+        })
+
+        if (isPerfect) {
+          get().addLog({
+            type: 'quiz_perfect',
+            quizId: record.id,
+            questions: totalQuestions,
+            bonusPoints: perfectBonus,
+            timestamp: Date.now()
+          })
+        }
+
+        get().checkAchievements()
+        return record
+      },
+
+      abandonQuiz: () => {
+        set((s) => ({
+          quiz: { ...s.quiz, activeQuiz: null }
+        }))
+      },
+
+      redeemReward: (rewardId) => {
+        const state = get()
+        const reward = getRewardById(rewardId)
+        if (!reward) return { success: false, reason: 'reward_not_found' }
+
+        if (reward.unique && state.quiz.redeemedRewards.includes(rewardId)) {
+          return { success: false, reason: 'already_redeemed' }
+        }
+
+        if (state.quiz.points < reward.cost) {
+          return { success: false, reason: 'insufficient_points', needed: reward.cost, current: state.quiz.points }
+        }
+
+        set((s) => {
+          const newQuiz = {
+            ...s.quiz,
+            points: s.quiz.points - reward.cost,
+            redeemedRewards: [...s.quiz.redeemedRewards, rewardId]
+          }
+
+          if (reward.type === 'hint') {
+            newQuiz.hints = s.quiz.hints + reward.amount
+          }
+          if (reward.type === 'theme') {
+            newQuiz.unlockedThemes = [...s.quiz.unlockedThemes, rewardId]
+          }
+          if (reward.type === 'badge') {
+            newQuiz.unlockedBadges = [...s.quiz.unlockedBadges, rewardId]
+          }
+          return { quiz: newQuiz }
+        })
+
+        if (reward.type === 'stamina') {
+          const ne = get().nightExpedition
+          set({
+            nightExpedition: {
+              ...ne,
+              stamina: Math.min(ne.stamina + reward.amount, STAMINA_CONFIG.maxStamina),
+              lastStaminaUpdate: Date.now()
+            }
+          })
+        }
+
+        if (reward.type === 'stamina_full') {
+          const ne = get().nightExpedition
+          set({
+            nightExpedition: {
+              ...ne,
+              stamina: STAMINA_CONFIG.maxStamina,
+              lastStaminaUpdate: Date.now()
+            }
+          })
+        }
+
+        if (reward.type === 'stardust') {
+          get().addStardust(reward.amount, `问答兑换：${reward.name}`)
+        }
+
+        get().addLog({
+          type: 'quiz_exchange',
+          rewardId,
+          rewardName: reward.name,
+          cost: reward.cost,
+          timestamp: Date.now()
+        })
+
+        get().checkAchievements()
+        return { success: true, reward }
+      },
+
+      useHint: () => {
+        const state = get()
+        if (state.quiz.hints <= 0) return false
+        set((s) => ({
+          quiz: { ...s.quiz, hints: s.quiz.hints - 1 }
+        }))
+        return true
+      },
+
+      getQuizStats: () => {
+        const state = get()
+        const q = state.quiz
+        const totalAnswered = q.totalCorrect + q.totalWrong
+        return {
+          points: q.points,
+          totalCompleted: q.totalCompleted,
+          totalCorrect: q.totalCorrect,
+          totalWrong: q.totalWrong,
+          totalAnswered,
+          accuracy: totalAnswered > 0 ? Math.round((q.totalCorrect / totalAnswered) * 100) : 0,
+          currentStreak: q.currentStreak,
+          bestStreak: q.bestStreak,
+          hints: q.hints,
+          unlockedThemes: q.unlockedThemes,
+          unlockedBadges: q.unlockedBadges,
+          redeemedCount: q.redeemedRewards.length,
+          averageScore: q.history.length > 0
+            ? Math.round(q.history.reduce((sum, h) => sum + h.accuracy, 0) / q.history.length)
+            : 0,
+          perfectCount: q.history.filter(h => h.isPerfect).length
+        }
+      },
 
       activePanel: null,
       setActivePanel: (panel) =>
@@ -1584,7 +1871,7 @@ export const useGameStore = create(
 
       getProgress: () => {
         const state = get()
-        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length
+        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length
         return {
           constellations: state.discoveredConstellations.length,
           totalConstellations: CONSTELLATIONS.length,
@@ -1592,7 +1879,10 @@ export const useGameStore = create(
           totalAchievements,
           logs: state.observationLogs.length,
           seasonRewardsClaimed: state.seasonRewardsClaimed.length,
-          totalSeasonRewards: Object.keys(SEASONS).length * Object.keys(SEASON_PHASES).length
+          totalSeasonRewards: Object.keys(SEASONS).length * Object.keys(SEASON_PHASES).length,
+          quizPoints: state.quiz?.points || 0,
+          quizCompleted: state.quiz?.totalCompleted || 0,
+          quizCorrect: state.quiz?.totalCorrect || 0
         }
       },
 
@@ -1667,6 +1957,20 @@ export const useGameStore = create(
             dailyRecommendationDate: null,
             customLogs: {},
             zodiac: null,
+          },
+          quiz: {
+            points: 0,
+            totalCompleted: 0,
+            totalCorrect: 0,
+            totalWrong: 0,
+            currentStreak: 0,
+            bestStreak: 0,
+            history: [],
+            redeemedRewards: [],
+            unlockedThemes: [],
+            unlockedBadges: [],
+            hints: 0,
+            activeQuiz: null
           }
         })
     }),
@@ -1689,7 +1993,8 @@ export const useGameStore = create(
         favoriteConstellations: state.favoriteConstellations,
         familyMode: state.familyMode,
         nightExpedition: state.nightExpedition,
-        observationCalendar: state.observationCalendar
+        observationCalendar: state.observationCalendar,
+        quiz: state.quiz
       })
     }
   )
