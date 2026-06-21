@@ -5,12 +5,25 @@ import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../
 import { ROUTE_TYPES } from '../data/starRoute'
 import { EVENT_TYPES } from '../data/nightSkyEvents'
 import { formatDate } from '../utils/math'
+import { useI18n } from '../i18n/useI18n'
 
 export default function ObservationLog() {
   const { observationLogs, setActivePanel, clearLogs, seasonRewardsClaimed, openAtlasList, openAtlasDetail } = useGameStore()
+  const { t, tc } = useI18n()
 
   const handleViewInAtlas = (constellationId) => {
     openAtlasDetail(constellationId)
+  }
+
+  const getLocalizedConstellationName = (constellationId) => {
+    const c = getConstellationById(constellationId)
+    if (!c) return constellationId
+    return tc('constellation', constellationId, 'name') || c.name
+  }
+
+  const getLocalizedConstellationNameEn = (constellationId) => {
+    const c = getConstellationById(constellationId)
+    return c?.nameEn || ''
   }
 
   const renderLogEntry = (log, index) => {
@@ -41,16 +54,16 @@ export default function ObservationLog() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-display text-white text-sm">
-                    {c.name}
+                    {getLocalizedConstellationName(log.constellationId)}
                   </span>
                   {log.perfect && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-star-gold/20 text-star-gold">
-                      完美
+                      {t('log.perfect')}
                     </span>
                   )}
                 </div>
                 <div className="text-[11px] text-white/40 mt-0.5">
-                  {c.nameEn} · {isDiscovery ? '首次发现' : '再次观测'}
+                  {getLocalizedConstellationNameEn(log.constellationId)} · {isDiscovery ? t('log.firstDiscovery') : t('log.reobservation')}
                 </div>
                 <div className="text-[10px] text-white/30 mt-1 font-mono">
                   {formatDate(log.timestamp)}
@@ -62,7 +75,7 @@ export default function ObservationLog() {
               className="ml-2 px-2 py-1 rounded-lg bg-space-600/50 text-white/50 text-[10px]
                        hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
                        flex-shrink-0"
-              title="在图鉴中查看"
+              title={t('detail.backToAtlas')}
             >
               📚
             </button>
@@ -76,6 +89,8 @@ export default function ObservationLog() {
       const seasonAchievement = SEASON_ACHIEVEMENTS?.find(a => a.id === log.achievementId)
       const achievement = a || seasonAchievement
       if (!achievement) return null
+      const achName = tc('achievement', achievement.id, 'name') || achievement.name
+      const achDesc = tc('achievement', achievement.id, 'description') || achievement.description
       return (
         <div
           key={index}
@@ -88,10 +103,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-star-gold text-sm">
-                成就解锁 · {achievement.name}
+                {t('log.achievementUnlocked')} · {achName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                {achievement.description}
+                {achDesc}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -106,6 +121,8 @@ export default function ObservationLog() {
       const s = SEASONS[log.seasonId]
       const phase = SEASON_PHASES[log.phaseId]
       if (!s || !phase) return null
+      const seasonName = tc('season', log.seasonId, 'name') || s.name
+      const phaseName = tc('seasonPhase', log.phaseId, 'name') || phase.name
       return (
         <div
           key={index}
@@ -118,10 +135,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className={`font-display text-sm ${s.textColor}`}>
-                季节奖励 · {log.rewardName}
+                {t('log.seasonReward')} · {log.rewardName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                {s.name} · {phase.name}阶段完成
+                {t('log.stageComplete', { name: seasonName, phase: phaseName })}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -145,11 +162,11 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-nebula-cyan text-sm">
-                星座百科 · 完成答题
+                {t('log.quizComplete')}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                答对 {log.correct}/{log.total} 题 · 获得 +{log.points} 积分
-                {log.isPerfect && <span className="text-star-gold ml-1">💯全对!</span>}
+                {t('log.correctCount', { correct: log.correct, total: log.total })} · {t('log.earnedPoints', { points: log.points })}
+                {log.isPerfect && <span className="text-star-gold ml-1">{t('log.allCorrect')}</span>}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -173,10 +190,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-star-gold text-sm">
-                完美通关 · {log.questions}题全对！
+                {t('log.quizPerfect')} · {t('log.questionsAllCorrect', { count: log.questions })}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                额外奖励 +{log.bonusPoints} 积分
+                {t('log.bonusPoints', { points: log.bonusPoints })}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -200,10 +217,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-pink-300 text-sm">
-                积分兑换 · {log.rewardName}
+                {t('log.quizExchange')} · {log.rewardName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                消耗 {log.cost} 积分
+                {t('log.costPoints', { cost: log.cost })}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -228,10 +245,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-emerald-300 text-sm">
-                启程 · {log.routeName}
+                {t('log.routeStart')} · {log.routeName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                共 {log.totalSteps} 个探索目标
+                {t('log.totalSteps', { count: log.totalSteps })}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -265,11 +282,11 @@ export default function ObservationLog() {
               <div className={`font-display text-sm ${
                 log.perfect ? 'text-star-gold' : 'text-nebula-cyan'
               }`}>
-                完成路线 · {log.routeName}
-                {log.perfect && <span className="ml-1">💎 全完美!</span>}
+                {t('log.routeComplete')} · {log.routeName}
+                {log.perfect && <span className="ml-1">💎 {t('log.perfect')}!</span>}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                完成 {log.completedSteps} 步
+                {t('log.completedSteps', { count: log.completedSteps })}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -293,10 +310,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-white/60 text-sm">
-                放弃路线 · {log.routeName}
+                {t('log.routeAbandon')} · {log.routeName}
               </div>
               <div className="text-[11px] text-white/40 mt-0.5">
-                已完成 {log.completedSteps}/{log.totalSteps} 步
+                {t('log.abandonedSteps', { completed: log.completedSteps, total: log.totalSteps })}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -334,10 +351,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className={`font-display ${colors.text} text-sm`}>
-                🌌 事件开始 · {log.eventName}
+                {t('log.eventStart')} · {log.eventName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                {log.message || '新的夜空事件开始了！'}
+                {log.message || t('log.newEventStarted')}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -360,10 +377,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-white/60 text-sm">
-                事件结束 · {log.eventName}
+                {t('log.eventEnd')} · {log.eventName}
               </div>
               <div className="text-[11px] text-white/40 mt-0.5">
-                {log.message || '该事件已结束'}
+                {log.message || t('log.eventEnded')}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -386,10 +403,10 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-yellow-300 text-sm">
-                🎉 事件奖励 · {log.eventName}
+                {t('log.eventReward')} · {log.eventName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                {log.message || '获得事件奖励'}
+                {log.message || t('log.gotEventReward')}
                 {log.stardust && <span className="text-yellow-300"> 💫 {log.stardust}</span>}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
@@ -413,12 +430,12 @@ export default function ObservationLog() {
             </div>
             <div>
               <div className="font-display text-purple-300 text-sm">
-                参与事件 · {log.eventName}
+                {t('log.eventParticipate')} · {log.eventName}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                {log.message || '成功参与了夜空事件'}
+                {log.message || t('log.participated')}
                 {log.progress && (
-                  <span className="text-purple-300"> 进度 {log.progress}</span>
+                  <span className="text-purple-300"> {log.progress}</span>
                 )}
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
@@ -440,27 +457,27 @@ export default function ObservationLog() {
         <div className="p-5 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-display text-white">观测日志</h2>
+              <h2 className="text-xl font-display text-white">{t('log.title')}</h2>
               <p className="text-xs text-white/50 mt-1">
-                记录每一次与星空的相遇
+                {t('log.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-2">
               {observationLogs.length > 0 && (
                 <button
                   onClick={() => {
-                    if (confirm('确定要清空所有观测日志吗？')) clearLogs()
+                    if (confirm(t('log.clearConfirm'))) clearLogs()
                   }}
                   className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20
                            text-red-300 hover:bg-red-500/20 transition-all"
                 >
-                  清空
+                  {t('log.clearAll')}
                 </button>
               )}
               <button
                 onClick={() => setActivePanel(null)}
                 className="icon-btn"
-                aria-label="关闭"
+                aria-label={t('settings.close')}
               >
                 ✕
               </button>
@@ -472,31 +489,31 @@ export default function ObservationLog() {
               <div className="text-lg font-bold text-nebula-purple">
                 {observationLogs.filter(l => l.type === 'discovery').length}
               </div>
-              <div className="text-[10px] text-white/50">首次发现</div>
+              <div className="text-[10px] text-white/50">{t('log.firstDiscovery')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-nebula-cyan">
                 {observationLogs.filter(l => l.type === 'reobservation').length}
               </div>
-              <div className="text-[10px] text-white/50">再次观测</div>
+              <div className="text-[10px] text-white/50">{t('log.reobservation')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-star-gold">
                 {observationLogs.filter(l => l.type === 'achievement').length}
               </div>
-              <div className="text-[10px] text-white/50">成就解锁</div>
+              <div className="text-[10px] text-white/50">{t('log.achievementUnlocked')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-pink-300">
                 {seasonRewardsClaimed.length}
               </div>
-              <div className="text-[10px] text-white/50">季节奖励</div>
+              <div className="text-[10px] text-white/50">{t('log.seasonReward')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-blue-400">
                 {observationLogs.filter(l => l.type?.startsWith('event_')).length}
               </div>
-              <div className="text-[10px] text-white/50">夜空事件</div>
+              <div className="text-[10px] text-white/50">{t('log.nightEvents')}</div>
             </div>
           </div>
 
@@ -509,7 +526,7 @@ export default function ObservationLog() {
                        transition-all flex items-center justify-center gap-2"
             >
               <span>📚</span>
-              <span>浏览星空图鉴</span>
+              <span>{t('log.browseAtlas')}</span>
               <span className="text-nebula-cyan">→</span>
             </button>
           </div>
@@ -519,9 +536,9 @@ export default function ObservationLog() {
           {observationLogs.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center py-12">
               <div className="text-5xl mb-4 opacity-30">📖</div>
-              <h3 className="text-white/70 font-display mb-2">暂无观测记录</h3>
+              <h3 className="text-white/70 font-display mb-2">{t('log.emptyTitle')}</h3>
               <p className="text-xs text-white/40 max-w-xs leading-relaxed">
-                开始探索星座，你的每一次发现都将记录在这里
+                {t('log.emptyDesc')}
               </p>
             </div>
           ) : (

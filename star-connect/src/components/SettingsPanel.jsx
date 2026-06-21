@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { DEFAULT_SETTINGS } from '../data/constants'
 import { audioManager } from '../modules/AudioManager'
+import { useI18n } from '../i18n/useI18n'
+import { setLanguage as setI18nLanguage } from '../i18n/index'
 
 export default function SettingsPanel() {
   const {
@@ -13,6 +15,7 @@ export default function SettingsPanel() {
     getProgress,
     manualSave
   } = useGameStore()
+  const { t, language, supportedLanguages } = useI18n()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showSavedToast, setShowSavedToast] = useState(false)
   const progress = getProgress()
@@ -21,6 +24,13 @@ export default function SettingsPanel() {
     audioManager.ensureContext()
     audioManager.playClick()
     updateSettings({ [key]: value })
+  }
+
+  const handleLanguageChange = async (code) => {
+    audioManager.ensureContext()
+    audioManager.playClick()
+    await setI18nLanguage(code)
+    updateSettings({ language: code })
   }
 
   const handleResetSettings = () => {
@@ -58,7 +68,7 @@ export default function SettingsPanel() {
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50
                       px-4 py-2 rounded-xl bg-nebula-cyan/20 border border-nebula-cyan/40
                       text-nebula-cyan text-sm font-medium animate-bounce-in">
-          ✓ 进度已保存
+          {t('settings.saved')}
         </div>
       )}
 
@@ -66,16 +76,16 @@ export default function SettingsPanel() {
         <div className="p-5 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-display text-white">设置</h2>
+              <h2 className="text-xl font-display text-white">{t('settings.title')}</h2>
               <p className="text-xs text-white/50 mt-1">
-                定制你的观星体验
+                {t('settings.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-2">
               {settings.autoSave && (
                 <div className="flex items-center gap-1.5 text-[10px] text-nebula-cyan/70">
                   <span className="w-1.5 h-1.5 rounded-full bg-nebula-cyan animate-pulse" />
-                  自动保存中
+                  {t('settings.autoSaving')}
                 </div>
               )}
               {!settings.autoSave && (
@@ -84,13 +94,13 @@ export default function SettingsPanel() {
                   className="text-xs px-3 py-1.5 rounded-lg bg-nebula-cyan/20 border border-nebula-cyan/30
                            text-nebula-cyan hover:bg-nebula-cyan/30 transition-all"
                 >
-                  💾 手动保存
+                  {t('settings.manualSave')}
                 </button>
               )}
               <button
                 onClick={handleClose}
                 className="icon-btn"
-                aria-label="关闭"
+                aria-label={t('settings.close')}
               >
                 ✕
               </button>
@@ -101,11 +111,42 @@ export default function SettingsPanel() {
         <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-6">
           <section>
             <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
-              🎮 体验设置
+              {t('settings.languageSection')}
+            </h3>
+            <div className="p-4 rounded-xl bg-space-700/30 border border-white/5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🌐</span>
+                <div>
+                  <div className="text-sm text-white">{t('settings.languageLabel')}</div>
+                  <div className="text-[10px] text-white/40 mt-0.5">{t('settings.languageDesc')}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {supportedLanguages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => handleLanguageChange(lang.code)}
+                    className={`py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                      language === lang.code
+                        ? 'bg-nebula-purple text-white'
+                        : 'bg-space-800/60 text-white/60 hover:bg-space-700/60'
+                    }`}
+                  >
+                    <span>{lang.icon}</span>
+                    <span>{lang.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
+              {t('settings.experienceSection')}
             </h3>
             <div className="space-y-3">
               <SettingSlider
-                label="主音量"
+                label={t('settings.mainVolume')}
                 icon="🔊"
                 value={settings.volume}
                 min={0}
@@ -116,7 +157,7 @@ export default function SettingsPanel() {
               />
 
               <SettingSlider
-                label="音效音量"
+                label={t('settings.sfxVolume')}
                 icon="🎵"
                 value={settings.sfxVolume}
                 min={0}
@@ -127,17 +168,17 @@ export default function SettingsPanel() {
               />
 
               <SettingToggle
-                label="触控反馈"
+                label={t('settings.hapticFeedback')}
                 icon="📳"
-                description="点击时触发震动反馈"
+                description={t('settings.hapticFeedbackDesc')}
                 value={settings.hapticFeedback}
                 onChange={(v) => handleSettingChange('hapticFeedback', v)}
               />
 
               <SettingToggle
-                label="自动保存"
+                label={t('settings.autoSave')}
                 icon="💾"
-                description="自动保存进度到本地存储"
+                description={t('settings.autoSaveDesc')}
                 value={settings.autoSave}
                 onChange={(v) => handleSettingChange('autoSave', v)}
               />
@@ -146,14 +187,14 @@ export default function SettingsPanel() {
 
           <section>
             <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
-              🎨 画面设置
+              {t('settings.visualSection')}
             </h3>
             <div className="space-y-3">
               <div className="p-4 rounded-xl bg-space-700/30 border border-white/5">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-lg">🖼️</span>
                   <div>
-                    <div className="text-sm text-white">画质等级</div>
+                    <div className="text-sm text-white">{t('settings.graphicsQuality')}</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -167,14 +208,14 @@ export default function SettingsPanel() {
                           : 'bg-space-800/60 text-white/60 hover:bg-space-700/60'
                       }`}
                     >
-                      {q === 'low' ? '省电' : q === 'medium' ? '均衡' : '极致'}
+                      {q === 'low' ? t('settings.qualityLow') : q === 'medium' ? t('settings.qualityMedium') : t('settings.qualityHigh')}
                     </button>
                   ))}
                 </div>
               </div>
 
               <SettingSlider
-                label="星星密度"
+                label={t('settings.starDensity')}
                 icon="✨"
                 value={settings.starDensity}
                 min={0.3}
@@ -185,7 +226,7 @@ export default function SettingsPanel() {
               />
 
               <SettingSlider
-                label="动画速度"
+                label={t('settings.animationSpeed')}
                 icon="🌙"
                 value={settings.animationSpeed}
                 min={0.2}
@@ -196,17 +237,17 @@ export default function SettingsPanel() {
               />
 
               <SettingToggle
-                label="星云效果"
+                label={t('settings.nebulaEffect')}
                 icon="🌌"
-                description="显示背景中的彩色星云"
+                description={t('settings.nebulaEffectDesc')}
                 value={settings.showNebula}
                 onChange={(v) => handleSettingChange('showNebula', v)}
               />
 
               <SettingToggle
-                label="显示星名"
+                label={t('settings.showLabels')}
                 icon="🏷️"
-                description="悬停时显示星星名称"
+                description={t('settings.showLabelsDesc')}
                 value={settings.showLabels}
                 onChange={(v) => handleSettingChange('showLabels', v)}
               />
@@ -215,33 +256,33 @@ export default function SettingsPanel() {
 
           <section>
             <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
-              📊 当前进度
+              {t('settings.progressSection')}
             </h3>
             <div className="grid grid-cols-3 gap-2">
               <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
                 <div className="text-lg font-bold text-nebula-cyan">
                   {progress.constellations}/{progress.totalConstellations}
                 </div>
-                <div className="text-[10px] text-white/50 mt-1">星座</div>
+                <div className="text-[10px] text-white/50 mt-1">{t('settings.constellations')}</div>
               </div>
               <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
                 <div className="text-lg font-bold text-star-gold">
                   {progress.achievements}/{progress.totalAchievements}
                 </div>
-                <div className="text-[10px] text-white/50 mt-1">成就</div>
+                <div className="text-[10px] text-white/50 mt-1">{t('settings.achievements')}</div>
               </div>
               <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
                 <div className="text-lg font-bold text-nebula-purple">
                   {progress.logs}
                 </div>
-                <div className="text-[10px] text-white/50 mt-1">日志</div>
+                <div className="text-[10px] text-white/50 mt-1">{t('settings.logs')}</div>
               </div>
             </div>
           </section>
 
           <section>
             <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
-              ⚠️ 危险操作
+              {t('settings.dangerSection')}
             </h3>
             <div className="space-y-2">
               <button
@@ -250,7 +291,7 @@ export default function SettingsPanel() {
                          hover:border-yellow-500/30 hover:bg-yellow-500/5
                          transition-all text-sm text-white/80"
               >
-                🔄 恢复默认设置
+                {t('settings.resetSettings')}
               </button>
 
               {!showResetConfirm ? (
@@ -263,12 +304,12 @@ export default function SettingsPanel() {
                   className="w-full p-3 rounded-xl bg-space-700/30 border border-red-500/20
                            hover:bg-red-500/10 transition-all text-sm text-red-300"
                 >
-                  🗑️ 清空所有数据
+                  {t('settings.clearAllData')}
                 </button>
               ) : (
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30">
                   <p className="text-xs text-red-200 mb-3">
-                    确定要清空所有进度、成就和日志吗？此操作无法撤销。
+                    {t('settings.clearConfirmText')}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -276,7 +317,7 @@ export default function SettingsPanel() {
                       className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium
                                hover:bg-red-600 transition-all"
                     >
-                      确认清空
+                      {t('settings.confirmClear')}
                     </button>
                     <button
                       onClick={() => {
@@ -286,7 +327,7 @@ export default function SettingsPanel() {
                       className="flex-1 py-2 rounded-lg bg-space-800 text-white/80 text-sm
                                hover:bg-space-700 transition-all"
                     >
-                      取消
+                      {t('settings.cancel')}
                     </button>
                   </div>
                 </div>
