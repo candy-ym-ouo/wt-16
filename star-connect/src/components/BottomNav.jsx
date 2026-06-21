@@ -12,6 +12,7 @@ export default function BottomNav() {
   const totalSeasonRewards = Object.keys(SEASONS).length * 3
   const todayCheckinStatus = getCheckinStatus(new Date())
   const streakInfo = getStreakInfo()
+  const tutorialProgress = getTutorialProgress()
   const shopProgress = getShopProgress()
 
   const items = [
@@ -90,11 +91,36 @@ export default function BottomNav() {
       badgeColor: 'bg-star-gold text-space-900'
     },
     {
+      id: 'dashboard',
+      label: '数据',
+      icon: '📊',
+      badge: null
+    },
+    {
+      id: 'gallery',
+      label: '档案',
+      icon: '📷',
+      badge: null
+    },
+    {
       id: 'quiz',
       label: '百科',
       icon: '📚',
       badge: progress.quizPoints > 0 ? `${progress.quizPoints}` : null,
       badgeColor: progress.quizPoints > 0 ? 'bg-star-gold text-space-900' : null
+    },
+    {
+      id: 'tutorial',
+      label: '训练营',
+      icon: '🎓',
+      badge: !tutorial.started
+        ? 'NEW'
+        : !tutorial.completed && tutorial.currentStepId
+        ? `${tutorialProgress.percentage}%`
+        : tutorial.completed && tutorial.rewardsClaimed.length < 3
+        ? '🎁'
+        : null,
+      badgeColor: !tutorial.started ? 'bg-star-gold text-space-900 animate-pulse' : null
     },
     {
       id: 'settings',
@@ -126,8 +152,13 @@ export default function BottomNav() {
       setActivePanel(null)
     } else if (panelId === 'atlas') {
       openAtlasList()
+      if (!isClosing) recordTutorialPanelVisit('atlas')
     } else {
+      const willOpen = activePanel !== panelId
       setActivePanel(activePanel === panelId ? null : panelId)
+      if (willOpen && panelId) {
+        recordTutorialPanelVisit(panelId)
+      }
     }
   }
 
@@ -146,7 +177,7 @@ export default function BottomNav() {
                   isActive
                     ? item.isHome
                       ? 'bg-gradient-to-br from-nebula-purple to-nebula-cyan text-white shadow-lg -mt-5'
-                      : 'bg-white/10 text-white'
+                      : 'bg-white/10 text-white border border-white/10'
                     : 'text-white/50 hover:text-white/80 hover:bg-white/5'
                 }`}
               >

@@ -49,6 +49,13 @@ import {
   getTeamTaskById,
   getTeamAchievementById
 } from '../data/team'
+import {
+  ALL_SHOP_ITEMS,
+  SHOP_SKINS,
+  SHOP_ITEMS,
+  SHOP_DECORATIONS,
+  getShopItemById
+} from '../data/shop'
 
 let autoSaveEnabled = true
 
@@ -2522,6 +2529,270 @@ export const useGameStore = create(
         }
       },
 
+      shop: {
+        inventory: {},
+        unlockedSkins: ['skin_default'],
+        unlockedDecorations: [],
+        currentSkin: 'skin_default',
+        activeDecorations: [],
+        purchaseHistory: [],
+        hints: 0,
+        perfectCharms: 0,
+        doubleStardustUntil: 0
+      },
+
+      buyShopItem: (itemId) => {
+        const state = get()
+        const item = getShopItemById(itemId)
+        if (!item) return { success: false, reason: 'item_not_found' }
+
+        const oc = state.observationCalendar
+        if (item.priceType === 'stardust' && oc.stardust < item.price) {
+          return { success: false, reason: 'not_enough_stardust' }
+        }
+
+        if (item.type === 'skin') {
+          if (state.shop.unlockedSkins.includes(itemId)) {
+            return { success: false, reason: 'already_owned' }
+          }
+        }
+        if (item.type === 'decoration') {
+          if (state.shop.unlockedDecorations.includes(itemId)) {
+            return { success: false, reason: 'already_owned' }
+          }
+        }
+
+        if (item.type === 'consumable') {
+          const currentCount = state.shop.inventory[itemId] || 0
+          if (currentCount >= item.maxStack) {
+            return { success: false, reason: 'max_stack_reached' }
+          }
+        }
+
+        set((s) => {
+          const newShop = { ...s.shop }
+          const newOC = { ...s.observationCalendar }
+
+          if (item.priceType === 'stardust') {
+            newOC.stardust -= item.price
+          }
+
+          if (item.type === 'skin') {
+            newShop.unlockedSkins = [...newShop.unlockedSkins, itemId]
+          } else if (item.type === 'decoration') {
+            newShop.unlockedDecorations = [...newShop.unlockedDecorations, itemId]
+          } else if (item.type === 'consumable') {
+            newShop.inventory = {
+              ...newShop.inventory,
+              [itemId]: (newShop.inventory[itemId] || 0) + 1
+            }
+            if (item.effect?.type === 'hint') {
+              newShop.hints = newShop.hints + 1
+            }
+            if (item.effect?.type === 'perfect_charm') {
+              newShop.perfectCharms = newShop.perfectCharms + 1
+            }
+          }
+
+          newShop.purchaseHistory = [
+            { itemId, price: item.price, timestamp: Date.now() },
+            ...newShop.purchaseHistory
+          ].slice(0, 50)
+
+          return {
+            shop: newShop,
+            observationCalendar: newOC
+          }
+        })
+
+        get().addLog({
+          type: 'shop_purchase',
+          itemId,
+          itemName: item.name,
+          price: item.price,
+          timestamp: Date.now()
+        })
+
+        return { success: true, item }
+      },
+
+      useShopItem: (itemId) => {
+        const state = get()
+        const item = getShopItemById(itemId)
+        if (!item) return { success: false, reason: 'item_not_found' }
+        if (item.type !== 'consumable') return { success: false, reason: 'not_consumable' }
+
+        const count = state.shop.inventory[itemId] || 0
+        if (count <= 0) return { success: false, reason: 'not_enough' }
+
+        let result = { success: true }
+
+        if (item.effect?.type === 'stardust') {
+          get().addStardust(item.effect.amount, `使用${item.name}`)
+        }
+        if (item.effect?.type === 'double_stardust') {
+          const until = Date.now() + item.effect.duration
+          set((s) => ({
+            shop: {
+              ...s.shop,
+              doubleStardustUntil: Math.max(s.shop.doubleStardustUntil, Date.now()) + item.effect.duration
+            }
+          }))
+          result.effect = { type: 'double_stardust', until }
+        }
+
+        set((s) => {
+          const newShop = { ...s.shop }
+          const newCount = (newShop.inventory[itemId] || 0) - 1
+          if (newCount <= 0) {
+            delete newShop.inventory[itemId]
+          } else {
+            newShop.inventory = { ...newShop.inventory, [itemId]: newCount }
+          }
+
+          if (item.effect?.type === 'hint') {
+            newShop.hints = Math.max(0, newShop.hints - 1)
+          }
+          if (item.effect?.type === 'perfect_charm') {
+            newShop.perfectCharms = Math.max(0, newShop.perfectCharms - 1)
+          }
+
+          return { shop: newShop }
+        })
+
+        get().addLog({
+          type: 'shop_use',
+          itemId,
+          itemName: item.name,
+          timestamp: Date.now()
+        })
+
+        return result
+      },
+
+      setCurrentSkin: (skinId) => {
+        const state = get()
+        if (!state.shop.unlockedSkins.includes(skinId)) return false
+        set((s) => ({
+          shop: { ...s.shop, currentSkin: skinId }
+        }))
+        return true
+      },
+
+      toggleDecoration: (decoId) => {
+        const state = get()
+        if (!state.shop.unlockedDecorations.includes(decoId)) return false
+
+        const isActive = state.shop.activeDecorations.includes(decoId)
+        set((s) => ({
+          shop: {
+            ...s.shop,
+            activeDecorations: isActive
+              ? s.shop.activeDecorations.filter(id => id !== decoId)
+              : [...s.shop.activeDecorations, decoId]
+          }
+        }))
+        return true
+      },
+
+      getShopInventory: () => {
+        const state = get()
+        return state.shop.inventory
+      },
+
+      getCurrentSkin: () => {
+        const state = get()
+        return SHOP_SKINS.find(s => s.id === state.shop.currentSkin) || SHOP_SKINS[0]
+      },
+
+      getShopProgress: () => {
+        const state = get()
+        const totalSkins = SHOP_SKINS.length
+        const unlockedSkins = state.shop.unlockedSkins.length
+        const totalDecorations = SHOP_DECORATIONS.length
+        const unlockedDecorations = state.shop.unlockedDecorations.length
+        const totalItems = SHOP_ITEMS.length
+        const ownedItems = Object.keys(state.shop.inventory).length
+
+        return {
+          totalSkins,
+          unlockedSkins,
+          totalDecorations,
+          unlockedDecorations,
+          totalItems,
+          ownedItems,
+          stardust: state.observationCalendar.stardust
+        }
+      },
+
+      addShopReward: (itemId, reason) => {
+        const item = getShopItemById(itemId)
+        if (!item) return false
+
+        set((s) => {
+          const newShop = { ...s.shop }
+
+          if (item.type === 'skin') {
+            if (!newShop.unlockedSkins.includes(itemId)) {
+              newShop.unlockedSkins = [...newShop.unlockedSkins, itemId]
+            }
+          } else if (item.type === 'decoration') {
+            if (!newShop.unlockedDecorations.includes(itemId)) {
+              newShop.unlockedDecorations = [...newShop.unlockedDecorations, itemId]
+            }
+          } else if (item.type === 'consumable') {
+            const currentCount = newShop.inventory[itemId] || 0
+            if (currentCount < item.maxStack) {
+              newShop.inventory = {
+                ...newShop.inventory,
+                [itemId]: currentCount + 1
+              }
+              if (item.effect?.type === 'hint') {
+                newShop.hints = newShop.hints + 1
+              }
+              if (item.effect?.type === 'perfect_charm') {
+                newShop.perfectCharms = newShop.perfectCharms + 1
+              }
+            }
+          }
+
+          return { shop: newShop }
+        })
+
+        get().addLog({
+          type: 'shop_reward',
+          itemId,
+          itemName: item.name,
+          reason: reason || '奖励',
+          timestamp: Date.now()
+        })
+
+        return true
+      },
+
+      useHint: () => {
+        const state = get()
+        if (state.shop.hints <= 0) return false
+        set((s) => ({
+          shop: { ...s.shop, hints: s.shop.hints - 1 }
+        }))
+        return true
+      },
+
+      usePerfectCharm: () => {
+        const state = get()
+        if (state.shop.perfectCharms <= 0) return false
+        set((s) => ({
+          shop: { ...s.shop, perfectCharms: s.shop.perfectCharms - 1 }
+        }))
+        return true
+      },
+
+      isDoubleStardustActive: () => {
+        const state = get()
+        return state.shop.doubleStardustUntil > Date.now()
+      },
+
       activePanel: null,
       setActivePanel: (panel) =>
         set((state) => {
@@ -2691,6 +2962,17 @@ export const useGameStore = create(
             teamStreakDays: 0,
             lastActiveDate: null,
             teamExpeditionsCompleted: 0
+          },
+          shop: {
+            inventory: {},
+            unlockedSkins: ['skin_default'],
+            unlockedDecorations: [],
+            currentSkin: 'skin_default',
+            activeDecorations: [],
+            purchaseHistory: [],
+            hints: 0,
+            perfectCharms: 0,
+            doubleStardustUntil: 0
           }
         })
     }),
@@ -2715,7 +2997,8 @@ export const useGameStore = create(
         nightExpedition: state.nightExpedition,
         observationCalendar: state.observationCalendar,
         quiz: state.quiz,
-        team: state.team
+        team: state.team,
+        shop: state.shop
       })
     }
   )
