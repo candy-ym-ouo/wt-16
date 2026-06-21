@@ -18,6 +18,8 @@ import StarGallery from './components/StarGallery'
 import TutorialCamp from './components/TutorialCamp'
 import StarRoute from './components/StarRoute'
 import StoryChapter from './components/StoryChapter'
+import NightSkyEvents from './components/NightSkyEvents'
+import HomeEventBanner from './components/HomeEventBanner'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -31,19 +33,28 @@ export default function App() {
   const markFinalChapterAsRead = useGameStore((s) => s.markFinalChapterAsRead)
   const setNarrativeChoice = useGameStore((s) => s.setNarrativeChoice)
   const addStardust = useGameStore((s) => s.addStardust)
-  const addLog = useGameStore((s) => s.addLog)
+  const refreshNightSkyEvents = useGameStore((s) => s.refreshNightSkyEvents)
 
   const [activeStory, setActiveStory] = useState(null)
   const [currentUnlockIndex, setCurrentUnlockIndex] = useState(0)
+  const [showNightSkyEvents, setShowNightSkyEvents] = useState(false)
 
   useEffect(() => {
-    if (storyProgress.pendingUnlock && 
-        storyProgress.pendingUnlock.length > 0 && 
+    refreshNightSkyEvents()
+    const interval = setInterval(() => {
+      refreshNightSkyEvents()
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [refreshNightSkyEvents])
+
+  useEffect(() => {
+    if (storyProgress.pendingUnlock &&
+        storyProgress.pendingUnlock.length > 0 &&
         !activeStory &&
         activePanel !== 'seasons') {
       const firstUnlock = storyProgress.pendingUnlock[0]
       setCurrentUnlockIndex(0)
-      
+
       if (firstUnlock.type === 'chapter') {
         setActiveStory({ type: 'chapter', id: firstUnlock.chapterId })
       } else if (firstUnlock.type === 'prologue') {
@@ -86,6 +97,8 @@ export default function App() {
     <div className="relative w-full h-full overflow-hidden bg-space-900">
       <NightSky />
 
+      <HomeEventBanner onOpenEvents={() => setShowNightSkyEvents(true)} />
+
       <ConstellationTasks />
 
       <BottomNav />
@@ -106,6 +119,10 @@ export default function App() {
       {activePanel === 'gallery' && <StarGallery />}
       {activePanel === 'tutorial' && <TutorialCamp />}
       {activePanel === 'route' && <StarRoute />}
+
+      {showNightSkyEvents && (
+        <NightSkyEvents onClose={() => setShowNightSkyEvents(false)} />
+      )}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />

@@ -55,6 +55,14 @@ export class NightSkyRenderer {
 
     this.nebulasCreated = false
 
+    this.meteors = []
+    this.meteorParticles = []
+    this.activeEvents = []
+    this.eventEffects = new Map()
+    this.eventOverlay = null
+    this.meteorShowerActive = false
+    this.specialAstroActive = false
+
     this.init()
   }
 
@@ -265,6 +273,338 @@ export class NightSkyRenderer {
     } else if (!show && this.nebulasCreated) {
       this.removeNebulae()
     }
+  }
+
+  createMeteor(color = 0x64b5f6, speed = 1.0) {
+    const startX = randomRange(-20, 20)
+    const startY = randomRange(15, 25)
+    const startZ = randomRange(-5, 5)
+
+    const length = randomRange(2, 5)
+    const geometry = new THREE.BufferGeometry()
+    const positions = new Float32Array([
+      startX, startY, startZ,
+      startX + length * 0.3, startY - length, startZ + length * 0.2
+    ])
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+
+    const material = new THREE.LineBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      linewidth: 2
+    })
+
+    const meteor = new THREE.Line(geometry, material)
+    meteor.userData = {
+      velocity: new THREE.Vector3(
+        randomRange(0.02, 0.05) * speed,
+        randomRange(-0.08, -0.12) * speed,
+        randomRange(-0.01, 0.01) * speed
+      ),
+      life: 1.0,
+      maxLife: 1.0,
+      particleCount: 0
+    }
+
+    this.scene.add(meteor)
+    this.meteors.push(meteor)
+    return meteor
+  }
+
+  createMeteorParticle(position, color) {
+    const geometry = new THREE.SphereGeometry(0.05, 8, 8)
+    const material = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    })
+
+    const particle = new THREE.Mesh(geometry, material)
+    particle.position.copy(position)
+    particle.userData = {
+      velocity: new THREE.Vector3(
+        randomRange(-0.02, 0.02),
+        randomRange(-0.02, 0.02),
+        randomRange(-0.02, 0.02)
+      ),
+      life: 1.0
+    }
+
+    this.scene.add(particle)
+    this.meteorParticles.push(particle)
+    return particle
+  }
+
+  updateMeteors() {
+    for (let i = this.meteors.length - 1; i >= 0; i--) {
+      const meteor = this.meteors[i]
+      const positions = meteor.geometry.attributes.position.array
+
+      positions[0] += meteor.userData.velocity.x
+      positions[1] += meteor.userData.velocity.y
+      positions[2] += meteor.userData.velocity.z
+      positions[3] += meteor.userData.velocity.x
+      positions[4] += meteor.userData.velocity.y
+      positions[5] += meteor.userData.velocity.z
+
+      meteor.geometry.attributes.position.needsUpdate = true
+
+      meteor.userData.life -= 0.01
+      meteor.material.opacity = meteor.userData.life * 0.8
+
+      meteor.userData.particleCount++
+      if (meteor.userData.particleCount % 3 === 0) {
+        const particlePos = new THREE.Vector3(positions[3], positions[4], positions[5])
+        this.createMeteorParticle(particlePos, meteor.material.color)
+      }
+
+      if (meteor.userData.life <= 0 || positions[1] < -20) {
+        this.scene.remove(meteor)
+        if (meteor.geometry) meteor.geometry.dispose()
+        if (meteor.material) meteor.material.dispose()
+        this.meteors.splice(i, 1)
+      }
+    }
+
+    for (let i = this.meteorParticles.length - 1; i >= 0; i--) {
+      const particle = this.meteorParticles[i]
+      particle.position.add(particle.userData.velocity)
+      particle.userData.life -= 0.02
+      particle.material.opacity = particle.userData.life
+      particle.scale.setScalar(particle.userData.life)
+
+      if (particle.userData.life <= 0) {
+        this.scene.remove(particle)
+        if (particle.geometry) particle.geometry.dispose()
+        if (particle.material) particle.material.dispose()
+        this.meteorParticles.splice(i, 1)
+      }
+    }
+  }
+
+  createSpecialAstroEffect(eventType, color) {
+    const effectId = `${eventType}_${Date.now()}`
+
+    if (eventType === 'total_lunar_eclipse') {
+      const moonGeometry = new THREE.SphereGeometry(1.5, 32, 32)
+      const moonMaterial = new THREE.MeshBasicMaterial({
+        color: 0xef5350,
+        transparent: true,
+        opacity: 0.9
+      })
+      const moon = new THREE.Mesh(moonGeometry, moonMaterial)
+      moon.position.set(10, 8, -15)
+
+      const glowGeometry = new THREE.SphereGeometry(2, 32, 32)
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xef5350,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.BackSide
+      })
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+      moon.add(glow)
+
+      this.scene.add(moon)
+      this.eventEffects.set(effectId, { type: 'total_lunar_eclipse', objects: [moon, glow] })
+    } else if (eventType === 'total_solar_eclipse') {
+      const sunGeometry = new THREE.SphereGeometry(2, 32, 32)
+      const sunMaterial = new THREE.MeshBasicMaterial({
+        color: 0x7c4dff,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.BackSide
+      })
+      const corona = new THREE.Mesh(sunGeometry, sunMaterial)
+      corona.position.set(-10, 10, -20)
+
+      const moonGeometry = new THREE.SphereGeometry(1.8, 32, 32)
+      const moonMaterial = new THREE.MeshBasicMaterial({
+        color: 0x1a1a2e,
+        transparent: false
+      })
+      const moon = new THREE.Mesh(moonGeometry, moonMaterial)
+      corona.add(moon)
+
+      this.scene.add(corona)
+      this.eventEffects.set(effectId, { type: 'total_solar_eclipse', objects: [corona, moon] })
+    } else if (eventType === 'super_moon') {
+      const moonGeometry = new THREE.SphereGeometry(2.5, 32, 32)
+      const moonMaterial = new THREE.MeshBasicMaterial({
+        color: 0xfff59d,
+        transparent: true,
+        opacity: 0.95
+      })
+      const moon = new THREE.Mesh(moonGeometry, moonMaterial)
+      moon.position.set(-8, 12, -18)
+
+      this.scene.add(moon)
+      this.eventEffects.set(effectId, { type: 'super_moon', objects: [moon] })
+    } else if (eventType === 'blue_moon') {
+      const moonGeometry = new THREE.SphereGeometry(1.8, 32, 32)
+      const moonMaterial = new THREE.MeshBasicMaterial({
+        color: 0x64b5f6,
+        transparent: true,
+        opacity: 0.9
+      })
+      const moon = new THREE.Mesh(moonGeometry, moonMaterial)
+      moon.position.set(12, 6, -16)
+
+      this.scene.add(moon)
+      this.eventEffects.set(effectId, { type: 'blue_moon', objects: [moon] })
+    } else if (eventType === 'aurora_borealis') {
+      const auroraGroup = new THREE.Group()
+
+      for (let i = 0; i < 5; i++) {
+        const curve = new THREE.EllipseCurve(
+          0, 0,
+          15 + i * 2, 8 + i,
+          0, Math.PI,
+          false,
+          0
+        )
+        const points = curve.getPoints(50)
+        const geometry = new THREE.BufferGeometry().setFromPoints(points)
+        const material = new THREE.LineBasicMaterial({
+          color: new THREE.Color().setHSL(0.3 + i * 0.05, 0.8, 0.6),
+          transparent: true,
+          opacity: 0.4 - i * 0.06,
+          blending: THREE.AdditiveBlending
+        })
+        const line = new THREE.Line(geometry, material)
+        line.rotation.x = Math.PI / 2
+        line.rotation.z = Math.PI / 6
+        line.position.set(0, 15 - i * 0.5, -25 + i)
+        auroraGroup.add(line)
+      }
+
+      this.scene.add(auroraGroup)
+      this.eventEffects.set(effectId, { type: 'aurora_borealis', objects: [auroraGroup] })
+    } else if (eventType === 'comet_visit') {
+      const cometGroup = new THREE.Group()
+
+      const nucleusGeometry = new THREE.SphereGeometry(0.3, 16, 16)
+      const nucleusMaterial = new THREE.MeshBasicMaterial({
+        color: 0x4fc3f7,
+        transparent: true,
+        opacity: 0.9
+      })
+      const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial)
+      cometGroup.add(nucleus)
+
+      const tailGeometry = new THREE.ConeGeometry(0.5, 4, 8)
+      const tailMaterial = new THREE.MeshBasicMaterial({
+        color: 0x4fc3f7,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+      })
+      const tail = new THREE.Mesh(tailGeometry, tailMaterial)
+      tail.rotation.x = Math.PI / 2
+      tail.position.z = 2
+      cometGroup.add(tail)
+
+      cometGroup.position.set(-15, 5, -20)
+      this.scene.add(cometGroup)
+      this.eventEffects.set(effectId, { type: 'comet_visit', objects: [cometGroup, nucleus, tail] })
+    } else if (eventType === 'planetary_alignment') {
+      const planets = []
+      const planetColors = [0xffa726, 0xef5350, 0x42a5f5, 0x66bb6a, 0xffca28]
+      const planetSizes = [0.4, 0.6, 0.5, 0.7, 0.3]
+
+      for (let i = 0; i < 5; i++) {
+        const geometry = new THREE.SphereGeometry(planetSizes[i], 16, 16)
+        const material = new THREE.MeshBasicMaterial({
+          color: planetColors[i],
+          transparent: true,
+          opacity: 0.85
+        })
+        const planet = new THREE.Mesh(geometry, material)
+        planet.position.set(-12 + i * 4, 2, -18)
+        this.scene.add(planet)
+        planets.push(planet)
+      }
+
+      this.eventEffects.set(effectId, { type: 'planetary_alignment', objects: planets })
+    }
+
+    return effectId
+  }
+
+  updateEventEffects() {
+    this.eventEffects.forEach((effect) => {
+      if (effect.type === 'total_lunar_eclipse' || effect.type === 'super_moon' || effect.type === 'blue_moon') {
+        const moon = effect.objects[0]
+        moon.rotation.y += 0.001
+        moon.position.y += Math.sin(this.time * 0.5) * 0.005
+      } else if (effect.type === 'aurora_borealis') {
+        effect.objects[0].children.forEach((line, i) => {
+          line.material.opacity = 0.3 + Math.sin(this.time * 0.5 + i) * 0.15
+        })
+      } else if (effect.type === 'comet_visit') {
+        const comet = effect.objects[0]
+        comet.position.x += 0.01
+        comet.position.y += Math.sin(this.time * 0.8) * 0.008
+        effect.objects[2].material.opacity = 0.2 + Math.sin(this.time * 2) * 0.1
+      } else if (effect.type === 'planetary_alignment') {
+        effect.objects.forEach((planet, i) => {
+          planet.rotation.y += 0.005 + i * 0.002
+        })
+      } else if (effect.type === 'total_solar_eclipse') {
+        const corona = effect.objects[0]
+        corona.rotation.y += 0.002
+        corona.children[0].rotation.y -= 0.005
+      }
+    })
+  }
+
+  clearAllEventEffects() {
+    this.eventEffects.forEach((effect) => {
+      effect.objects.forEach((obj) => {
+        this.scene.remove(obj)
+        if (obj.geometry) obj.geometry.dispose()
+        if (obj.material) obj.material.dispose()
+      })
+    })
+    this.eventEffects.clear()
+    this.meteors.forEach((meteor) => {
+      this.scene.remove(meteor)
+      if (meteor.geometry) meteor.geometry.dispose()
+      if (meteor.material) meteor.material.dispose()
+    })
+    this.meteors = []
+    this.meteorParticles.forEach((particle) => {
+      this.scene.remove(particle)
+      if (particle.geometry) particle.geometry.dispose()
+      if (particle.material) particle.material.dispose()
+    })
+    this.meteorParticles = []
+    this.meteorShowerActive = false
+    this.specialAstroActive = false
+  }
+
+  setMeteorShowerActive(active, color = 0x64b5f6, intensity = 1.0) {
+    this.meteorShowerActive = active
+    this.meteorShowerColor = color
+    this.meteorShowerIntensity = intensity
+  }
+
+  setActiveEvents(events) {
+    this.activeEvents = events
+
+    this.clearAllEventEffects()
+
+    events.forEach((event) => {
+      if (event.type === 'meteor_shower') {
+        this.setMeteorShowerActive(true, event.color ? new THREE.Color(event.color).getHex() : 0x64b5f6, event.isPeak ? 2.0 : 1.0)
+      } else if (event.type === 'special_astro') {
+        this.specialAstroActive = true
+        this.createSpecialAstroEffect(event.id, event.color)
+      }
+    })
   }
 
   loadConstellation(constellationId) {
@@ -642,6 +982,16 @@ export class NightSkyRenderer {
       star.scale.set(scale * pulse, scale * pulse, 1)
     })
 
+    if (this.meteorShowerActive) {
+      const spawnRate = 0.03 * (this.meteorShowerIntensity || 1.0)
+      if (Math.random() < spawnRate && this.meteors.length < 30) {
+        this.createMeteor(this.meteorShowerColor, this.meteorShowerIntensity || 1.0)
+      }
+    }
+    this.updateMeteors()
+
+    this.updateEventEffects()
+
     this.renderer.render(this.scene, this.camera)
   }
 
@@ -721,6 +1071,7 @@ export class NightSkyRenderer {
     }
 
     this.clearConstellation()
+    this.clearAllEventEffects()
 
     if (this.scene) {
       this.scene.traverse((obj) => {

@@ -14,6 +14,8 @@ export default function NightSky() {
   const mistakes = useGameStore((s) => s.mistakes)
   const connectStar = useGameStore((s) => s.connectStar)
   const isConstellationComplete = useGameStore((s) => s.isConstellationComplete)
+  const getActiveNightSkyEvents = useGameStore((s) => s.getActiveNightSkyEvents)
+  const refreshNightSkyEvents = useGameStore((s) => s.refreshNightSkyEvents)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -98,6 +100,21 @@ export default function NightSky() {
     }
     lastMistakesRef.current = mistakes
   }, [mistakes])
+
+  useEffect(() => {
+    const updateEvents = () => {
+      if (rendererRef.current) {
+        refreshNightSkyEvents()
+        const activeEvents = getActiveNightSkyEvents()
+        rendererRef.current.setActiveEvents(activeEvents)
+      }
+    }
+
+    updateEvents()
+    const interval = setInterval(updateEvents, 60000)
+
+    return () => clearInterval(interval)
+  }, [refreshNightSkyEvents, getActiveNightSkyEvents])
 
   return (
     <div

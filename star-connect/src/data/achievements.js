@@ -1,4 +1,7 @@
+import { EVENT_ACHIEVEMENTS } from './nightSkyEvents'
+
 export const ACHIEVEMENTS = [
+  ...EVENT_ACHIEVEMENTS,
   {
     id: 'first_star',
     name: '初见星光',

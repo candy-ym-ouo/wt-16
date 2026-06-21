@@ -3,6 +3,7 @@ import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { getAchievementById } from '../data/achievements'
 import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../data/seasonPlan'
 import { ROUTE_TYPES } from '../data/starRoute'
+import { EVENT_TYPES } from '../data/nightSkyEvents'
 import { formatDate } from '../utils/math'
 
 export default function ObservationLog() {
@@ -306,6 +307,129 @@ export default function ObservationLog() {
       )
     }
 
+    if (log.type === 'event_start') {
+      const getEventColor = (eventType) => {
+        switch (eventType) {
+          case EVENT_TYPES.METEOR_SHOWER:
+            return { border: 'border-blue-500/30', bg: 'bg-blue-500/10', text: 'text-blue-300', gradient: 'from-blue-500 to-purple-500' }
+          case EVENT_TYPES.SPECIAL_ASTRO:
+            return { border: 'border-amber-500/30', bg: 'bg-amber-500/10', text: 'text-amber-300', gradient: 'from-amber-500 to-orange-500' }
+          case EVENT_TYPES.LIMITED_TASK:
+            return { border: 'border-green-500/30', bg: 'bg-green-500/10', text: 'text-green-300', gradient: 'from-green-500 to-teal-500' }
+          default:
+            return { border: 'border-white/10', bg: 'bg-space-700/20', text: 'text-white/60', gradient: 'from-gray-500 to-slate-500' }
+        }
+      }
+
+      const colors = getEventColor(log.eventType)
+
+      return (
+        <div
+          key={index}
+          className={`p-4 rounded-xl border ${colors.border} ${colors.bg}`}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br ${colors.gradient}`}>
+              {log.icon || '🌟'}
+            </div>
+            <div>
+              <div className={`font-display ${colors.text} text-sm`}>
+                🌌 事件开始 · {log.eventName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                {log.message || '新的夜空事件开始了！'}
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'event_end') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-white/10 bg-space-700/20"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-space-600/50 flex items-center justify-center text-lg">
+              {log.icon || '🌙'}
+            </div>
+            <div>
+              <div className="font-display text-white/60 text-sm">
+                事件结束 · {log.eventName}
+              </div>
+              <div className="text-[11px] text-white/40 mt-0.5">
+                {log.message || '该事件已结束'}
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'event_reward') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br from-yellow-500 to-orange-500">
+              🎁
+            </div>
+            <div>
+              <div className="font-display text-yellow-300 text-sm">
+                🎉 事件奖励 · {log.eventName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                {log.message || '获得事件奖励'}
+                {log.stardust && <span className="text-yellow-300"> 💫 {log.stardust}</span>}
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'event_participate') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/10"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br from-purple-500 to-pink-500">
+              {log.icon || '✨'}
+            </div>
+            <div>
+              <div className="font-display text-purple-300 text-sm">
+                参与事件 · {log.eventName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                {log.message || '成功参与了夜空事件'}
+                {log.progress && (
+                  <span className="text-purple-300"> 进度 {log.progress}</span>
+                )}
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return null
   }
 
@@ -343,7 +467,7 @@ export default function ObservationLog() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+          <div className="mt-4 grid grid-cols-5 gap-2 text-center">
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-nebula-purple">
                 {observationLogs.filter(l => l.type === 'discovery').length}
@@ -367,6 +491,12 @@ export default function ObservationLog() {
                 {seasonRewardsClaimed.length}
               </div>
               <div className="text-[10px] text-white/50">季节奖励</div>
+            </div>
+            <div className="p-2 rounded-lg bg-space-700/40">
+              <div className="text-lg font-bold text-blue-400">
+                {observationLogs.filter(l => l.type?.startsWith('event_')).length}
+              </div>
+              <div className="text-[10px] text-white/50">夜空事件</div>
             </div>
           </div>
 
