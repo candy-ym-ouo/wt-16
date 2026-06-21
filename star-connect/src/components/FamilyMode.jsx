@@ -53,15 +53,17 @@ export default function FamilyMode() {
     checkFamilyStreak()
     
     return () => {
+      endFamilySession()
     }
   }, [])
 
   const handleToggleFamilyMode = (enabled) => {
-    setFamilyMode(enabled)
     if (!enabled) {
       endFamilySession()
+      setFamilyMode(enabled)
       setShowRoleSelect(true)
     } else {
+      setFamilyMode(enabled)
       setShowRoleSelect(true)
       setViewMode('home')
     }

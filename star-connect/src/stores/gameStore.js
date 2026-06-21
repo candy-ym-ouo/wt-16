@@ -223,6 +223,7 @@ export const useGameStore = create(
             newState.familyMode.turnCompleteCount = state.familyMode.turnCompleteCount + 1
           } else if (task.type === 'guided') {
             newState.familyMode.guidedCompleteCount = state.familyMode.guidedCompleteCount + 1
+            newState.familyMode.parentGuidedCount = state.familyMode.parentGuidedCount + 1
           }
           
           if (task.reward?.xp) {
@@ -329,13 +330,13 @@ export const useGameStore = create(
               sessionStartTime: null
             }
           }))
-          get().checkFamilyAchievements()
+          get().checkFamilyAchievements(true)
         }
       },
 
-      checkFamilyAchievements: () => {
+      checkFamilyAchievements: (skipEnabledCheck = false) => {
         const state = get()
-        if (!state.familyMode.enabled) return []
+        if (!skipEnabledCheck && !state.familyMode.enabled) return []
         
         const newlyUnlocked = []
         const fm = state.familyMode
@@ -611,13 +612,30 @@ export const useGameStore = create(
 
           if (state.familyMode.enabled) {
             get().recordFamilyDiscovery(constellationId, isPerfect)
+            
+            const currentRole = state.familyMode.turnRole || state.familyMode.currentRole
+            const activeTaskId = state.familyMode.activeTaskId
+            
+            if (currentRole === 'child' && !activeTaskId) {
+              get().recordChildIndependent()
+            }
+            
+            if (activeTaskId) {
+              const task = getFamilyTaskById(activeTaskId)
+              if (task?.type === 'guided' && currentRole === 'child') {
+                get().recordParentGuided()
+              }
+            }
+            
             get().addFamilyLog({
               type: alreadyDiscovered ? 'reobservation' : 'discovery',
               constellationId,
               perfect: isPerfect,
-              role: state.familyMode.turnRole || state.familyMode.currentRole,
+              role: currentRole,
               timestamp: Date.now()
             })
+            
+            get().checkFamilyAchievements()
           }
 
           get().checkSeasonProgress()
