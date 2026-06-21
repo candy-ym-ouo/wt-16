@@ -64,7 +64,8 @@ export const useGameStore = create(
             unlockedAchievements: state.unlockedAchievements,
             totalMistakes: state.totalMistakes,
             seasonProgress: state.seasonProgress,
-            seasonRewards: state.seasonRewards,
+            seasonRewardsUnlocked: state.seasonRewardsUnlocked,
+            seasonRewardsClaimed: state.seasonRewardsClaimed,
             perfectObservations: state.perfectObservations,
             totalObservations: state.totalObservations,
             seasonHistory: state.seasonHistory
@@ -205,7 +206,8 @@ export const useGameStore = create(
         autumn: { beginner: false, intermediate: false, master: false },
         winter: { beginner: false, intermediate: false, master: false }
       },
-      seasonRewards: [],
+      seasonRewardsUnlocked: [],
+      seasonRewardsClaimed: [],
       perfectObservations: {},
       totalObservations: {},
       seasonHistory: [],
@@ -258,7 +260,7 @@ export const useGameStore = create(
         const state = get()
         const newProgress = { ...state.seasonProgress }
         const newlyCompleted = []
-        const newlyUnlockedAchievements = []
+        const newUnlockedRewards = []
 
         Object.keys(SEASONS).forEach((seasonId) => {
           Object.keys(SEASON_PHASES).forEach((phaseId) => {
@@ -275,7 +277,8 @@ export const useGameStore = create(
                 newlyCompleted.push({ seasonId, phaseId })
 
                 const reward = SEASON_REWARDS[seasonId][phaseId]
-                if (reward && !state.seasonRewards.includes(reward.id)) {
+                if (reward && !state.seasonRewardsUnlocked.includes(reward.id)) {
+                  newUnlockedRewards.push(reward.id)
                   state.addLog({
                     type: 'season_reward',
                     seasonId,
@@ -285,39 +288,15 @@ export const useGameStore = create(
                     timestamp: Date.now()
                   })
                 }
-
-                if (phaseId === 'master') {
-                  const seasonAchievement = SEASON_ACHIEVEMENTS.find(
-                    a => a.season === seasonId
-                  )
-                  if (seasonAchievement && !state.unlockedAchievements.includes(seasonAchievement.id)) {
-                    newlyUnlockedAchievements.push(seasonAchievement.id)
-                  }
-                }
               }
             }
           })
         })
 
-        const allSeasonsMaster = Object.keys(SEASONS).every(
-          s => newProgress[s].master
-        )
-        if (allSeasonsMaster) {
-          const fourSeasonsAchievement = SEASON_ACHIEVEMENTS.find(a => a.season === 'all')
-          if (fourSeasonsAchievement && !state.unlockedAchievements.includes(fourSeasonsAchievement.id)) {
-            newlyUnlockedAchievements.push(fourSeasonsAchievement.id)
-          }
-        }
-
         if (newlyCompleted.length > 0) {
-          const allRewardIds = newlyCompleted.map(
-            ({ seasonId, phaseId }) => SEASON_REWARDS[seasonId][phaseId].id
-          )
-          const newRewards = allRewardIds.filter(id => !state.seasonRewards.includes(id))
-
           set({
             seasonProgress: newProgress,
-            seasonRewards: [...state.seasonRewards, ...newRewards],
+            seasonRewardsUnlocked: [...state.seasonRewardsUnlocked, ...newUnlockedRewards],
             seasonHistory: [
               ...newlyCompleted.map(item => ({
                 ...item,
@@ -328,30 +307,18 @@ export const useGameStore = create(
           })
         }
 
-        if (newlyUnlockedAchievements.length > 0) {
-          set((s) => ({
-            unlockedAchievements: [
-              ...s.unlockedAchievements,
-              ...newlyUnlockedAchievements
-            ]
-          }))
-          newlyUnlockedAchievements.forEach((id) => {
-            state.addLog({
-              type: 'achievement',
-              achievementId: id,
-              timestamp: Date.now()
-            })
-          })
-          return newlyUnlockedAchievements
-        }
+        get().checkAchievements()
 
         return newlyCompleted.length > 0 ? newlyCompleted : []
       },
 
       claimSeasonReward: (rewardId) => {
         const state = get()
-        if (!state.seasonRewards.includes(rewardId)) {
-          set({ seasonRewards: [...state.seasonRewards, rewardId] })
+        if (state.seasonRewardsUnlocked.includes(rewardId) &&
+            !state.seasonRewardsClaimed.includes(rewardId)) {
+          set({
+            seasonRewardsClaimed: [...state.seasonRewardsClaimed, rewardId]
+          })
           return true
         }
         return false
@@ -361,7 +328,9 @@ export const useGameStore = create(
         const state = get()
         const newlyUnlocked = []
 
-        ACHIEVEMENTS.forEach((achievement) => {
+        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS]
+
+        allAchievements.forEach((achievement) => {
           if (state.unlockedAchievements.includes(achievement.id)) return
           const { type, value } = achievement.condition
 
@@ -396,6 +365,14 @@ export const useGameStore = create(
             }
             case 'total_mistakes':
               unlocked = state.totalMistakes >= value
+              break
+            case 'season_master':
+              unlocked = state.seasonProgress[value]?.master === true
+              break
+            case 'four_seasons':
+              unlocked = Object.keys(SEASONS).every(
+                s => state.seasonProgress[s]?.master === true
+              )
               break
           }
 
@@ -434,12 +411,15 @@ export const useGameStore = create(
 
       getProgress: () => {
         const state = get()
+        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length
         return {
           constellations: state.discoveredConstellations.length,
           totalConstellations: CONSTELLATIONS.length,
           achievements: state.unlockedAchievements.length,
-          totalAchievements: ACHIEVEMENTS.length,
-          logs: state.observationLogs.length
+          totalAchievements,
+          logs: state.observationLogs.length,
+          seasonRewardsClaimed: state.seasonRewardsClaimed.length,
+          totalSeasonRewards: Object.keys(SEASONS).length * Object.keys(SEASON_PHASES).length
         }
       },
 
@@ -460,7 +440,8 @@ export const useGameStore = create(
             autumn: { beginner: false, intermediate: false, master: false },
             winter: { beginner: false, intermediate: false, master: false }
           },
-          seasonRewards: [],
+          seasonRewardsUnlocked: [],
+          seasonRewardsClaimed: [],
           perfectObservations: {},
           totalObservations: {},
           seasonHistory: []
@@ -477,7 +458,8 @@ export const useGameStore = create(
         unlockedAchievements: state.unlockedAchievements,
         totalMistakes: state.totalMistakes,
         seasonProgress: state.seasonProgress,
-        seasonRewards: state.seasonRewards,
+        seasonRewardsUnlocked: state.seasonRewardsUnlocked,
+        seasonRewardsClaimed: state.seasonRewardsClaimed,
         perfectObservations: state.perfectObservations,
         totalObservations: state.totalObservations,
         seasonHistory: state.seasonHistory

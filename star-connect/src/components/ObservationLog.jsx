@@ -5,7 +5,7 @@ import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../
 import { formatDate } from '../utils/math'
 
 export default function ObservationLog() {
-  const { observationLogs, setActivePanel, clearLogs, seasonRewards } = useGameStore()
+  const { observationLogs, setActivePanel, clearLogs, seasonRewardsClaimed } = useGameStore()
 
   const renderLogEntry = (log, index) => {
     if (log.type === 'discovery' || log.type === 'reobservation') {
@@ -175,7 +175,7 @@ export default function ObservationLog() {
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-pink-300">
-                {seasonRewards.length}
+                {seasonRewardsClaimed.length}
               </div>
               <div className="text-[10px] text-white/50">季节奖励</div>
             </div>

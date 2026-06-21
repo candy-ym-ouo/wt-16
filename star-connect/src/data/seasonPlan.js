@@ -189,7 +189,8 @@ export const SEASON_ACHIEVEMENTS = [
     description: '成为春季观测大师',
     icon: '🌺',
     category: 'season',
-    season: 'spring'
+    season: 'spring',
+    condition: { type: 'season_master', value: 'spring' }
   },
   {
     id: 'summer_master',
@@ -197,7 +198,8 @@ export const SEASON_ACHIEVEMENTS = [
     description: '成为夏季观测大师',
     icon: '🌌',
     category: 'season',
-    season: 'summer'
+    season: 'summer',
+    condition: { type: 'season_master', value: 'summer' }
   },
   {
     id: 'autumn_master',
@@ -205,7 +207,8 @@ export const SEASON_ACHIEVEMENTS = [
     description: '成为秋季观测大师',
     icon: '🦢',
     category: 'season',
-    season: 'autumn'
+    season: 'autumn',
+    condition: { type: 'season_master', value: 'autumn' }
   },
   {
     id: 'winter_master',
@@ -213,7 +216,8 @@ export const SEASON_ACHIEVEMENTS = [
     description: '成为冬季观测大师',
     icon: '💎',
     category: 'season',
-    season: 'winter'
+    season: 'winter',
+    condition: { type: 'season_master', value: 'winter' }
   },
   {
     id: 'four_seasons',
@@ -221,7 +225,8 @@ export const SEASON_ACHIEVEMENTS = [
     description: '完成所有四季的观测计划',
     icon: '🔄',
     category: 'season',
-    season: 'all'
+    season: 'all',
+    condition: { type: 'four_seasons', value: true }
   }
 ]
 

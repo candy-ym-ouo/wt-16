@@ -1,19 +1,23 @@
 import { useGameStore } from '../stores/gameStore'
 import { ACHIEVEMENTS } from '../data/achievements'
+import { SEASON_ACHIEVEMENTS } from '../data/seasonPlan'
 
 const CATEGORY_INFO = {
   beginner: { name: '初心者', icon: '🌱', color: 'from-green-500 to-emerald-400' },
   explorer: { name: '探索家', icon: '🧭', color: 'from-blue-500 to-cyan-400' },
   challenge: { name: '挑战者', icon: '🔥', color: 'from-orange-500 to-red-400' },
   collector: { name: '收藏家', icon: '📚', color: 'from-purple-500 to-pink-400' },
-  special: { name: '特别成就', icon: '💫', color: 'from-yellow-500 to-orange-400' }
+  special: { name: '特别成就', icon: '💫', color: 'from-yellow-500 to-orange-400' },
+  season: { name: '四季成就', icon: '🌸', color: 'from-pink-500 to-cyan-400' }
 }
 
 export default function Achievements() {
   const { unlockedAchievements, setActivePanel, getProgress } = useGameStore()
   const progress = getProgress()
 
-  const grouped = ACHIEVEMENTS.reduce((acc, a) => {
+  const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS]
+
+  const grouped = allAchievements.reduce((acc, a) => {
     if (!acc[a.category]) acc[a.category] = []
     acc[a.category].push(a)
     return acc

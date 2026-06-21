@@ -15,7 +15,9 @@ export default function SeasonPlan() {
     setActivePanel,
     discoveredConstellations,
     seasonProgress,
-    seasonRewards,
+    seasonRewardsUnlocked,
+    seasonRewardsClaimed,
+    claimSeasonReward,
     seasonHistory,
     totalObservations,
     perfectObservations,
@@ -80,7 +82,8 @@ export default function SeasonPlan() {
           const phaseProgress = seasonStats[phaseId]
           const isCompleted = seasonProgress[selectedSeason][phaseId]
           const reward = SEASON_REWARDS[selectedSeason][phaseId]
-          const rewardClaimed = seasonRewards.includes(reward.id)
+          const isUnlocked = seasonRewardsUnlocked.includes(reward.id)
+          const isClaimed = seasonRewardsClaimed.includes(reward.id)
 
           return (
             <div
@@ -109,10 +112,10 @@ export default function SeasonPlan() {
                     <p className="text-[10px] text-white/40">{phase.description}</p>
                   </div>
                 </div>
-                {isCompleted && (
+                {isUnlocked && (
                   <div className="flex items-center gap-1">
                     <span className="text-lg">{reward.icon}</span>
-                    {rewardClaimed ? (
+                    {isClaimed ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
                         已领取
                       </span>
@@ -144,7 +147,7 @@ export default function SeasonPlan() {
                 />
               </div>
 
-              {isCompleted && (
+              {isUnlocked && (
                 <div className="mt-3 pt-3 border-t border-white/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -154,6 +157,18 @@ export default function SeasonPlan() {
                         <p className="text-[10px] text-white/40">{reward.description}</p>
                       </div>
                     </div>
+                    {isClaimed ? (
+                      <span className="text-[11px] text-green-400/80">✓ 已领取</span>
+                    ) : (
+                      <button
+                        onClick={() => claimSeasonReward(reward.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                                   bg-gradient-to-r ${season.color} text-white
+                                   hover:shadow-lg active:scale-95`}
+                      >
+                        领取
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -307,7 +322,7 @@ export default function SeasonPlan() {
       <div className="space-y-4">
         {Object.entries(SEASONS).map(([seasonId, s]) => {
           const seasonRewardsList = allRewards.filter(r => r.seasonId === seasonId)
-          const unlockedCount = seasonRewardsList.filter(r => seasonRewards.includes(r.id)).length
+          const claimedCount = seasonRewardsList.filter(r => seasonRewardsClaimed.includes(r.id)).length
 
           return (
             <div
@@ -318,32 +333,53 @@ export default function SeasonPlan() {
                 <span className="text-xl">{s.icon}</span>
                 <h4 className={`font-display text-sm ${s.textColor}`}>{s.name}奖励</h4>
                 <span className="text-[10px] text-white/40 ml-auto">
-                  {unlockedCount} / {seasonRewardsList.length}
+                  {claimedCount} / {seasonRewardsList.length}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {seasonRewardsList.map((reward) => {
-                  const isUnlocked = seasonRewards.includes(reward.id)
+                  const isUnlocked = seasonRewardsUnlocked.includes(reward.id)
+                  const isClaimed = seasonRewardsClaimed.includes(reward.id)
+
                   return (
                     <div
                       key={reward.id}
-                      className={`p-3 rounded-xl text-center transition-all ${
-                        isUnlocked
-                          ? 'bg-white/10 border border-white/20'
-                          : 'bg-space-900/40 border border-white/5 opacity-50'
+                      className={`p-3 rounded-xl text-center transition-all border ${
+                        isClaimed
+                          ? 'bg-white/10 border-green-400/30'
+                          : isUnlocked
+                          ? 'bg-star-gold/5 border-star-gold/20 ring-1 ring-star-gold/10'
+                          : 'bg-space-900/40 border-white/5 opacity-50'
                       }`}
                     >
-                      <div className={`text-2xl mb-1 ${isUnlocked ? '' : 'grayscale'}`}>
+                      <div className={`text-2xl mb-1 ${
+                        !isUnlocked ? 'grayscale' : ''
+                      }`}>
                         {reward.icon}
                       </div>
                       <p className={`text-[11px] font-medium ${
-                        isUnlocked ? 'text-white' : 'text-white/40'
+                        isClaimed ? 'text-green-300' : isUnlocked ? 'text-star-gold' : 'text-white/40'
                       }`}>
                         {reward.name}
                       </p>
                       <p className="text-[9px] text-white/40 mt-0.5 leading-tight">
                         {reward.description}
                       </p>
+                      {isUnlocked && !isClaimed && (
+                        <button
+                          onClick={() => claimSeasonReward(reward.id)}
+                          className={`mt-2 px-2.5 py-1 rounded-md text-[10px] font-medium
+                                     bg-gradient-to-r ${s.color} text-white
+                                     hover:shadow-md active:scale-95 transition-all`}
+                        >
+                          领取
+                        </button>
+                      )}
+                      {isClaimed && (
+                        <span className="mt-1.5 inline-block text-[10px] text-green-400/70">
+                          ✓ 已领取
+                        </span>
+                      )}
                     </div>
                   )
                 })}
