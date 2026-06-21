@@ -77,6 +77,15 @@ import {
   getRouteAchievementById,
   DIFFICULTY_PREFERENCE
 } from '../data/starRoute'
+import {
+  STORY_ARCS,
+  FINAL_CHAPTER,
+  getChapter,
+  getSeasonForConstellation,
+  isSeasonComplete,
+  isAllSeasonsComplete,
+  getChapterCount
+} from '../data/storyChapters'
 
 let autoSaveEnabled = true
 
@@ -140,7 +149,9 @@ export const useGameStore = create(
             observationCalendar: state.observationCalendar,
             quiz: state.quiz,
             starGallery: state.starGallery,
-            tutorial: state.tutorial
+            tutorial: state.tutorial,
+            storyProgress: state.storyProgress,
+            starRoute: state.starRoute
           },
           version: 0
         }
@@ -1408,6 +1419,8 @@ export const useGameStore = create(
             get().updateRouteStep(constellationId, isPerfect)
           }
 
+          get().checkStoryProgress()
+
           return true
         }
         return false
@@ -1439,6 +1452,247 @@ export const useGameStore = create(
       clearLogs: () => set({ observationLogs: [] }),
 
       unlockedAchievements: [],
+
+      storyProgress: {
+        unlockedChapters: [],
+        readChapters: [],
+        unlockedEpilogues: [],
+        readEpilogues: [],
+        unlockedPrologues: [],
+        readPrologues: [],
+        finalChapterUnlocked: false,
+        finalChapterRead: false,
+        narrativeChoices: {},
+        pendingUnlock: null
+      },
+
+      setPendingStoryUnlock: (unlockData) => set({
+        storyProgress: {
+          ...get().storyProgress,
+          pendingUnlock: unlockData
+        }
+      }),
+
+      clearPendingStoryUnlock: () => set({
+        storyProgress: {
+          ...get().storyProgress,
+          pendingUnlock: null
+        }
+      }),
+
+      unlockChapter: (chapterId) => {
+        const state = get()
+        if (state.storyProgress.unlockedChapters.includes(chapterId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            unlockedChapters: [...state.storyProgress.unlockedChapters, chapterId]
+          }
+        })
+        get().addLog({
+          type: 'story_chapter_unlocked',
+          chapterId,
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markChapterAsRead: (chapterId) => {
+        const state = get()
+        if (state.storyProgress.readChapters.includes(chapterId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            readChapters: [...state.storyProgress.readChapters, chapterId]
+          }
+        })
+        return true
+      },
+
+      unlockPrologue: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.unlockedPrologues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            unlockedPrologues: [...state.storyProgress.unlockedPrologues, seasonId]
+          }
+        })
+        get().addLog({
+          type: 'story_prologue_unlocked',
+          seasonId,
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markPrologueAsRead: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.readPrologues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            readPrologues: [...state.storyProgress.readPrologues, seasonId]
+          }
+        })
+        return true
+      },
+
+      unlockEpilogue: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.unlockedEpilogues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            unlockedEpilogues: [...state.storyProgress.unlockedEpilogues, seasonId]
+          }
+        })
+        get().addLog({
+          type: 'story_epilogue_unlocked',
+          seasonId,
+          timestamp: Date.now()
+        })
+        const arc = STORY_ARCS[seasonId]
+        if (arc?.epilogue?.reward?.stardust) {
+          get().addStardust(arc.epilogue.reward.stardust, `季节终章：${arc.title}`)
+        }
+        return true
+      },
+
+      markEpilogueAsRead: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.readEpilogues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            readEpilogues: [...state.storyProgress.readEpilogues, seasonId]
+          }
+        })
+        get().checkStoryProgress()
+        return true
+      },
+
+      unlockFinalChapter: () => {
+        const state = get()
+        if (state.storyProgress.finalChapterUnlocked) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            finalChapterUnlocked: true
+          }
+        })
+        get().addLog({
+          type: 'story_final_unlocked',
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markFinalChapterAsRead: () => {
+        const state = get()
+        if (state.storyProgress.finalChapterRead) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            finalChapterRead: true
+          }
+        })
+        if (FINAL_CHAPTER.reward?.stardust) {
+          get().addStardust(FINAL_CHAPTER.reward.stardust, '最终章：星辰之书')
+        }
+        return true
+      },
+
+      setNarrativeChoice: (chapterId, choiceId) => {
+        set((state) => ({
+          storyProgress: {
+            ...state.storyProgress,
+            narrativeChoices: {
+              ...state.storyProgress.narrativeChoices,
+              [chapterId]: choiceId
+            }
+          }
+        }))
+      },
+
+      checkStoryProgress: () => {
+        const state = get()
+        const discoveries = state.discoveredConstellations
+        const newlyUnlocked = []
+
+        Object.entries(STORY_ARCS).forEach(([seasonId, arc]) => {
+          if (!state.storyProgress.unlockedPrologues.includes(seasonId)) {
+            const seasonConstellations = Object.keys(arc.chapters)
+            if (seasonConstellations.length > 0) {
+              const firstConstellation = seasonConstellations[0]
+              if (discoveries.includes(firstConstellation) || discoveries.length >= 1) {
+                if (get().unlockPrologue(seasonId)) {
+                  newlyUnlocked.push({ type: 'prologue', seasonId, data: arc.prologue })
+                }
+              }
+            }
+          }
+
+          Object.entries(arc.chapters).forEach(([constellationId, chapter]) => {
+            if (!state.storyProgress.unlockedChapters.includes(chapter.id) &&
+                discoveries.includes(constellationId)) {
+              if (get().unlockChapter(chapter.id)) {
+                newlyUnlocked.push({ type: 'chapter', chapterId: chapter.id, data: chapter })
+              }
+            }
+          })
+
+          if (!state.storyProgress.unlockedEpilogues.includes(seasonId) &&
+              isSeasonComplete(seasonId, discoveries)) {
+            if (get().unlockEpilogue(seasonId)) {
+              newlyUnlocked.push({ type: 'epilogue', seasonId, data: arc.epilogue })
+            }
+          }
+        })
+
+        if (!state.storyProgress.finalChapterUnlocked &&
+            isAllSeasonsComplete(discoveries)) {
+          if (get().unlockFinalChapter()) {
+            newlyUnlocked.push({ type: 'final', data: FINAL_CHAPTER })
+          }
+        }
+
+        if (newlyUnlocked.length > 0) {
+          get().setPendingStoryUnlock(newlyUnlocked)
+        }
+
+        return newlyUnlocked
+      },
+
+      getStoryStats: () => {
+        const state = get()
+        const sp = state.storyProgress
+        const totalChapters = getChapterCount()
+        const unlockedChapters = sp.unlockedChapters.length
+        const readChapters = sp.readChapters.length
+        const unlockedPrologues = sp.unlockedPrologues.length
+        const readPrologues = sp.readPrologues.length
+        const unlockedEpilogues = sp.unlockedEpilogues.length
+        const readEpilogues = sp.readEpilogues.length
+        const totalStoryContent = totalChapters + 4 + 4 + 1
+
+        return {
+          totalChapters,
+          unlockedChapters,
+          readChapters,
+          unlockedPrologues,
+          readPrologues,
+          unlockedEpilogues,
+          readEpilogues,
+          finalChapterUnlocked: sp.finalChapterUnlocked,
+          finalChapterRead: sp.finalChapterRead,
+          totalUnlocked: unlockedChapters + unlockedPrologues + unlockedEpilogues + (sp.finalChapterUnlocked ? 1 : 0),
+          totalRead: readChapters + readPrologues + readEpilogues + (sp.finalChapterRead ? 1 : 0),
+          overallProgress: totalStoryContent > 0
+            ? Math.round(((readChapters + readPrologues + readEpilogues + (sp.finalChapterRead ? 1 : 0)) / totalStoryContent) * 100)
+            : 0
+        }
+      },
 
       seasonProgress: {
         spring: { beginner: false, intermediate: false, master: false },

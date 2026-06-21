@@ -12,6 +12,7 @@ export const CONSTELLATIONS = [
     hemisphere: '北半球',
     area: '1280平方度',
     ranking: 3,
+    storyChapterId: 'spring_ursa_major',
     stars: [
       { id: 'um1', name: '天枢', x: -4.2, y: 1.8, z: 0, mag: 1.8, color: '#ffddaa' },
       { id: 'um2', name: '天璇', x: -3.5, y: 1.2, z: 0, mag: 2.4, color: '#ffeecc' },
@@ -42,6 +43,7 @@ export const CONSTELLATIONS = [
     hemisphere: '南北半球均可见',
     area: '594平方度',
     ranking: 26,
+    storyChapterId: 'winter_orion',
     stars: [
       { id: 'o1', name: '参宿四', x: -2.5, y: 2.0, z: 0, mag: 0.5, color: '#ff8866' },
       { id: 'o2', name: '参宿五', x: 2.2, y: 2.0, z: 0, mag: 1.6, color: '#cce0ff' },
@@ -75,6 +77,7 @@ export const CONSTELLATIONS = [
     hemisphere: '北半球',
     area: '598平方度',
     ranking: 25,
+    storyChapterId: 'autumn_cassiopeia',
     stars: [
       { id: 'c1', name: '王良一', x: -3.0, y: 1.0, z: 0, mag: 2.5, color: '#ffffff' },
       { id: 'c2', name: '王良四', x: -1.5, y: 2.2, z: 0, mag: 2.3, color: '#ffddbb' },
@@ -102,6 +105,7 @@ export const CONSTELLATIONS = [
     hemisphere: '南半球更易观测，北半球夏季可见',
     area: '497平方度',
     ranking: 33,
+    storyChapterId: 'summer_scorpius',
     stars: [
       { id: 's1', name: '房宿四', x: -2.0, y: -1.0, z: 0, mag: 2.6, color: '#ffeecc' },
       { id: 's2', name: '房宿三', x: -1.0, y: -0.5, z: 0, mag: 2.3, color: '#ccdeff' },
@@ -133,6 +137,7 @@ export const CONSTELLATIONS = [
     hemisphere: '北半球',
     area: '286平方度',
     ranking: 52,
+    storyChapterId: 'summer_lyra',
     stars: [
       { id: 'l1', name: '织女一', x: 0.0, y: 2.0, z: 0, mag: 0.0, color: '#aaddff' },
       { id: 'l2', name: '渐台二', x: -1.0, y: 0.5, z: 0, mag: 4.3, color: '#ffddcc' },
@@ -161,6 +166,7 @@ export const CONSTELLATIONS = [
     hemisphere: '北半球',
     area: '804平方度',
     ranking: 16,
+    storyChapterId: 'autumn_cygnus',
     stars: [
       { id: 'cy1', name: '天津四', x: 0.0, y: 2.5, z: 0, mag: 1.3, color: '#ddeeff' },
       { id: 'cy2', name: '天津九', x: -1.2, y: 1.0, z: 0, mag: 2.9, color: '#ffeecc' },

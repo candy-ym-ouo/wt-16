@@ -8,7 +8,9 @@ import {
   getSeasonConstellations,
   getCurrentSeason
 } from '../data/seasonPlan'
+import { STORY_ARCS, FINAL_CHAPTER } from '../data/storyChapters'
 import { formatDate } from '../utils/math'
+import StoryChapter from './StoryChapter'
 
 export default function SeasonPlan() {
   const {
@@ -24,7 +26,10 @@ export default function SeasonPlan() {
     getSeasonStats,
     setTargetConstellation,
     openAtlasList,
-    openAtlasDetail
+    openAtlasDetail,
+    storyProgress,
+    getStoryStats,
+    clearPendingStoryUnlock
   } = useGameStore()
 
   const handleViewInAtlas = (constellationId, e) => {
@@ -35,6 +40,40 @@ export default function SeasonPlan() {
   const currentSeason = getCurrentSeason()
   const [selectedSeason, setSelectedSeason] = useState(currentSeason)
   const [viewMode, setViewMode] = useState('overview')
+  const [activeStory, setActiveStory] = useState(null)
+  const [pendingStoryIndex, setPendingStoryIndex] = useState(0)
+
+  const storyStats = getStoryStats()
+
+  const handleOpenStory = (type, id) => {
+    setActiveStory({ type, id })
+  }
+
+  const handleCloseStory = () => {
+    setActiveStory(null)
+    
+    if (storyProgress.pendingUnlock && pendingStoryIndex < storyProgress.pendingUnlock.length - 1) {
+      const nextIndex = pendingStoryIndex + 1
+      setPendingStoryIndex(nextIndex)
+      const nextStory = storyProgress.pendingUnlock[nextIndex]
+      if (nextStory) {
+        setTimeout(() => {
+          if (nextStory.type === 'chapter') {
+            setActiveStory({ type: 'chapter', id: nextStory.chapterId })
+          } else if (nextStory.type === 'prologue') {
+            setActiveStory({ type: 'prologue', id: nextStory.seasonId })
+          } else if (nextStory.type === 'epilogue') {
+            setActiveStory({ type: 'epilogue', id: nextStory.seasonId })
+          } else if (nextStory.type === 'final') {
+            setActiveStory({ type: 'final', id: 'final' })
+          }
+        }, 300)
+      }
+    } else {
+      clearPendingStoryUnlock()
+      setPendingStoryIndex(0)
+    }
+  }
 
   const stats = getSeasonStats()
   const seasonStats = stats[selectedSeason]
@@ -414,6 +453,254 @@ export default function SeasonPlan() {
     )
   }
 
+  const renderStory = () => {
+    const arc = STORY_ARCS[selectedSeason]
+    if (!arc) return null
+
+    const sp = storyProgress
+    const chapters = Object.entries(arc.chapters)
+
+    const prologueUnlocked = sp.unlockedPrologues.includes(selectedSeason)
+    const prologueRead = sp.readPrologues.includes(selectedSeason)
+    const epilogueUnlocked = sp.unlockedEpilogues.includes(selectedSeason)
+    const epilogueRead = sp.readEpilogues.includes(selectedSeason)
+
+    return (
+      <div className="space-y-4">
+        <div className={`p-4 rounded-2xl border ${arc.borderColor} ${arc.bgColor}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{arc.icon}</span>
+              <div>
+                <h3 className={`font-display text-lg ${arc.textColor}`}>
+                  {arc.title}
+                </h3>
+                <p className="text-[11px] text-white/50">{arc.subtitle}</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-xs mb-2">
+              <span className="text-white/60">剧情进度</span>
+              <span className={`font-mono ${arc.textColor}`}>
+                {storyStats.overallProgress}%
+              </span>
+            </div>
+            <div className="h-2.5 bg-space-900/60 rounded-full overflow-hidden">
+              <div
+                className={`h-full bg-gradient-to-r ${arc.color} rounded-full transition-all duration-700`}
+                style={{ width: `${storyStats.overallProgress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`p-4 rounded-2xl border transition-all ${
+            prologueUnlocked
+              ? `${arc.borderColor} ${arc.bgColor}`
+              : 'border-white/10 bg-space-700/20 opacity-60'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+                prologueUnlocked
+                  ? `bg-gradient-to-br ${arc.color} text-white`
+                  : 'bg-space-600/50 text-white/50'
+              }`}>
+                {prologueRead ? '📖' : prologueUnlocked ? '📌' : '🔒'}
+              </div>
+              <div>
+                <h4 className={`text-sm font-display ${
+                  prologueUnlocked ? 'text-white' : 'text-white/80'
+                }`}>
+                  {arc.prologue.title}
+                </h4>
+                <p className="text-[10px] text-white/40">
+                  {prologueRead ? '已阅读' : prologueUnlocked ? '点击阅读' : '未解锁'}
+                </p>
+              </div>
+            </div>
+            {prologueUnlocked && !prologueRead && (
+              <span className="text-[10px] px-2 py-1 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
+                新
+              </span>
+            )}
+          </div>
+          {prologueUnlocked && (
+            <button
+              onClick={() => handleOpenStory('prologue', selectedSeason)}
+              className="mt-3 w-full py-2 rounded-lg text-xs font-medium transition-all
+                         bg-white/5 text-white/70 hover:bg-white/10"
+            >
+              {prologueRead ? '重新阅读' : '开始阅读'}
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-xs text-white/60 font-display px-1">剧情章节</h4>
+          {chapters.map(([constellationId, chapter], index) => {
+            const c = getConstellationById(constellationId)
+            const chapterUnlocked = sp.unlockedChapters.includes(chapter.id)
+            const chapterRead = sp.readChapters.includes(chapter.id)
+            const discovered = discoveredConstellations.includes(constellationId)
+
+            return (
+              <div
+                key={chapter.id}
+                className={`p-4 rounded-2xl border transition-all ${
+                  chapterUnlocked
+                    ? `${arc.borderColor} ${arc.bgColor}`
+                    : 'border-white/10 bg-space-700/20'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm ${
+                      chapterUnlocked
+                        ? `bg-gradient-to-br ${arc.color} text-white`
+                        : 'bg-space-600/50 text-white/50'
+                    }`}>
+                      {chapterRead ? '📖' : chapterUnlocked ? '✦' : '🔒'}
+                    </div>
+                    <div>
+                      <h4 className={`text-sm font-display ${
+                        chapterUnlocked ? 'text-white' : 'text-white/80'
+                      }`}>
+                        {chapter.title}
+                      </h4>
+                      <p className="text-[10px] text-white/40 mb-1">
+                        {chapter.subtitle}
+                      </p>
+                      {c && (
+                        <span className="text-[10px] text-white/30">
+                          🔗 {c.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {chapterUnlocked && !chapterRead && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
+                        新
+                      </span>
+                    )}
+                    {discovered && !chapterUnlocked && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-nebula-cyan/20 text-nebula-cyan">
+                        即将解锁
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {chapter.reward && (
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-white/50">
+                    <span>🎁</span>
+                    <span>
+                      {chapter.reward.type === 'stardust' && `星尘 +${chapter.reward.amount}`}
+                    </span>
+                  </div>
+                )}
+                {chapterUnlocked && (
+                  <button
+                    onClick={() => handleOpenStory('chapter', chapter.id)}
+                    className="mt-3 w-full py-2 rounded-lg text-xs font-medium transition-all
+                               bg-white/5 text-white/70 hover:bg-white/10"
+                  >
+                    {chapterRead ? '重新阅读' : '开始阅读'}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div
+          className={`p-4 rounded-2xl border transition-all ${
+            epilogueUnlocked
+              ? `${arc.borderColor} ${arc.bgColor}`
+              : 'border-white/10 bg-space-700/20 opacity-60'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+                epilogueUnlocked
+                  ? `bg-gradient-to-br from-star-gold to-amber-500 text-white`
+                  : 'bg-space-600/50 text-white/50'
+              }`}>
+                {epilogueRead ? '📖' : epilogueUnlocked ? '👑' : '🔒'}
+              </div>
+              <div>
+                <h4 className={`text-sm font-display ${
+                  epilogueUnlocked ? 'text-star-gold' : 'text-white/80'
+                }`}>
+                  {arc.epilogue.title}
+                </h4>
+                <p className="text-[10px] text-white/40">
+                  {epilogueRead ? '已阅读' : epilogueUnlocked ? '点击阅读' : '完成全部章节解锁'}
+                </p>
+              </div>
+            </div>
+            {epilogueUnlocked && !epilogueRead && (
+              <span className="text-[10px] px-2 py-1 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
+                新
+              </span>
+            )}
+          </div>
+          {epilogueUnlocked && (
+            <button
+              onClick={() => handleOpenStory('epilogue', selectedSeason)}
+              className="mt-3 w-full py-2 rounded-lg text-xs font-medium transition-all
+                         bg-gradient-to-r from-star-gold to-amber-500 text-white hover:shadow-lg"
+            >
+              {epilogueRead ? '重新阅读' : '阅读终章'}
+            </button>
+          )}
+        </div>
+
+        {sp.finalChapterUnlocked && (
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-nebula-purple/30 to-nebula-cyan/30 rounded-2xl blur-xl" />
+              <div className="relative p-5 rounded-2xl border border-nebula-purple/40 bg-gradient-to-br from-nebula-purple/20 to-nebula-cyan/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br from-nebula-purple to-nebula-cyan text-white">
+                      📖
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-display text-white">
+                        {FINAL_CHAPTER.title}
+                      </h4>
+                      <p className="text-[10px] text-white/50">
+                        {FINAL_CHAPTER.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                  {!sp.finalChapterRead && (
+                    <span className="text-[10px] px-3 py-1 rounded-full bg-nebula-cyan/20 text-nebula-cyan animate-pulse">
+                      ✨ 最终章 ✨
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleOpenStory('final', 'final')}
+                  className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all
+                             bg-gradient-to-r from-nebula-purple to-nebula-cyan text-white
+                             hover:shadow-lg hover:shadow-nebula-purple/30"
+                >
+                  {sp.finalChapterRead ? '重新阅读' : '开启最终章'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="absolute inset-0 z-40 flex items-end sm:items-center justify-center p-4
                     bg-space-900/70 backdrop-blur-sm animate-in fade-in duration-200">
@@ -510,6 +797,7 @@ export default function SeasonPlan() {
           <div className="mt-4 flex gap-2">
             {[
               { id: 'overview', label: '进度', icon: '📊' },
+              { id: 'story', label: '故事', icon: '📖' },
               { id: 'rewards', label: '奖励', icon: '🎁' },
               { id: 'history', label: '回溯', icon: '🗓️' }
             ].map((tab) => (
@@ -531,10 +819,19 @@ export default function SeasonPlan() {
 
         <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
           {viewMode === 'overview' && renderOverview()}
+          {viewMode === 'story' && renderStory()}
           {viewMode === 'rewards' && renderRewards()}
           {viewMode === 'history' && renderHistory()}
         </div>
       </div>
+
+      {activeStory && (
+        <StoryChapter
+          storyType={activeStory.type}
+          storyId={activeStory.id}
+          onClose={handleCloseStory}
+        />
+      )}
     </div>
   )
 }
