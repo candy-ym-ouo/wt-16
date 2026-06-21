@@ -89,6 +89,7 @@ export function calculateExpeditionRewards(clearedStages, perfectCount, totalSta
 
   const perfectBonus = perfectCount * PERFECT_CLEAR_BONUS.stardustPerPerfect
   totalStardust += perfectBonus
+  totalStardust += totalBonusStardust
   totalXP += perfectCount * PERFECT_CLEAR_BONUS.xpPerPerfect
 
   const tierRewards = []

@@ -31,13 +31,13 @@ export default function NightExpedition() {
   }, [])
 
   useEffect(() => {
-    if (run && !run.active && showResult === null) {
+    if (ne.currentRun === null && ne.history.length > 0 && showResult === null) {
       const latestHistory = ne.history[0]
       if (latestHistory) {
         setShowResult(latestHistory)
       }
     }
-  }, [run?.active])
+  }, [ne.currentRun, ne.history.length, showResult])
 
   const getNextRecoveryTime = () => {
     if (ne.stamina >= STAMINA_CONFIG.maxStamina) return null
@@ -255,7 +255,7 @@ export default function NightExpedition() {
                 容错 {currentStage.allowedMistakes} 次 · {TOLERANCE_CONFIG[currentStage.difficulty].label}
               </p>
             </div>
-            {currentStage.mistakesInStage > 0 && (
+            {run.mistakesInStage > 0 && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
                 已失误 {run.mistakesInStage}
               </span>
