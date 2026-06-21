@@ -8,7 +8,8 @@ export const ACHIEVEMENTS = [
     description: '完成第一次星星连线',
     icon: '⭐',
     category: 'beginner',
-    condition: { type: 'connect_count', value: 1 }
+    condition: { type: 'connect_count', value: 1 },
+    reward: { type: 'stardust', amount: 20 }
   },
   {
     id: 'constellation_1',
@@ -16,7 +17,8 @@ export const ACHIEVEMENTS = [
     description: '成功发现第一个完整星座',
     icon: '✨',
     category: 'explorer',
-    condition: { type: 'discover_count', value: 1 }
+    condition: { type: 'discover_count', value: 1 },
+    reward: { type: 'stardust', amount: 50 }
   },
   {
     id: 'constellation_3',
@@ -24,7 +26,8 @@ export const ACHIEVEMENTS = [
     description: '发现3个不同的星座',
     icon: '🌙',
     category: 'explorer',
-    condition: { type: 'discover_count', value: 3 }
+    condition: { type: 'discover_count', value: 3 },
+    reward: { type: 'stardust', amount: 100 }
   },
   {
     id: 'constellation_all',
@@ -32,7 +35,8 @@ export const ACHIEVEMENTS = [
     description: '发现所有的星座',
     icon: '🌟',
     category: 'explorer',
-    condition: { type: 'discover_count', value: 6 }
+    condition: { type: 'discover_count', value: 6 },
+    reward: { type: 'stardust', amount: 300 }
   },
   {
     id: 'easy_clear',
@@ -40,7 +44,8 @@ export const ACHIEVEMENTS = [
     description: '完成所有难度1的星座',
     icon: '🎯',
     category: 'challenge',
-    condition: { type: 'difficulty_clear', value: 1 }
+    condition: { type: 'difficulty_clear', value: 1 },
+    reward: { type: 'stardust', amount: 80 }
   },
   {
     id: 'medium_clear',
@@ -48,7 +53,8 @@ export const ACHIEVEMENTS = [
     description: '完成所有难度2的星座',
     icon: '🔥',
     category: 'challenge',
-    condition: { type: 'difficulty_clear', value: 2 }
+    condition: { type: 'difficulty_clear', value: 2 },
+    reward: { type: 'stardust', amount: 150 }
   },
   {
     id: 'hard_clear',
@@ -56,7 +62,8 @@ export const ACHIEVEMENTS = [
     description: '完成所有难度3的星座',
     icon: '💎',
     category: 'challenge',
-    condition: { type: 'difficulty_clear', value: 3 }
+    condition: { type: 'difficulty_clear', value: 3 },
+    reward: { type: 'stardust', amount: 250 }
   },
   {
     id: 'log_5',
@@ -64,7 +71,8 @@ export const ACHIEVEMENTS = [
     description: '累计5条观测日志',
     icon: '📖',
     category: 'collector',
-    condition: { type: 'log_count', value: 5 }
+    condition: { type: 'log_count', value: 5 },
+    reward: { type: 'stardust', amount: 30 }
   },
   {
     id: 'log_15',
@@ -72,7 +80,8 @@ export const ACHIEVEMENTS = [
     description: '累计15条观测日志',
     icon: '📚',
     category: 'collector',
-    condition: { type: 'log_count', value: 15 }
+    condition: { type: 'log_count', value: 15 },
+    reward: { type: 'stardust', amount: 100 }
   },
   {
     id: 'perfect_orion',
@@ -80,7 +89,8 @@ export const ACHIEVEMENTS = [
     description: '在没有错误的情况下完成猎户座',
     icon: '🏹',
     category: 'special',
-    condition: { type: 'perfect_constellation', value: 'orion' }
+    condition: { type: 'perfect_constellation', value: 'orion' },
+    reward: { type: 'stardust', amount: 60 }
   },
   {
     id: 'perfect_ursa',
@@ -88,7 +98,8 @@ export const ACHIEVEMENTS = [
     description: '在没有错误的情况下完成大熊座',
     icon: '🐻',
     category: 'special',
-    condition: { type: 'perfect_constellation', value: 'ursa_major' }
+    condition: { type: 'perfect_constellation', value: 'ursa_major' },
+    reward: { type: 'stardust', amount: 60 }
   },
   {
     id: 'dedicated',
@@ -96,7 +107,8 @@ export const ACHIEVEMENTS = [
     description: '累计错误连线超过20次但最终完成',
     icon: '💪',
     category: 'special',
-    condition: { type: 'total_mistakes', value: 20 }
+    condition: { type: 'total_mistakes', value: 20 },
+    reward: { type: 'stardust', amount: 40 }
   },
   {
     id: 'expedition_first',
@@ -104,7 +116,8 @@ export const ACHIEVEMENTS = [
     description: '完成第一次夜间远征',
     icon: '🌙',
     category: 'expedition',
-    condition: { type: 'expedition_complete', value: 1 }
+    condition: { type: 'expedition_complete', value: 1 },
+    reward: { type: 'stardust', amount: 50 }
   },
   {
     id: 'expedition_5',
@@ -112,7 +125,8 @@ export const ACHIEVEMENTS = [
     description: '完成5次夜间远征',
     icon: '🗺️',
     category: 'expedition',
-    condition: { type: 'expedition_complete', value: 5 }
+    condition: { type: 'expedition_complete', value: 5 },
+    reward: { type: 'stardust', amount: 200 }
   },
   {
     id: 'expedition_half',
@@ -120,7 +134,8 @@ export const ACHIEVEMENTS = [
     description: '在单次远征中通过3关',
     icon: '⛰️',
     category: 'expedition',
-    condition: { type: 'expedition_stages', value: 3 }
+    condition: { type: 'expedition_stages', value: 3 },
+    reward: { type: 'stardust', amount: 80 }
   },
   {
     id: 'expedition_full',
@@ -128,7 +143,8 @@ export const ACHIEVEMENTS = [
     description: '在单次远征中通过全部6关',
     icon: '🏆',
     category: 'expedition',
-    condition: { type: 'expedition_stages', value: 6 }
+    condition: { type: 'expedition_stages', value: 6 },
+    reward: { type: 'stardust', amount: 300 }
   },
   {
     id: 'expedition_perfect_3',
@@ -136,7 +152,8 @@ export const ACHIEVEMENTS = [
     description: '累计3次完美通关远征关卡',
     icon: '💫',
     category: 'expedition',
-    condition: { type: 'expedition_perfect', value: 3 }
+    condition: { type: 'expedition_perfect', value: 3 },
+    reward: { type: 'stardust', amount: 120 }
   },
   {
     id: 'expedition_stardust',
@@ -144,7 +161,8 @@ export const ACHIEVEMENTS = [
     description: '远征累计获得500星尘',
     icon: '✦',
     category: 'expedition',
-    condition: { type: 'expedition_stardust', value: 500 }
+    condition: { type: 'expedition_stardust', value: 500 },
+    reward: { type: 'stardust', amount: 200 }
   }
 ]
 
