@@ -16,7 +16,9 @@ export default function ConstellationDetail({ constellationId }) {
     setActivePanel,
     observationLogs,
     resetAtlasState,
-    openAtlasList
+    openAtlasList,
+    openGalleryWithConstellation,
+    getPhotosByConstellation
   } = useGameStore()
 
   const constellation = useMemo(() => 
@@ -41,6 +43,11 @@ export default function ConstellationDetail({ constellationId }) {
     )
     return log ? new Date(log.timestamp) : null
   }, [constellation, observationLogs])
+
+  const constellationPhotos = useMemo(() => {
+    if (!constellation) return []
+    return getPhotosByConstellation(constellation.id)
+  }, [constellation, getPhotosByConstellation])
 
   if (!constellation) {
     return (
@@ -308,6 +315,66 @@ export default function ConstellationDetail({ constellationId }) {
                 </p>
               </div>
             )}
+
+            {completed && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-display text-white border-l-2 border-star-gold pl-3 flex items-center justify-between">
+                  <span>📷 摄影作品</span>
+                  <span className="text-[10px] text-white/40 font-normal">
+                    共 {constellationPhotos.length} 张
+                  </span>
+                </h3>
+
+                {constellationPhotos.length > 0 ? (
+                  <div>
+                    <div className="grid grid-cols-4 gap-2 mb-3">
+                      {constellationPhotos.slice(0, 4).map(photo => (
+                        <div
+                          key={photo.id}
+                          className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-star-gold/50 transition-all"
+                          onClick={() => openGalleryWithConstellation(constellation.id)}
+                        >
+                          <img
+                            src={photo.thumbnailUrl}
+                            alt={photo.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          {photo.featured && (
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-star-gold/90 flex items-center justify-center text-[8px]">
+                              ⭐
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => openGalleryWithConstellation(constellation.id)}
+                      className="w-full py-2 rounded-xl bg-white/5 text-white/70 text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-1"
+                    >
+                      <span>📷</span>
+                      <span>查看全部 {constellationPhotos.length} 张作品</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-space-700/30 border border-dashed border-white/10 text-center">
+                    <div className="text-3xl mb-2 opacity-50">📷</div>
+                    <p className="text-xs text-white/50 mb-1">
+                      还没有拍摄记录
+                    </p>
+                    <p className="text-[10px] text-white/30 mb-3">
+                      记录你拍摄{constellation.name}的美妙瞬间
+                    </p>
+                    <button
+                      onClick={() => openGalleryWithConstellation(constellation.id)}
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-star-gold to-nebula-orange text-white text-xs font-medium hover:shadow-lg transition-all"
+                    >
+                      + 添加拍摄记录
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -319,6 +386,15 @@ export default function ConstellationDetail({ constellationId }) {
             >
               返回图鉴
             </button>
+            {completed && (
+              <button
+                onClick={() => openGalleryWithConstellation(constellation.id)}
+                className="flex-1 py-2.5 rounded-xl bg-star-gold/20 text-star-gold text-sm font-medium border border-star-gold/30 hover:bg-star-gold/30 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>📷</span>
+                <span>摄影档案</span>
+              </button>
+            )}
             <button
               onClick={handleStartObservation}
               className="flex-1 btn-primary"

@@ -2527,6 +2527,7 @@ export const useGameStore = create(
         photos: INITIAL_GALLERY_PHOTOS,
         activeGalleryPanel: 'grid',
         selectedPhotoId: null,
+        prefillConstellationId: null,
         galleryFilters: {
           season: 'all',
           difficulty: 'all',
@@ -2595,6 +2596,25 @@ export const useGameStore = create(
         set((state) => ({
           starGallery: { ...state.starGallery, photos: newPhotos }
         }))
+      },
+
+      setPrefillConstellation: (constellationId) => set((state) => ({
+        starGallery: { ...state.starGallery, prefillConstellationId: constellationId }
+      })),
+
+      clearPrefillConstellation: () => set((state) => ({
+        starGallery: { ...state.starGallery, prefillConstellationId: null }
+      })),
+
+      openGalleryWithConstellation: (constellationId) => {
+        set((state) => ({
+          starGallery: {
+            ...state.starGallery,
+            prefillConstellationId: constellationId,
+            activeGalleryPanel: 'grid'
+          }
+        }))
+        get().setActivePanel('gallery')
       },
 
       togglePhotoFeatured: (photoId) => {
@@ -2856,6 +2876,7 @@ export const useGameStore = create(
             photos: [],
             activeGalleryPanel: 'grid',
             selectedPhotoId: null,
+            prefillConstellationId: null,
             galleryFilters: {
               season: 'all',
               difficulty: 'all',
