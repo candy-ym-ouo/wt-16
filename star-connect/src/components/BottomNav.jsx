@@ -3,7 +3,7 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo, tutorial, getTutorialProgress, recordTutorialPanelVisit, getShopProgress } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo, tutorial, getTutorialProgress, recordTutorialPanelVisit, getShopProgress, constellationChallenge, getChallengeStats } = useGameStore()
   const progress = getProgress()
   const familyProgress = getFamilyProgress()
   const currentSeason = getCurrentSeason()
@@ -14,6 +14,7 @@ export default function BottomNav() {
   const streakInfo = getStreakInfo()
   const tutorialProgress = getTutorialProgress()
   const shopProgress = getShopProgress()
+  const challengeStats = getChallengeStats()
 
   const items = [
     {
@@ -68,6 +69,15 @@ export default function BottomNav() {
         ? `${nightExpedition.currentRun.stageIndex + 1}`
         : nightExpedition.stamina < 5 ? `${nightExpedition.stamina}` : null,
       badgeColor: nightExpedition.currentRun?.active ? 'bg-violet-500 text-white' : null
+    },
+    {
+      id: 'challenge',
+      label: '挑战赛',
+      icon: '⚔️',
+      badge: constellationChallenge.currentChallenge?.active
+        ? `${constellationChallenge.currentChallenge.stageIndex + 1}`
+        : challengeStats.currentTier ? challengeStats.currentTier.icon : null,
+      badgeColor: constellationChallenge.currentChallenge?.active ? 'bg-red-500 text-white' : null
     },
     {
       id: 'seasons',

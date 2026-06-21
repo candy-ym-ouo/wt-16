@@ -22,6 +22,7 @@ import NightSkyEvents from './components/NightSkyEvents'
 import HomeEventBanner from './components/HomeEventBanner'
 import ObservationDashboard from './components/ObservationDashboard'
 import StarShop from './components/StarShop'
+import ConstellationChallenge from './components/ConstellationChallenge'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -123,6 +124,7 @@ export default function App() {
       {activePanel === 'route' && <StarRoute />}
       {activePanel === 'dashboard' && <ObservationDashboard />}
       {activePanel === 'shop' && <StarShop />}
+      {activePanel === 'challenge' && <ConstellationChallenge />}
 
       {showNightSkyEvents && (
         <NightSkyEvents onClose={() => setShowNightSkyEvents(false)} />

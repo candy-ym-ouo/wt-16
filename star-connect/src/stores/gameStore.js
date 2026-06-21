@@ -56,6 +56,18 @@ import {
   SHOP_DECORATIONS,
   getShopItemById
 } from '../data/shop'
+import {
+  CHALLENGE_DIFFICULTIES,
+  CHALLENGE_SEASON_TIERS,
+  CHALLENGE_SEASON_REWARDS,
+  generateChallengeRoute,
+  calculateChallengeScore,
+  getSeasonTier,
+  getNextTier,
+  generateLeaderboard,
+  getChallengeDateKey,
+  getSeasonChallengeRewards
+} from '../data/constellationChallenge'
 
 let autoSaveEnabled = true
 
@@ -1269,6 +1281,12 @@ export const useGameStore = create(
               if (result === 'failed') return false
             }
 
+            const inChallenge = state.constellationChallenge.currentChallenge?.active
+            if (inChallenge) {
+              const result = get().recordChallengeMistake()
+              if (result === 'failed') return false
+            }
+
             get().checkAchievements()
             return false
           }
@@ -1371,6 +1389,10 @@ export const useGameStore = create(
 
           if (state.nightExpedition.currentRun?.active) {
             get().advanceExpeditionStage()
+          }
+
+          if (state.constellationChallenge.currentChallenge?.active) {
+            get().advanceChallengeStage()
           }
 
           return true
@@ -2541,6 +2563,334 @@ export const useGameStore = create(
         doubleStardustUntil: 0
       },
 
+      constellationChallenge: {
+        dailyAttempts: {},
+        lastAttemptDate: null,
+        bestScores: { novice: 0, elite: 0, master: 0 },
+        seasonScores: {},
+        records: [],
+        seasonRewardsClaimed: [],
+        currentChallenge: null
+      },
+
+      syncChallengeDailyAttempts: () => {
+        const state = get()
+        const todayKey = getChallengeDateKey()
+        if (state.constellationChallenge.lastAttemptDate === todayKey) return
+
+        set((s) => ({
+          constellationChallenge: {
+            ...s.constellationChallenge,
+            dailyAttempts: {},
+            lastAttemptDate: todayKey
+          }
+        }))
+      },
+
+      startChallenge: (difficultyId) => {
+        const state = get()
+        get().syncChallengeDailyAttempts()
+        const synced = get().constellationChallenge
+        const config = CHALLENGE_DIFFICULTIES[difficultyId]
+        if (!config) return { success: false, reason: 'invalid_difficulty' }
+
+        const todayAttempts = synced.dailyAttempts[difficultyId] || 0
+        if (todayAttempts >= config.dailyAttempts) {
+          return { success: false, reason: 'no_attempts' }
+        }
+
+        const route = generateChallengeRoute(difficultyId)
+        if (route.length === 0) return { success: false, reason: 'no_constellations' }
+
+        const firstStage = route[0]
+
+        set((s) => ({
+          constellationChallenge: {
+            ...s.constellationChallenge,
+            dailyAttempts: {
+              ...s.constellationChallenge.dailyAttempts,
+              [difficultyId]: (s.constellationChallenge.dailyAttempts[difficultyId] || 0) + 1
+            },
+            currentChallenge: {
+              difficultyId,
+              route,
+              stageIndex: 0,
+              mistakesInStage: 0,
+              stageStartTime: Date.now(),
+              results: [],
+              active: true
+            }
+          },
+          currentTargetConstellation: firstStage.constellationId,
+          connectionPath: [],
+          mistakes: 0,
+          perfectRun: true
+        }))
+
+        return { success: true, route, difficultyId }
+      },
+
+      advanceChallengeStage: () => {
+        const state = get()
+        const cc = state.constellationChallenge
+        const challenge = cc.currentChallenge
+        if (!challenge || !challenge.active) return null
+
+        const currentStage = challenge.route[challenge.stageIndex]
+        const timeUsed = (Date.now() - challenge.stageStartTime) / 1000
+        const isPerfect = challenge.mistakesInStage === 0
+        const config = CHALLENGE_DIFFICULTIES[challenge.difficultyId]
+
+        const stageResult = {
+          constellationId: currentStage.constellationId,
+          completed: true,
+          perfect: isPerfect,
+          mistakes: challenge.mistakesInStage,
+          timeUsed: Math.round(timeUsed * 10) / 10
+        }
+
+        const newResults = [...challenge.results, stageResult]
+        const nextIndex = challenge.stageIndex + 1
+
+        if (nextIndex >= challenge.route.length) {
+          return get().completeChallenge(newResults)
+        }
+
+        const nextStage = challenge.route[nextIndex]
+
+        set((s) => ({
+          constellationChallenge: {
+            ...s.constellationChallenge,
+            currentChallenge: {
+              ...s.constellationChallenge.currentChallenge,
+              stageIndex: nextIndex,
+              mistakesInStage: 0,
+              stageStartTime: Date.now(),
+              results: newResults
+            }
+          },
+          currentTargetConstellation: nextStage.constellationId,
+          connectionPath: [],
+          mistakes: 0,
+          perfectRun: true
+        }))
+
+        return { nextStage, stageIndex: nextIndex }
+      },
+
+      failChallengeStage: () => {
+        const state = get()
+        const cc = state.constellationChallenge
+        const challenge = cc.currentChallenge
+        if (!challenge || !challenge.active) return null
+
+        const timeUsed = (Date.now() - challenge.stageStartTime) / 1000
+
+        const stageResult = {
+          constellationId: challenge.route[challenge.stageIndex].constellationId,
+          completed: false,
+          perfect: false,
+          mistakes: challenge.mistakesInStage,
+          timeUsed: Math.round(timeUsed * 10) / 10
+        }
+
+        const newResults = [...challenge.results, stageResult]
+        return get().completeChallenge(newResults)
+      },
+
+      recordChallengeMistake: () => {
+        const state = get()
+        const cc = state.constellationChallenge
+        const challenge = cc.currentChallenge
+        if (!challenge || !challenge.active) return 'no_challenge'
+
+        const currentStage = challenge.route[challenge.stageIndex]
+        const newMistakes = challenge.mistakesInStage + 1
+
+        if (newMistakes > currentStage.allowedMistakes) {
+          get().failChallengeStage()
+          return 'failed'
+        }
+
+        set((s) => ({
+          constellationChallenge: {
+            ...s.constellationChallenge,
+            currentChallenge: {
+              ...s.constellationChallenge.currentChallenge,
+              mistakesInStage: newMistakes
+            }
+          }
+        }))
+
+        return 'continue'
+      },
+
+      completeChallenge: (results) => {
+        const state = get()
+        const cc = state.constellationChallenge
+        const challenge = cc.currentChallenge
+        if (!challenge) return null
+
+        const score = calculateChallengeScore(challenge.difficultyId, results)
+        const seasonId = getCurrentSeason()
+        const config = CHALLENGE_DIFFICULTIES[challenge.difficultyId]
+
+        const record = {
+          id: `ch_${Date.now()}`,
+          difficultyId: challenge.difficultyId,
+          score,
+          results,
+          completedStages: results.filter(r => r.completed).length,
+          totalStages: challenge.route.length,
+          perfectStages: results.filter(r => r.perfect).length,
+          timestamp: Date.now()
+        }
+
+        set((s) => {
+          const prevBest = s.constellationChallenge.bestScores[challenge.difficultyId] || 0
+          const newBestScores = { ...s.constellationChallenge.bestScores }
+          if (score > prevBest) {
+            newBestScores[challenge.difficultyId] = score
+          }
+
+          const prevSeasonScore = s.constellationChallenge.seasonScores[seasonId] || 0
+          const newSeasonScores = {
+            ...s.constellationChallenge.seasonScores,
+            [seasonId]: prevSeasonScore + score
+          }
+
+          return {
+            constellationChallenge: {
+              ...s.constellationChallenge,
+              currentChallenge: null,
+              bestScores: newBestScores,
+              seasonScores: newSeasonScores,
+              records: [record, ...s.constellationChallenge.records].slice(0, 100)
+            },
+            currentTargetConstellation: null,
+            connectionPath: [],
+            mistakes: 0
+          }
+        })
+
+        get().addStardust(Math.floor(score / 10), `挑战赛奖励`)
+        get().addLog({
+          type: 'challenge_complete',
+          difficultyId: challenge.difficultyId,
+          score,
+          completedStages: record.completedStages,
+          totalStages: record.totalStages,
+          timestamp: Date.now()
+        })
+        get().checkAchievements()
+
+        return record
+      },
+
+      abandonChallenge: () => {
+        const state = get()
+        const cc = state.constellationChallenge
+        const challenge = cc.currentChallenge
+        if (!challenge || !challenge.active) return
+
+        if (challenge.results.length > 0) {
+          get().completeChallenge(challenge.results)
+        } else {
+          set((s) => ({
+            constellationChallenge: {
+              ...s.constellationChallenge,
+              currentChallenge: null
+            },
+            currentTargetConstellation: null,
+            connectionPath: [],
+            mistakes: 0
+          }))
+        }
+      },
+
+      claimChallengeSeasonReward: (rewardId) => {
+        const state = get()
+        if (state.constellationChallenge.seasonRewardsClaimed.includes(rewardId)) {
+          return false
+        }
+
+        let found = false
+        Object.values(CHALLENGE_SEASON_REWARDS).forEach(tiers => {
+          Object.values(tiers).forEach(reward => {
+            if (reward.id === rewardId) found = true
+          })
+        })
+        if (!found) return false
+
+        const seasonId = getCurrentSeason()
+        const seasonScore = state.constellationChallenge.seasonScores[seasonId] || 0
+        const reward = Object.values(CHALLENGE_SEASON_REWARDS[seasonId] || {}).find(r => r.id === rewardId)
+        if (!reward) return false
+
+        const tier = Object.values(CHALLENGE_SEASON_TIERS).find(t => t.name === Object.keys(CHALLENGE_SEASON_TIERS).find(k => {
+          const t = CHALLENGE_SEASON_TIERS[k]
+          return CHALLENGE_SEASON_REWARDS[seasonId]?.[k]?.id === rewardId
+        }))
+        const tierKey = Object.keys(CHALLENGE_SEASON_REWARDS[seasonId] || {}).find(k => CHALLENGE_SEASON_REWARDS[seasonId][k]?.id === rewardId)
+        const requiredTier = CHALLENGE_SEASON_TIERS[tierKey]
+        if (!requiredTier || seasonScore < requiredTier.minScore) return false
+
+        set((s) => ({
+          constellationChallenge: {
+            ...s.constellationChallenge,
+            seasonRewardsClaimed: [...s.constellationChallenge.seasonRewardsClaimed, rewardId]
+          }
+        }))
+
+        if (reward.stardust) {
+          get().addStardust(reward.stardust, `挑战赛段位奖励：${reward.name}`)
+        }
+
+        return true
+      },
+
+      getChallengeStats: () => {
+        const state = get()
+        get().syncChallengeDailyAttempts()
+        const synced = get().constellationChallenge
+        const seasonId = getCurrentSeason()
+        const seasonScore = synced.seasonScores[seasonId] || 0
+        const currentTier = getSeasonTier(seasonScore)
+        const nextTier = getNextTier(seasonScore)
+
+        const totalChallenges = synced.records.length
+        const totalScore = synced.records.reduce((sum, r) => sum + r.score, 0)
+        const perfectStages = synced.records.reduce((sum, r) => sum + r.perfectStages, 0)
+
+        return {
+          bestScores: synced.bestScores,
+          seasonScore,
+          currentTier,
+          nextTier,
+          totalChallenges,
+          totalScore,
+          perfectStages,
+          dailyAttempts: synced.dailyAttempts,
+          records: synced.records.slice(0, 20),
+          seasonRewardsClaimed: synced.seasonRewardsClaimed
+        }
+      },
+
+      getChallengeLeaderboard: (difficultyId) => {
+        const state = get()
+        const bestScore = state.constellationChallenge.bestScores[difficultyId] || 0
+        return generateLeaderboard(difficultyId, bestScore)
+      },
+
+      getChallengeRemainingAttempts: (difficultyId) => {
+        get().syncChallengeDailyAttempts()
+        const synced = get().constellationChallenge
+        const config = CHALLENGE_DIFFICULTIES[difficultyId]
+        if (!config) return 0
+        const used = synced.dailyAttempts[difficultyId] || 0
+        return Math.max(0, config.dailyAttempts - used)
+      },
+
       buyShopItem: (itemId) => {
         const state = get()
         const item = getShopItemById(itemId)
@@ -2973,6 +3323,15 @@ export const useGameStore = create(
             hints: 0,
             perfectCharms: 0,
             doubleStardustUntil: 0
+          },
+          constellationChallenge: {
+            dailyAttempts: {},
+            lastAttemptDate: null,
+            bestScores: { novice: 0, elite: 0, master: 0 },
+            seasonScores: {},
+            records: [],
+            seasonRewardsClaimed: [],
+            currentChallenge: null
           }
         })
     }),
@@ -2998,7 +3357,8 @@ export const useGameStore = create(
         observationCalendar: state.observationCalendar,
         quiz: state.quiz,
         team: state.team,
-        shop: state.shop
+        shop: state.shop,
+        constellationChallenge: state.constellationChallenge
       })
     }
   )
