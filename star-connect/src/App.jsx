@@ -23,7 +23,10 @@ import HomeEventBanner from './components/HomeEventBanner'
 import ObservationDashboard from './components/ObservationDashboard'
 import StarShop from './components/StarShop'
 import ConstellationChallenge from './components/ConstellationChallenge'
+import OfflineStatusBadge from './components/OfflineStatusBadge'
 import { useGameStore } from './stores/gameStore'
+import { offlineManager } from './modules/offline/OfflineManager.js'
+import { useOffline } from './modules/offline/useOffline.js'
 
 export default function App() {
   const activePanel = useGameStore((s) => s.activePanel)
@@ -37,10 +40,33 @@ export default function App() {
   const setNarrativeChoice = useGameStore((s) => s.setNarrativeChoice)
   const addStardust = useGameStore((s) => s.addStardust)
   const refreshNightSkyEvents = useGameStore((s) => s.refreshNightSkyEvents)
+  const observationLogs = useGameStore((s) => s.observationLogs)
 
+  const offline = useOffline()
   const [activeStory, setActiveStory] = useState(null)
   const [currentUnlockIndex, setCurrentUnlockIndex] = useState(0)
   const [showNightSkyEvents, setShowNightSkyEvents] = useState(false)
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await offlineManager.init()
+      } catch (e) {
+        console.warn('Offline module init failed:', e)
+      }
+    }
+    init()
+  }, [])
+
+  useEffect(() => {
+    if (observationLogs && observationLogs.length > 0) {
+      observationLogs.forEach(async (log) => {
+        try {
+          await offlineManager.saveObservationLog(log)
+        } catch (e) {}
+      })
+    }
+  }, [observationLogs.length])
 
   useEffect(() => {
     refreshNightSkyEvents()
@@ -99,6 +125,47 @@ export default function App() {
   return (
     <div className="relative w-full h-full overflow-hidden bg-space-900">
       <NightSky />
+
+      <div className="absolute top-3 right-3 z-30">
+        <OfflineStatusBadge />
+      </div>
+
+      {offline.installProgress && offline.installProgress.step !== 'complete' && offline.installProgress.step !== 'error' && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl
+                        bg-space-800/90 backdrop-blur border border-nebula-purple/30 text-xs text-white
+                        flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+          <span className="w-4 h-4 border-2 border-nebula-purple border-t-transparent rounded-full animate-spin" />
+          <div>
+            <div className="font-medium">{offline.installProgress.message}</div>
+            <div className="w-32 h-1 mt-1 bg-space-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-nebula-purple to-nebula-cyan transition-all"
+                style={{ width: `${offline.installProgress.progress || 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!offline.isOnline && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-full
+                        bg-red-500/20 border border-red-500/40 backdrop-blur-sm">
+          <span className="text-xs text-red-300 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+            当前处于离线模式，已启用缓存数据
+          </span>
+        </div>
+      )}
+
+      {offline.isWeakConnection && offline.isOnline && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-full
+                        bg-yellow-500/20 border border-yellow-500/40 backdrop-blur-sm">
+          <span className="text-xs text-yellow-300 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+            网络信号较弱，使用缓存提升体验
+          </span>
+        </div>
+      )}
 
       <HomeEventBanner onOpenEvents={() => setShowNightSkyEvents(true)} />
 

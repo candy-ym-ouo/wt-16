@@ -8,10 +8,7 @@ import {
   getSeasonConstellations,
   getCurrentSeason
 } from '../data/seasonPlan'
-import { STORY_ARCS, FINAL_CHAPTER } from '../data/storyChapters'
 import { formatDate } from '../utils/math'
-import StoryChapter from './StoryChapter'
-import { useI18n } from '../i18n/useI18n'
 
 export default function SeasonPlan() {
   const {
@@ -27,12 +24,8 @@ export default function SeasonPlan() {
     getSeasonStats,
     setTargetConstellation,
     openAtlasList,
-    openAtlasDetail,
-    storyProgress,
-    getStoryStats,
-    clearPendingStoryUnlock
+    openAtlasDetail
   } = useGameStore()
-  const { t, tc } = useI18n()
 
   const handleViewInAtlas = (constellationId, e) => {
     e.stopPropagation()
@@ -42,40 +35,6 @@ export default function SeasonPlan() {
   const currentSeason = getCurrentSeason()
   const [selectedSeason, setSelectedSeason] = useState(currentSeason)
   const [viewMode, setViewMode] = useState('overview')
-  const [activeStory, setActiveStory] = useState(null)
-  const [pendingStoryIndex, setPendingStoryIndex] = useState(0)
-
-  const storyStats = getStoryStats()
-
-  const handleOpenStory = (type, id) => {
-    setActiveStory({ type, id })
-  }
-
-  const handleCloseStory = () => {
-    setActiveStory(null)
-    
-    if (storyProgress.pendingUnlock && pendingStoryIndex < storyProgress.pendingUnlock.length - 1) {
-      const nextIndex = pendingStoryIndex + 1
-      setPendingStoryIndex(nextIndex)
-      const nextStory = storyProgress.pendingUnlock[nextIndex]
-      if (nextStory) {
-        setTimeout(() => {
-          if (nextStory.type === 'chapter') {
-            setActiveStory({ type: 'chapter', id: nextStory.chapterId })
-          } else if (nextStory.type === 'prologue') {
-            setActiveStory({ type: 'prologue', id: nextStory.seasonId })
-          } else if (nextStory.type === 'epilogue') {
-            setActiveStory({ type: 'epilogue', id: nextStory.seasonId })
-          } else if (nextStory.type === 'final') {
-            setActiveStory({ type: 'final', id: 'final' })
-          }
-        }, 300)
-      }
-    } else {
-      clearPendingStoryUnlock()
-      setPendingStoryIndex(0)
-    }
-  }
 
   const stats = getSeasonStats()
   const seasonStats = stats[selectedSeason]
@@ -98,20 +57,20 @@ export default function SeasonPlan() {
             <span className="text-3xl">{season.icon}</span>
             <div>
               <h3 className={`font-display text-lg ${season.textColor}`}>
-                {tc('season', selectedSeason, 'name')}{t('ui.seasonPlan')}
+                {season.name}观测计划
               </h3>
               <p className="text-[11px] text-white/50">{season.months} · {season.description}</p>
             </div>
           </div>
           {selectedSeason === currentSeason && (
             <span className="text-[10px] px-2 py-1 rounded-full bg-white/10 text-white/70">
-              {t('detail.currentSeason')}
+              当前季节
             </span>
           )}
         </div>
         <div>
           <div className="flex justify-between text-xs mb-2">
-            <span className="text-white/60">{t('ui.seasonProgress')}</span>
+            <span className="text-white/60">季节总进度</span>
             <span className={`font-mono ${season.textColor}`}>
               {seasonStats.overallPercentage}%
             </span>
@@ -155,9 +114,9 @@ export default function SeasonPlan() {
                     <h4 className={`text-sm font-display ${
                       isCompleted ? 'text-white' : 'text-white/80'
                     }`}>
-                      {tc('seasonPhase', phaseId, 'name')}
+                      {phase.name}
                     </h4>
-                    <p className="text-[10px] text-white/40">{tc('seasonPhase', phaseId, 'description')}</p>
+                    <p className="text-[10px] text-white/40">{phase.description}</p>
                   </div>
                 </div>
                 {isUnlocked && (
@@ -165,11 +124,11 @@ export default function SeasonPlan() {
                     <span className="text-lg">{reward.icon}</span>
                     {isClaimed ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
-                        {t('ui.claimed')}
+                        已领取
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
-                        {t('ui.claimable')}
+                        可领取
                       </span>
                     )}
                   </div>
@@ -178,9 +137,9 @@ export default function SeasonPlan() {
 
               <div className="flex justify-between text-[10px] mb-1.5">
                 <span className="text-white/50">
-                  {phaseId === 'beginner' && t('ui.discoverTarget', { target: phaseProgress.target })}
-                  {phaseId === 'intermediate' && t('ui.perfectTarget', { target: phaseProgress.target })}
-                  {phaseId === 'master' && t('ui.reobserveTarget', { target: phaseProgress.target })}
+                  {phaseId === 'beginner' && `发现 ${phaseProgress.target} 个当季星座`}
+                  {phaseId === 'intermediate' && `完美完成 ${phaseProgress.target} 个当季星座`}
+                  {phaseId === 'master' && `累计反复观测 ${phaseProgress.target} 次`}
                 </span>
                 <span className="text-white/60 font-mono">
                   {phaseProgress.current} / {phaseProgress.target}
@@ -206,7 +165,7 @@ export default function SeasonPlan() {
                       </div>
                     </div>
                     {isClaimed ? (
-                      <span className="text-[11px] text-green-400/80">✓ {t('ui.claimed')}</span>
+                      <span className="text-[11px] text-green-400/80">✓ 已领取</span>
                     ) : (
                       <button
                         onClick={() => claimSeasonReward(reward.id)}
@@ -214,7 +173,7 @@ export default function SeasonPlan() {
                                    bg-gradient-to-r ${season.color} text-white
                                    hover:shadow-lg active:scale-95`}
                       >
-                        {t('ui.claim')}
+                        领取
                       </button>
                     )}
                   </div>
@@ -228,7 +187,7 @@ export default function SeasonPlan() {
       <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">✨</span>
-          <h4 className="font-display text-white/90 text-sm">{t('ui.currentConstellations')}</h4>
+          <h4 className="font-display text-white/90 text-sm">当季星座</h4>
           <span className="text-[10px] text-white/40 ml-auto">
             {seasonStats.discovered} / {seasonStats.constellations}
           </span>
@@ -266,12 +225,12 @@ export default function SeasonPlan() {
                         <p className={`text-xs font-medium truncate ${
                           discovered ? 'text-white' : 'text-white/50'
                         }`}>
-                          {tc('constellation', constellationId, 'name')}
+                          {c.name}
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {perfect && (
                             <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
-                              {t('log.perfect')}
+                              完美
                             </span>
                           )}
                           {observed > 1 && (
@@ -316,7 +275,7 @@ export default function SeasonPlan() {
               >
                 <div className="text-2xl mb-1">{s.icon}</div>
                 <div className={`text-[11px] ${completed ? s.textColor : 'text-white/50'}`}>
-                  {tc('season', id, 'name')}
+                  {s.name}
                 </div>
                 <div className="text-[10px] text-white/40 mt-0.5">
                   {stats[id].overallPercentage}%
@@ -330,9 +289,9 @@ export default function SeasonPlan() {
       {seasonHistory.length === 0 ? (
         <div className="h-40 flex flex-col items-center justify-center text-center">
           <div className="text-4xl mb-3 opacity-30">🗓️</div>
-          <h4 className="text-white/60 font-display mb-1">{t('ui.noSeasonHistory')}</h4>
+          <h4 className="text-white/60 font-display mb-1">暂无季节进度记录</h4>
           <p className="text-xs text-white/40 max-w-xs leading-relaxed">
-            {t('ui.noSeasonHistoryDesc')}
+            开始探索星座，你的季节里程碑将记录在这里
           </p>
         </div>
       ) : (
@@ -354,12 +313,12 @@ export default function SeasonPlan() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-display text-white">
-                        {tc('season', id, 'name')} · {tc('seasonPhase', entry.phaseId, 'name')}
+                        {s.name} · {phase.name}
                       </span>
                       <span className="text-base">{reward.icon}</span>
                     </div>
                     <div className="text-[11px] text-white/50 mt-0.5">
-                      {t('log.phaseComplete', { name: reward.name })}
+                      完成阶段目标，获得「{reward.name}」
                     </div>
                     <div className="text-[10px] text-white/30 mt-0.5 font-mono">
                       {formatDate(entry.timestamp)}
@@ -395,7 +354,7 @@ export default function SeasonPlan() {
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xl">{s.icon}</span>
-                <h4 className={`font-display text-sm ${s.textColor}`}>{tc('season', seasonId, 'name')}{t('ui.tabRewards')}</h4>
+                <h4 className={`font-display text-sm ${s.textColor}`}>{s.name}奖励</h4>
                 <span className="text-[10px] text-white/40 ml-auto">
                   {claimedCount} / {seasonRewardsList.length}
                 </span>
@@ -436,12 +395,12 @@ export default function SeasonPlan() {
                                      bg-gradient-to-r ${s.color} text-white
                                      hover:shadow-md active:scale-95 transition-all`}
                         >
-                          {t('ui.claim')}
+                          领取
                         </button>
                       )}
                       {isClaimed && (
                         <span className="mt-1.5 inline-block text-[10px] text-green-400/70">
-                          ✓ {t('ui.claimed')}
+                          ✓ 已领取
                         </span>
                       )}
                     </div>
@@ -455,254 +414,6 @@ export default function SeasonPlan() {
     )
   }
 
-  const renderStory = () => {
-    const arc = STORY_ARCS[selectedSeason]
-    if (!arc) return null
-
-    const sp = storyProgress
-    const chapters = Object.entries(arc.chapters)
-
-    const prologueUnlocked = sp.unlockedPrologues.includes(selectedSeason)
-    const prologueRead = sp.readPrologues.includes(selectedSeason)
-    const epilogueUnlocked = sp.unlockedEpilogues.includes(selectedSeason)
-    const epilogueRead = sp.readEpilogues.includes(selectedSeason)
-
-    return (
-      <div className="space-y-4">
-        <div className={`p-4 rounded-2xl border ${arc.borderColor} ${arc.bgColor}`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{arc.icon}</span>
-              <div>
-                <h3 className={`font-display text-lg ${arc.textColor}`}>
-                  {arc.title}
-                </h3>
-                <p className="text-[11px] text-white/50">{arc.subtitle}</p>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between text-xs mb-2">
-              <span className="text-white/60">{t('ui.storyProgress')}</span>
-              <span className={`font-mono ${arc.textColor}`}>
-                {storyStats.overallProgress}%
-              </span>
-            </div>
-            <div className="h-2.5 bg-space-900/60 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-gradient-to-r ${arc.color} rounded-full transition-all duration-700`}
-                style={{ width: `${storyStats.overallProgress}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`p-4 rounded-2xl border transition-all ${
-            prologueUnlocked
-              ? `${arc.borderColor} ${arc.bgColor}`
-              : 'border-white/10 bg-space-700/20 opacity-60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                prologueUnlocked
-                  ? `bg-gradient-to-br ${arc.color} text-white`
-                  : 'bg-space-600/50 text-white/50'
-              }`}>
-                {prologueRead ? '📖' : prologueUnlocked ? '📌' : '🔒'}
-              </div>
-              <div>
-                <h4 className={`text-sm font-display ${
-                  prologueUnlocked ? 'text-white' : 'text-white/80'
-                }`}>
-                  {arc.prologue.title}
-                </h4>
-                <p className="text-[10px] text-white/40">
-                  {prologueRead ? t('ui.read') : prologueUnlocked ? t('ui.clickToRead') : t('ui.locked')}
-                </p>
-              </div>
-            </div>
-            {prologueUnlocked && !prologueRead && (
-              <span className="text-[10px] px-2 py-1 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
-                {t('ui.new')}
-              </span>
-            )}
-          </div>
-          {prologueUnlocked && (
-            <button
-              onClick={() => handleOpenStory('prologue', selectedSeason)}
-              className="mt-3 w-full py-2 rounded-lg text-xs font-medium transition-all
-                         bg-white/5 text-white/70 hover:bg-white/10"
-            >
-              {prologueRead ? t('ui.readAgain') : t('ui.startReading')}
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <h4 className="text-xs text-white/60 font-display px-1">{t('ui.chapterTitle')}</h4>
-          {chapters.map(([constellationId, chapter], index) => {
-            const c = getConstellationById(constellationId)
-            const chapterUnlocked = sp.unlockedChapters.includes(chapter.id)
-            const chapterRead = sp.readChapters.includes(chapter.id)
-            const discovered = discoveredConstellations.includes(constellationId)
-
-            return (
-              <div
-                key={chapter.id}
-                className={`p-4 rounded-2xl border transition-all ${
-                  chapterUnlocked
-                    ? `${arc.borderColor} ${arc.bgColor}`
-                    : 'border-white/10 bg-space-700/20'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm ${
-                      chapterUnlocked
-                        ? `bg-gradient-to-br ${arc.color} text-white`
-                        : 'bg-space-600/50 text-white/50'
-                    }`}>
-                      {chapterRead ? '📖' : chapterUnlocked ? '✦' : '🔒'}
-                    </div>
-                    <div>
-                      <h4 className={`text-sm font-display ${
-                        chapterUnlocked ? 'text-white' : 'text-white/80'
-                      }`}>
-                        {chapter.title}
-                      </h4>
-                      <p className="text-[10px] text-white/40 mb-1">
-                        {chapter.subtitle}
-                      </p>
-                      {c && (
-                        <span className="text-[10px] text-white/30">
-                          🔗 {tc('constellation', constellationId, 'name')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {chapterUnlocked && !chapterRead && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
-                        {t('ui.new')}
-                      </span>
-                    )}
-                    {discovered && !chapterUnlocked && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-nebula-cyan/20 text-nebula-cyan">
-                        {t('ui.unlocking')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {chapter.reward && (
-                  <div className="mt-2 flex items-center gap-2 text-[10px] text-white/50">
-                    <span>🎁</span>
-                    <span>
-                      {chapter.reward.type === 'stardust' && t('ui.stardustReward', { amount: chapter.reward.amount })}
-                    </span>
-                  </div>
-                )}
-                {chapterUnlocked && (
-                  <button
-                    onClick={() => handleOpenStory('chapter', chapter.id)}
-                    className="mt-3 w-full py-2 rounded-lg text-xs font-medium transition-all
-                               bg-white/5 text-white/70 hover:bg-white/10"
-                  >
-                    {chapterRead ? t('ui.readAgain') : t('ui.startReading')}
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        <div
-          className={`p-4 rounded-2xl border transition-all ${
-            epilogueUnlocked
-              ? `${arc.borderColor} ${arc.bgColor}`
-              : 'border-white/10 bg-space-700/20 opacity-60'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                epilogueUnlocked
-                  ? `bg-gradient-to-br from-star-gold to-amber-500 text-white`
-                  : 'bg-space-600/50 text-white/50'
-              }`}>
-                {epilogueRead ? '📖' : epilogueUnlocked ? '👑' : '🔒'}
-              </div>
-              <div>
-                <h4 className={`text-sm font-display ${
-                  epilogueUnlocked ? 'text-star-gold' : 'text-white/80'
-                }`}>
-                  {arc.epilogue.title}
-                </h4>
-                <p className="text-[10px] text-white/40">
-                  {epilogueRead ? t('ui.read') : epilogueUnlocked ? t('ui.clickToRead') : t('ui.completeAllToUnlock')}
-                </p>
-              </div>
-            </div>
-            {epilogueUnlocked && !epilogueRead && (
-              <span className="text-[10px] px-2 py-1 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
-                {t('ui.new')}
-              </span>
-            )}
-          </div>
-          {epilogueUnlocked && (
-            <button
-              onClick={() => handleOpenStory('epilogue', selectedSeason)}
-              className="mt-3 w-full py-2 rounded-lg text-xs font-medium transition-all
-                         bg-gradient-to-r from-star-gold to-amber-500 text-white hover:shadow-lg"
-            >
-              {epilogueRead ? t('ui.readAgain') : t('ui.readEpilogue')}
-            </button>
-          )}
-        </div>
-
-        {sp.finalChapterUnlocked && (
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-nebula-purple/30 to-nebula-cyan/30 rounded-2xl blur-xl" />
-              <div className="relative p-5 rounded-2xl border border-nebula-purple/40 bg-gradient-to-br from-nebula-purple/20 to-nebula-cyan/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br from-nebula-purple to-nebula-cyan text-white">
-                      📖
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-display text-white">
-                        {FINAL_CHAPTER.title}
-                      </h4>
-                      <p className="text-[10px] text-white/50">
-                        {FINAL_CHAPTER.subtitle}
-                      </p>
-                    </div>
-                  </div>
-                  {!sp.finalChapterRead && (
-                    <span className="text-[10px] px-3 py-1 rounded-full bg-nebula-cyan/20 text-nebula-cyan animate-pulse">
-                      {t('ui.finalChapter')}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleOpenStory('final', 'final')}
-                  className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-all
-                             bg-gradient-to-r from-nebula-purple to-nebula-cyan text-white
-                             hover:shadow-lg hover:shadow-nebula-purple/30"
-                >
-                  {sp.finalChapterRead ? t('ui.readAgain') : t('ui.openFinalChapter')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="absolute inset-0 z-40 flex items-end sm:items-center justify-center p-4
                     bg-space-900/70 backdrop-blur-sm animate-in fade-in duration-200">
@@ -710,9 +421,9 @@ export default function SeasonPlan() {
         <div className="p-5 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-display text-white">{t('ui.seasonPlan')}</h2>
+              <h2 className="text-xl font-display text-white">四季观测计划</h2>
               <p className="text-xs text-white/50 mt-1">
-                {t('ui.seasonPlanDesc')}
+                跟随季节的脚步，探索星空的奥秘
               </p>
             </div>
             <button
@@ -726,9 +437,9 @@ export default function SeasonPlan() {
 
           <div className="mt-4">
             <div className="flex justify-between text-xs mb-2">
-              <span className="text-white/60">{t('ui.overallProgress')}</span>
+              <span className="text-white/60">年度总进度</span>
               <span className="text-star-gold font-mono">
-                {totalSeasonsCompleted} / 4 {t('ui.seasonUnit')} · {overallProgress}%
+                {totalSeasonsCompleted} / 4 季 · {overallProgress}%
               </span>
             </div>
             <div className="h-3 bg-space-900/80 rounded-full overflow-hidden flex">
@@ -757,7 +468,7 @@ export default function SeasonPlan() {
                 <div className={`text-[10px] mt-0.5 ${
                   selectedSeason === id ? s.textColor : 'text-white/50'
                 }`}>
-                  {tc('season', id, 'name')}
+                  {s.name}
                 </div>
                 <div className="text-[9px] text-white/30 mt-0.5">
                   {stats[id].overallPercentage}%
@@ -775,7 +486,7 @@ export default function SeasonPlan() {
                        transition-all flex items-center justify-center gap-2"
             >
               <span>📚</span>
-              <span>{t('ui.viewAtlas')}</span>
+              <span>查看星空图鉴</span>
               <span className="text-nebula-cyan">→</span>
             </button>
           </div>
@@ -791,17 +502,16 @@ export default function SeasonPlan() {
                        transition-all flex items-center justify-center gap-2"
             >
               <span>🗺️</span>
-              <span>{t('ui.routeRecommend')}</span>
+              <span>观星路线推荐</span>
               <span className="text-pink-300">→</span>
             </button>
           </div>
 
           <div className="mt-4 flex gap-2">
             {[
-              { id: 'overview', label: t('ui.tabProgress'), icon: '📊' },
-              { id: 'story', label: t('ui.tabStory'), icon: '📖' },
-              { id: 'rewards', label: t('ui.tabRewards'), icon: '🎁' },
-              { id: 'history', label: t('ui.tabHistory'), icon: '🗓️' }
+              { id: 'overview', label: '进度', icon: '📊' },
+              { id: 'rewards', label: '奖励', icon: '🎁' },
+              { id: 'history', label: '回溯', icon: '🗓️' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -821,19 +531,10 @@ export default function SeasonPlan() {
 
         <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
           {viewMode === 'overview' && renderOverview()}
-          {viewMode === 'story' && renderStory()}
           {viewMode === 'rewards' && renderRewards()}
           {viewMode === 'history' && renderHistory()}
         </div>
       </div>
-
-      {activeStory && (
-        <StoryChapter
-          storyType={activeStory.type}
-          storyId={activeStory.id}
-          onClose={handleCloseStory}
-        />
-      )}
     </div>
   )
 }

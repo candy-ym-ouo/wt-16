@@ -3,6 +3,7 @@ import { useGameStore } from '../stores/gameStore'
 import { DEFAULT_SETTINGS } from '../data/constants'
 import { audioManager } from '../modules/AudioManager'
 import { useI18n } from '../i18n/useI18n'
+import OfflinePackagePanel from './OfflinePackagePanel'
 
 export default function SettingsPanel() {
   const {
@@ -17,6 +18,7 @@ export default function SettingsPanel() {
   const { t, language, changeLanguage, supportedLanguages, isLoading } = useI18n()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showSavedToast, setShowSavedToast] = useState(false)
+  const [showOfflinePanel, setShowOfflinePanel] = useState(false)
   const progress = getProgress()
 
   const handleSettingChange = (key, value) => {
@@ -283,6 +285,44 @@ export default function SettingsPanel() {
               </div>
             </div>
           </section>
+
+          <section>
+            <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
+              离线资料包
+            </h3>
+            <button
+              onClick={() => {
+                audioManager.ensureContext()
+                audioManager.playClick()
+                setShowOfflinePanel(true)
+              }}
+              className="w-full p-4 rounded-xl bg-space-700/30 border border-white/5
+                       hover:border-nebula-purple/30 hover:bg-nebula-purple/5
+                       transition-all text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📦</span>
+                  <div>
+                    <div className="text-sm text-white">离线数据管理</div>
+                    <div className="text-[11px] text-white/40 mt-0.5">
+                      管理星座数据、图鉴、成就的离线缓存，保证弱网环境下核心功能可用
+                    </div>
+                  </div>
+                </div>
+                <span className="text-nebula-cyan">→</span>
+              </div>
+            </button>
+          </section>
+
+          {showOfflinePanel && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4
+                            bg-space-900/80 backdrop-blur-md animate-in fade-in">
+              <div className="w-full max-w-md glass-panel max-h-[85vh] overflow-y-auto">
+                <OfflinePackagePanel onClose={() => setShowOfflinePanel(false)} />
+              </div>
+            </div>
+          )}
 
           <section>
             <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
