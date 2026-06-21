@@ -1506,6 +1506,14 @@ export const useGameStore = create(
             readChapters: [...state.storyProgress.readChapters, chapterId]
           }
         })
+        for (const arc of Object.values(STORY_ARCS)) {
+          for (const chapter of Object.values(arc.chapters)) {
+            if (chapter.id === chapterId && chapter.reward?.stardust) {
+              get().addStardust(chapter.reward.stardust, `剧情章节：${chapter.title}`)
+              break
+            }
+          }
+        }
         return true
       },
 
@@ -1552,10 +1560,6 @@ export const useGameStore = create(
           seasonId,
           timestamp: Date.now()
         })
-        const arc = STORY_ARCS[seasonId]
-        if (arc?.epilogue?.reward?.stardust) {
-          get().addStardust(arc.epilogue.reward.stardust, `季节终章：${arc.title}`)
-        }
         return true
       },
 
@@ -1568,6 +1572,10 @@ export const useGameStore = create(
             readEpilogues: [...state.storyProgress.readEpilogues, seasonId]
           }
         })
+        const arc = STORY_ARCS[seasonId]
+        if (arc?.epilogue?.reward?.stardust) {
+          get().addStardust(arc.epilogue.reward.stardust, `季节终章：${arc.epilogue.title}`)
+        }
         get().checkStoryProgress()
         return true
       },
@@ -1623,12 +1631,12 @@ export const useGameStore = create(
         Object.entries(STORY_ARCS).forEach(([seasonId, arc]) => {
           if (!state.storyProgress.unlockedPrologues.includes(seasonId)) {
             const seasonConstellations = Object.keys(arc.chapters)
-            if (seasonConstellations.length > 0) {
-              const firstConstellation = seasonConstellations[0]
-              if (discoveries.includes(firstConstellation) || discoveries.length >= 1) {
-                if (get().unlockPrologue(seasonId)) {
-                  newlyUnlocked.push({ type: 'prologue', seasonId, data: arc.prologue })
-                }
+            const discoveredInSeason = seasonConstellations.some(id =>
+              discoveries.includes(id)
+            )
+            if (discoveredInSeason) {
+              if (get().unlockPrologue(seasonId)) {
+                newlyUnlocked.push({ type: 'prologue', seasonId, data: arc.prologue })
               }
             }
           }

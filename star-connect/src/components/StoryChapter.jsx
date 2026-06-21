@@ -10,9 +10,7 @@ export default function StoryChapter({ storyType, storyId, onClose }) {
     markEpilogueAsRead,
     markFinalChapterAsRead,
     setNarrativeChoice,
-    storyProgress,
-    addStardust,
-    addLog
+    storyProgress
   } = useGameStore()
 
   const [isRevealing, setIsRevealing] = useState(true)
@@ -98,9 +96,6 @@ export default function StoryChapter({ storyType, storyId, onClose }) {
   const handleMarkAsRead = () => {
     if (storyType === 'chapter') {
       markChapterAsRead(storyId)
-      if (storyData?.reward?.stardust) {
-        addStardust(storyData.reward.stardust, `剧情章节：${storyData.title}`)
-      }
     } else if (storyType === 'prologue') {
       markPrologueAsRead(storyId)
     } else if (storyType === 'epilogue') {

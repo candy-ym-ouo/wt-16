@@ -20,6 +20,7 @@ export const STORY_ARCS = {
     },
     epilogue: {
       title: '终章·春日守望者',
+      reward: { type: 'stardust', amount: 200 },
       content: `当你完成了春季所有星座的连线，北斗七星在夜空中熠熠生辉。
 
 你忽然明白，这些星星不仅仅是夜空中的光点，它们是跨越时空的信使，承载着古人的智慧与想象。
@@ -83,6 +84,7 @@ export const STORY_ARCS = {
     },
     epilogue: {
       title: '终章·银河守护者',
+      reward: { type: 'stardust', amount: 300 },
       content: `当夏季的最后一颗星星被你连接，整个银河仿佛都在为你闪耀。
 
 天蝎座的毒刺、天琴座的竖琴，还有那永远相望的牛郎织女——这些古老的故事在你的脑海中交织成一幅壮丽的星图。
@@ -174,6 +176,7 @@ export const STORY_ARCS = {
     },
     epilogue: {
       title: '终章·秋水共长天',
+      reward: { type: 'stardust', amount: 300 },
       content: `当你完成了秋季所有星座的连接，仙后座在夜空中优雅地旋转，有时头朝上，有时头朝下——那是海神对她的惩罚。
 
 但卡西奥佩娅并不后悔。她爱她的女儿，愿意为她承受任何羞辱。
@@ -269,6 +272,7 @@ export const STORY_ARCS = {
     },
     epilogue: {
       title: '终章·极夜追光人',
+      reward: { type: 'stardust', amount: 500 },
       content: `当你完成了猎户座的连接，冬夜的星空仿佛为你点亮了最璀璨的烟火。
 
 奥利安站在星空中，他的猎犬大犬座在他脚边，他的猎物金牛座在他面前。即使在天界，他依然是那位骄傲的猎人。
@@ -328,6 +332,7 @@ export const FINAL_CHAPTER = {
   textColor: 'text-nebula-cyan',
   icon: '📖',
   requirement: 'all_seasons_complete',
+  reward: { type: 'stardust', amount: 1000 },
   content: `恭喜你，勇敢的观星者！
 
 你已经完成了四季的旅程，连接了所有的星座，聆听了每一颗星星的故事。
