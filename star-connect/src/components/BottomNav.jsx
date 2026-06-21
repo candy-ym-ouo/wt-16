@@ -47,6 +47,12 @@ export default function BottomNav() {
       badgeColor: familyMode.enabled ? 'bg-green-500 text-white' : null
     },
     {
+      id: 'team',
+      label: '队伍',
+      icon: '👥',
+      badge: null
+    },
+    {
       id: null,
       label: '夜空',
       icon: '🌌',

@@ -41,6 +41,14 @@ import {
   REWARD_ITEMS,
   getRewardById
 } from '../data/quiz'
+import {
+  TEAM_TASKS,
+  TEAM_ACHIEVEMENTS,
+  TEAM_MEMBER_TEMPLATES,
+  TEAM_ROLES,
+  getTeamTaskById,
+  getTeamAchievementById
+} from '../data/team'
 
 let autoSaveEnabled = true
 
@@ -1319,6 +1327,10 @@ export const useGameStore = create(
             get().checkFamilyAchievements()
           }
 
+          if (state.team.enabled) {
+            get().recordTeamDiscovery(constellationId, isPerfect, 'player')
+          }
+
           get().checkSeasonProgress()
 
           if (state.nightExpedition.currentRun?.active) {
@@ -1833,6 +1845,560 @@ export const useGameStore = create(
         }
       },
 
+      team: {
+        enabled: false,
+        teamName: '星空探索队',
+        teamLevel: 1,
+        teamXP: 0,
+        teamStardust: 0,
+        members: [
+          {
+            id: 'player',
+            name: '我',
+            avatar: '🌟',
+            role: 'leader',
+            xp: 0,
+            level: 1,
+            joinedAt: Date.now(),
+            isSelf: true,
+            discoveries: []
+          }
+        ],
+        activeTasks: [],
+        completedTasks: [],
+        teamDiscoveries: [],
+        teamPerfectObservations: {},
+        teamTotalObservations: {},
+        teamLogs: [],
+        unlockedTeamAchievements: [],
+        teamPerfectStreak: 0,
+        teamStreakDays: 0,
+        lastActiveDate: null,
+        teamExpeditionsCompleted: 0
+      },
+
+      setTeamEnabled: (enabled) => set((state) => {
+        const newTeam = { ...state.team, enabled }
+        if (enabled && !state.team.lastActiveDate) {
+          newTeam.lastActiveDate = new Date().toDateString()
+          newTeam.teamStreakDays = 1
+        }
+        return { team: newTeam }
+      }),
+
+      setTeamName: (name) => set((state) => ({
+        team: { ...state.team, teamName: name }
+      })),
+
+      addTeamMember: (memberData) => {
+        const member = {
+          id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          name: memberData.name || '新成员',
+          avatar: memberData.avatar || '👤',
+          role: memberData.role || 'rookie',
+          xp: 0,
+          level: 1,
+          joinedAt: Date.now(),
+          isSelf: false,
+          discoveries: []
+        }
+        set((state) => ({
+          team: {
+            ...state.team,
+            members: [...state.team.members, member],
+            teamLogs: [
+              {
+                type: 'member_join',
+                memberId: member.id,
+                memberName: member.name,
+                timestamp: Date.now()
+              },
+              ...state.team.teamLogs
+            ].slice(0, 200)
+          }
+        }))
+        get().checkTeamAchievements()
+        return member
+      },
+
+      updateTeamMember: (memberId, data) => set((state) => ({
+        team: {
+          ...state.team,
+          members: state.team.members.map(m =>
+            m.id === memberId ? { ...m, ...data } : m
+          )
+        }
+      })),
+
+      changeMemberRole: (memberId, newRole) => {
+        const role = TEAM_ROLES[newRole]
+        if (!role) return false
+        set((state) => ({
+          team: {
+            ...state.team,
+            members: state.team.members.map(m =>
+              m.id === memberId ? { ...m, role: newRole } : m
+            )
+          }
+        }))
+        return true
+      },
+
+      removeTeamMember: (memberId) => set((state) => ({
+        team: {
+          ...state.team,
+          members: state.team.members.filter(m => m.id !== memberId)
+        }
+      })),
+
+      addTeamXP: (amount) => set((state) => {
+        const newXP = state.team.teamXP + amount
+        const newLevel = Math.floor(newXP / 500) + 1
+        return {
+          team: {
+            ...state.team,
+            teamXP: newXP,
+            teamLevel: newLevel
+          }
+        }
+      }),
+
+      addMemberXP: (memberId, amount) => set((state) => {
+        const members = state.team.members.map(m => {
+          if (m.id !== memberId) return m
+          const newXP = m.xp + amount
+          const newLevel = Math.floor(newXP / 100) + 1
+          return { ...m, xp: newXP, level: newLevel }
+        })
+        return { team: { ...state.team, members } }
+      }),
+
+      addTeamStardust: (amount) => set((state) => ({
+        team: { ...state.team, teamStardust: state.team.teamStardust + amount }
+      })),
+
+      startTeamTask: (taskId) => {
+        const task = getTeamTaskById(taskId)
+        if (!task) return false
+        set((state) => ({
+          team: {
+            ...state.team,
+            activeTasks: [...state.team.activeTasks, {
+              taskId,
+              startedAt: Date.now(),
+              progress: 0
+            }]
+          }
+        }))
+        return true
+      },
+
+      completeTeamTask: (taskId) => {
+        const task = getTeamTaskById(taskId)
+        if (!task) return null
+        const state = get()
+        const activeTask = state.team.activeTasks.find(t => t.taskId === taskId)
+        if (!activeTask) return null
+
+        const reward = task.reward || {}
+        const xpGain = reward.teamXP || 0
+        const stardustGain = reward.stardust || 0
+
+        set((s) => ({
+          team: {
+            ...s.team,
+            activeTasks: s.team.activeTasks.filter(t => t.taskId !== taskId),
+            completedTasks: [
+              { taskId, completedAt: Date.now(), xp: xpGain, stardust: stardustGain },
+              ...s.team.completedTasks
+            ].slice(0, 50),
+            teamXP: s.team.teamXP + xpGain,
+            teamLevel: Math.floor((s.team.teamXP + xpGain) / 500) + 1,
+            teamStardust: s.team.teamStardust + stardustGain,
+            teamLogs: [
+              {
+                type: 'task_complete',
+                taskId,
+                taskName: task.name,
+                xp: xpGain,
+                stardust: stardustGain,
+                timestamp: Date.now()
+              },
+              ...s.team.teamLogs
+            ].slice(0, 200)
+          }
+        }))
+
+        get().checkTeamAchievements()
+        return { task, xp: xpGain, stardust: stardustGain }
+      },
+
+      recordTeamDiscovery: (constellationId, isPerfect, memberId = 'player') => {
+        const state = get()
+        const alreadyDiscovered = state.team.teamDiscoveries.includes(constellationId)
+
+        const newDiscoveries = alreadyDiscovered
+          ? state.team.teamDiscoveries
+          : [...state.team.teamDiscoveries, constellationId]
+
+        const newPerfect = isPerfect && !alreadyDiscovered
+          ? { ...state.team.teamPerfectObservations, [constellationId]: true }
+          : state.team.teamPerfectObservations
+
+        const newTotal = {
+          ...state.team.teamTotalObservations,
+          [constellationId]: (state.team.teamTotalObservations[constellationId] || 0) + 1
+        }
+
+        const newStreak = isPerfect ? state.team.teamPerfectStreak + 1 : 0
+
+        const members = state.team.members.map(m => {
+          if (m.id !== memberId) return m
+          const discoveries = m.discoveries.includes(constellationId)
+            ? m.discoveries
+            : [...m.discoveries, constellationId]
+          const xpGain = alreadyDiscovered ? 10 : 50
+          const newXP = m.xp + xpGain
+          const newLevel = Math.floor(newXP / 100) + 1
+          return { ...m, discoveries, xp: newXP, level: newLevel }
+        })
+
+        const today = new Date().toDateString()
+        let newStreakDays = state.team.teamStreakDays
+        let lastActiveDate = state.team.lastActiveDate
+
+        if (lastActiveDate !== today) {
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          if (lastActiveDate === yesterday.toDateString()) {
+            newStreakDays = state.team.teamStreakDays + 1
+          } else {
+            newStreakDays = 1
+          }
+          lastActiveDate = today
+        }
+
+        set((s) => ({
+          team: {
+            ...s.team,
+            teamDiscoveries: newDiscoveries,
+            teamPerfectObservations: newPerfect,
+            teamTotalObservations: newTotal,
+            teamPerfectStreak: newStreak,
+            teamStreakDays: newStreakDays,
+            lastActiveDate,
+            members,
+            teamLogs: [
+              {
+                type: alreadyDiscovered ? 'reobservation' : 'discovery',
+                constellationId,
+                perfect: isPerfect,
+                memberId,
+                memberName: members.find(m => m.id === memberId)?.name || '未知',
+                timestamp: Date.now()
+              },
+              ...s.team.teamLogs
+            ].slice(0, 200)
+          }
+        }))
+
+        get().checkTeamAchievements()
+        get().checkTeamTaskProgress()
+      },
+
+      checkTeamTaskProgress: () => {
+        const state = get()
+        const team = state.team
+        const newlyCompleted = []
+
+        team.activeTasks.forEach((activeTask) => {
+          const task = getTeamTaskById(activeTask.taskId)
+          if (!task) return
+
+          const { type, value } = task.target
+          let progress = 0
+          let completed = false
+
+          switch (type) {
+            case 'team_discoveries':
+              progress = team.teamDiscoveries.length
+              completed = progress >= value
+              break
+            case 'daily_discoveries': {
+              const today = new Date().toDateString()
+              const todayDiscoveries = team.teamLogs.filter(log =>
+                log.type === 'discovery' &&
+                new Date(log.timestamp).toDateString() === today
+              ).length
+              progress = todayDiscoveries
+              completed = progress >= value
+              break
+            }
+            case 'perfect_streak':
+              progress = team.teamPerfectStreak
+              completed = progress >= value
+              break
+            case 'season_complete': {
+              const seasonConstellations = getSeasonConstellations(value)
+              const discovered = seasonConstellations.filter(id =>
+                team.teamDiscoveries.includes(id)
+              ).length
+              progress = discovered
+              completed = discovered >= seasonConstellations.length
+              break
+            }
+            case 'all_seasons': {
+              const allSeasonsComplete = Object.keys(SEASONS).every(seasonId => {
+                const seasonConstellations = getSeasonConstellations(seasonId)
+                return seasonConstellations.every(id => team.teamDiscoveries.includes(id))
+              })
+              completed = allSeasonsComplete
+              progress = allSeasonsComplete ? 1 : 0
+              break
+            }
+            case 'team_logs':
+              progress = team.teamLogs.length
+              completed = progress >= value
+              break
+            case 'team_expeditions':
+              progress = team.teamExpeditionsCompleted
+              completed = progress >= value
+              break
+            case 'all_members_level':
+              completed = team.members.every(m => m.level >= value)
+              progress = team.members.filter(m => m.level >= value).length
+              break
+            case 'team_streak':
+              progress = team.teamStreakDays
+              completed = progress >= value
+              break
+          }
+
+          if (completed) {
+            newlyCompleted.push(activeTask.taskId)
+          }
+        })
+
+        newlyCompleted.forEach(taskId => {
+          get().completeTeamTask(taskId)
+        })
+
+        return newlyCompleted
+      },
+
+      addTeamLog: (entry) => set((state) => ({
+        team: {
+          ...state.team,
+          teamLogs: [entry, ...state.team.teamLogs].slice(0, 200)
+        }
+      })),
+
+      checkTeamAchievements: () => {
+        const state = get()
+        const team = state.team
+        const newlyUnlocked = []
+
+        TEAM_ACHIEVEMENTS.forEach((achievement) => {
+          if (team.unlockedTeamAchievements.includes(achievement.id)) return
+
+          const { type, value } = achievement.condition
+          let unlocked = false
+
+          switch (type) {
+            case 'team_discoveries':
+              unlocked = team.teamDiscoveries.length >= value
+              break
+            case 'daily_discoveries': {
+              const today = new Date().toDateString()
+              const todayDiscoveries = team.teamLogs.filter(log =>
+                log.type === 'discovery' &&
+                new Date(log.timestamp).toDateString() === today
+              ).length
+              unlocked = todayDiscoveries >= value
+              break
+            }
+            case 'perfect_streak':
+              unlocked = team.teamPerfectStreak >= value
+              break
+            case 'season_complete': {
+              const seasonConstellations = getSeasonConstellations(value)
+              const discovered = seasonConstellations.filter(id =>
+                team.teamDiscoveries.includes(id)
+              ).length
+              unlocked = discovered >= seasonConstellations.length
+              break
+            }
+            case 'all_seasons': {
+              const allComplete = Object.keys(SEASONS).every(seasonId => {
+                const seasonConstellations = getSeasonConstellations(seasonId)
+                return seasonConstellations.every(id => team.teamDiscoveries.includes(id))
+              })
+              unlocked = allComplete
+              break
+            }
+            case 'team_logs':
+              unlocked = team.teamLogs.length >= value
+              break
+            case 'team_expeditions':
+              unlocked = team.teamExpeditionsCompleted >= value
+              break
+            case 'all_members_level':
+              unlocked = team.members.every(m => m.level >= value)
+              break
+            case 'team_streak':
+              unlocked = team.teamStreakDays >= value
+              break
+            case 'team_discover_all':
+              unlocked = team.teamDiscoveries.length >= value
+              break
+          }
+
+          if (unlocked) {
+            newlyUnlocked.push(achievement.id)
+          }
+        })
+
+        if (newlyUnlocked.length > 0) {
+          set((s) => ({
+            team: {
+              ...s.team,
+              unlockedTeamAchievements: [
+                ...s.team.unlockedTeamAchievements,
+                ...newlyUnlocked
+              ]
+            }
+          }))
+
+          newlyUnlocked.forEach((id) => {
+            const achievement = getTeamAchievementById(id)
+            if (achievement) {
+              get().addTeamLog({
+                type: 'achievement',
+                achievementId: id,
+                achievementName: achievement.name,
+                icon: achievement.icon,
+                timestamp: Date.now()
+              })
+            }
+          })
+        }
+
+        return newlyUnlocked
+      },
+
+      getTeamStats: () => {
+        const state = get()
+        const team = state.team
+        return {
+          teamName: team.teamName,
+          teamLevel: team.teamLevel,
+          teamXP: team.teamXP,
+          teamStardust: team.teamStardust,
+          memberCount: team.members.length,
+          discoveries: team.teamDiscoveries.length,
+          totalObservations: Object.keys(team.teamTotalObservations).reduce(
+            (sum, key) => sum + (team.teamTotalObservations[key] || 0), 0
+          ),
+          perfectCount: Object.keys(team.teamPerfectObservations).length,
+          completedTasks: team.completedTasks.length,
+          totalTasks: TEAM_TASKS.length,
+          achievements: team.unlockedTeamAchievements.length,
+          totalAchievements: TEAM_ACHIEVEMENTS.length,
+          streakDays: team.teamStreakDays,
+          perfectStreak: team.teamPerfectStreak,
+          logCount: team.teamLogs.length,
+          expeditions: team.teamExpeditionsCompleted
+        }
+      },
+
+      getTeamMemberStats: (memberId) => {
+        const state = get()
+        const member = state.team.members.find(m => m.id === memberId)
+        if (!member) return null
+        return {
+          ...member,
+          discoveryCount: member.discoveries.length,
+          xpToNextLevel: (member.level * 100) - member.xp
+        }
+      },
+
+      getTeamTaskProgress: (taskId) => {
+        const state = get()
+        const team = state.team
+        const task = getTeamTaskById(taskId)
+        if (!task) return null
+
+        const { type, value } = task.target
+        let current = 0
+
+        switch (type) {
+          case 'team_discoveries':
+            current = team.teamDiscoveries.length
+            break
+          case 'daily_discoveries': {
+            const today = new Date().toDateString()
+            current = team.teamLogs.filter(log =>
+              log.type === 'discovery' &&
+              new Date(log.timestamp).toDateString() === today
+            ).length
+            break
+          }
+          case 'perfect_streak':
+            current = team.teamPerfectStreak
+            break
+          case 'season_complete': {
+            const seasonConstellations = getSeasonConstellations(value)
+            current = seasonConstellations.filter(id =>
+              team.teamDiscoveries.includes(id)
+            ).length
+            value = seasonConstellations.length
+            break
+          }
+          case 'all_seasons': {
+            let completed = 0
+            let total = Object.keys(SEASONS).length
+            Object.keys(SEASONS).forEach(seasonId => {
+              const seasonConstellations = getSeasonConstellations(seasonId)
+              if (seasonConstellations.every(id => team.teamDiscoveries.includes(id))) {
+                completed++
+              }
+            })
+            current = completed
+            value = total
+            break
+          }
+          case 'team_logs':
+            current = team.teamLogs.length
+            break
+          case 'team_expeditions':
+            current = team.teamExpeditionsCompleted
+            break
+          case 'all_members_level':
+            current = team.members.filter(m => m.level >= value).length
+            value = team.members.length
+            break
+          case 'team_streak':
+            current = team.teamStreakDays
+            break
+          case 'team_discover_all':
+            current = team.teamDiscoveries.length
+            break
+        }
+
+        const percentage = Math.min(100, Math.round((current / value) * 100))
+        const isActive = team.activeTasks.some(t => t.taskId === taskId)
+        const isCompleted = team.completedTasks.some(t => t.taskId === taskId)
+
+        return {
+          task,
+          current,
+          target: value,
+          percentage,
+          isActive,
+          isCompleted
+        }
+      },
+
       activePanel: null,
       setActivePanel: (panel) =>
         set((state) => {
@@ -1971,6 +2537,37 @@ export const useGameStore = create(
             unlockedBadges: [],
             hints: 0,
             activeQuiz: null
+          },
+          team: {
+            enabled: false,
+            teamName: '星空探索队',
+            teamLevel: 1,
+            teamXP: 0,
+            teamStardust: 0,
+            members: [
+              {
+                id: 'player',
+                name: '我',
+                avatar: '🌟',
+                role: 'leader',
+                xp: 0,
+                level: 1,
+                joinedAt: Date.now(),
+                isSelf: true,
+                discoveries: []
+              }
+            ],
+            activeTasks: [],
+            completedTasks: [],
+            teamDiscoveries: [],
+            teamPerfectObservations: {},
+            teamTotalObservations: {},
+            teamLogs: [],
+            unlockedTeamAchievements: [],
+            teamPerfectStreak: 0,
+            teamStreakDays: 0,
+            lastActiveDate: null,
+            teamExpeditionsCompleted: 0
           }
         })
     }),
@@ -1994,7 +2591,8 @@ export const useGameStore = create(
         familyMode: state.familyMode,
         nightExpedition: state.nightExpedition,
         observationCalendar: state.observationCalendar,
-        quiz: state.quiz
+        quiz: state.quiz,
+        team: state.team
       })
     }
   )
