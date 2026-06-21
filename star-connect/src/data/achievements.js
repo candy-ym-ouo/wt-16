@@ -94,6 +94,54 @@ export const ACHIEVEMENTS = [
     icon: '💪',
     category: 'special',
     condition: { type: 'total_mistakes', value: 20 }
+  },
+  {
+    id: 'expedition_first',
+    name: '夜行初旅',
+    description: '完成第一次夜间远征',
+    icon: '🌙',
+    category: 'expedition',
+    condition: { type: 'expedition_complete', value: 1 }
+  },
+  {
+    id: 'expedition_5',
+    name: '远征常客',
+    description: '完成5次夜间远征',
+    icon: '🗺️',
+    category: 'expedition',
+    condition: { type: 'expedition_complete', value: 5 }
+  },
+  {
+    id: 'expedition_half',
+    name: '半程征途',
+    description: '在单次远征中通过3关',
+    icon: '⛰️',
+    category: 'expedition',
+    condition: { type: 'expedition_stages', value: 3 }
+  },
+  {
+    id: 'expedition_full',
+    name: '月下征途',
+    description: '在单次远征中通过全部6关',
+    icon: '🏆',
+    category: 'expedition',
+    condition: { type: 'expedition_stages', value: 6 }
+  },
+  {
+    id: 'expedition_perfect_3',
+    name: '零失误远征',
+    description: '累计3次完美通关远征关卡',
+    icon: '💫',
+    category: 'expedition',
+    condition: { type: 'expedition_perfect', value: 3 }
+  },
+  {
+    id: 'expedition_stardust',
+    name: '星尘收集者',
+    description: '远征累计获得500星尘',
+    icon: '✦',
+    category: 'expedition',
+    condition: { type: 'expedition_stardust', value: 500 }
   }
 ]
 

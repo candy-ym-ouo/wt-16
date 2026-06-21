@@ -3,7 +3,7 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition } = useGameStore()
   const progress = getProgress()
   const familyProgress = getFamilyProgress()
   const currentSeason = getCurrentSeason()
@@ -34,6 +34,15 @@ export default function BottomNav() {
         ? familyProgress.unlockedAchievements.toString()
         : familyMode.enabled ? 'ON' : null,
       badgeColor: familyMode.enabled ? 'bg-green-500 text-white' : null
+    },
+    {
+      id: 'expedition',
+      label: '远征',
+      icon: '🌙',
+      badge: nightExpedition.currentRun?.active
+        ? `${nightExpedition.currentRun.stageIndex + 1}`
+        : nightExpedition.stamina < 5 ? `${nightExpedition.stamina}` : null,
+      badgeColor: nightExpedition.currentRun?.active ? 'bg-violet-500 text-white' : null
     },
     {
       id: null,

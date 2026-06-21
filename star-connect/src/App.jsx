@@ -9,6 +9,7 @@ import StarAtlas from './components/StarAtlas'
 import BottomNav from './components/BottomNav'
 import AchievementToast from './components/AchievementToast'
 import FamilyMode from './components/FamilyMode'
+import NightExpedition from './components/NightExpedition'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
       {activePanel === 'settings' && <SettingsPanel />}
       {activePanel === 'seasons' && <SeasonPlan />}
       {activePanel === 'family' && <FamilyMode />}
+      {activePanel === 'expedition' && <NightExpedition />}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />

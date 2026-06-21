@@ -18,6 +18,12 @@ import {
   getFamilyTaskById,
   getFamilyAchievementById
 } from '../data/familyMode'
+import {
+  STAMINA_CONFIG,
+  generateExpeditionRoute,
+  calculateExpeditionRewards,
+  getRecoveredStamina
+} from '../data/nightExpedition'
 
 let autoSaveEnabled = true
 
@@ -76,7 +82,8 @@ export const useGameStore = create(
             totalObservations: state.totalObservations,
             seasonHistory: state.seasonHistory,
             favoriteConstellations: state.favoriteConstellations,
-            familyMode: state.familyMode
+            familyMode: state.familyMode,
+            nightExpedition: state.nightExpedition
           },
           version: 0
         }
@@ -500,6 +507,256 @@ export const useGameStore = create(
         }
       },
 
+      nightExpedition: {
+        stamina: STAMINA_CONFIG.initialStamina,
+        lastStaminaUpdate: Date.now(),
+        currentRun: null,
+        history: [],
+        totalCompleted: 0,
+        highestStagesCleared: 0,
+        totalPerfectStages: 0,
+        totalStardustEarned: 0
+      },
+
+      syncExpeditionStamina: () => {
+        const state = get()
+        const ne = state.nightExpedition
+        if (ne.stamina >= STAMINA_CONFIG.maxStamina) return
+
+        const recovered = getRecoveredStamina(ne.lastStaminaUpdate, ne.stamina)
+        if (recovered > 0) {
+          const intervalsUsed = recovered / STAMINA_CONFIG.recoveryAmount
+          const newLastUpdate = ne.lastStaminaUpdate + (intervalsUsed * STAMINA_CONFIG.recoveryIntervalMs)
+
+          set((state) => ({
+            nightExpedition: {
+              ...state.nightExpedition,
+              stamina: Math.min(state.nightExpedition.stamina + recovered, STAMINA_CONFIG.maxStamina),
+              lastStaminaUpdate: newLastUpdate
+            }
+          }))
+        }
+      },
+
+      startExpedition: () => {
+        get().syncExpeditionStamina()
+        const syncedStamina = get().nightExpedition.stamina
+
+        if (syncedStamina < STAMINA_CONFIG.stageCost) return false
+
+        const route = generateExpeditionRoute()
+        const firstStage = route[0]
+
+        set((state) => ({
+          nightExpedition: {
+            ...state.nightExpedition,
+            stamina: state.nightExpedition.stamina - STAMINA_CONFIG.stageCost,
+            lastStaminaUpdate: Date.now(),
+            currentRun: {
+              route,
+              stageIndex: 0,
+              mistakesInStage: 0,
+              clearedStages: [],
+              perfectCount: 0,
+              startTime: Date.now(),
+              active: true
+            }
+          },
+          currentTargetConstellation: firstStage.constellationId,
+          connectionPath: [],
+          mistakes: 0,
+          perfectRun: true
+        }))
+
+        get().addLog({
+          type: 'expedition_start',
+          timestamp: Date.now(),
+          totalStages: route.length
+        })
+
+        return true
+      },
+
+      advanceExpeditionStage: () => {
+        const state = get()
+        const ne = state.nightExpedition
+        const run = ne.currentRun
+        if (!run || !run.active) return null
+
+        const currentStage = run.route[run.stageIndex]
+        const isPerfect = run.mistakesInStage === 0
+
+        const clearedStage = {
+          ...currentStage,
+          mistakes: run.mistakesInStage,
+          perfect: isPerfect,
+          completedAt: Date.now()
+        }
+
+        const newClearedStages = [...run.clearedStages, clearedStage]
+        const newPerfectCount = run.perfectCount + (isPerfect ? 1 : 0)
+        const nextIndex = run.stageIndex + 1
+
+        if (nextIndex >= run.route.length) {
+          return get().completeExpedition(newClearedStages, newPerfectCount)
+        }
+
+        const nextStage = run.route[nextIndex]
+
+        get().syncExpeditionStamina()
+        const syncedStamina = get().nightExpedition.stamina
+
+        if (syncedStamina < STAMINA_CONFIG.stageCost) {
+          return get().completeExpedition(newClearedStages, newPerfectCount, true)
+        }
+
+        set((state) => ({
+          nightExpedition: {
+            ...state.nightExpedition,
+            stamina: state.nightExpedition.stamina - STAMINA_CONFIG.stageCost,
+            lastStaminaUpdate: Date.now(),
+            currentRun: {
+              ...state.nightExpedition.currentRun,
+              stageIndex: nextIndex,
+              mistakesInStage: 0,
+              clearedStages: newClearedStages,
+              perfectCount: newPerfectCount
+            }
+          },
+          currentTargetConstellation: nextStage.constellationId,
+          connectionPath: [],
+          mistakes: 0,
+          perfectRun: true
+        }))
+
+        return { nextStage, stageIndex: nextIndex }
+      },
+
+      failExpeditionStage: () => {
+        const state = get()
+        const ne = state.nightExpedition
+        const run = ne.currentRun
+        if (!run || !run.active) return null
+
+        return get().completeExpedition(run.clearedStages, run.perfectCount)
+      },
+
+      completeExpedition: (clearedStages, perfectCount, staminaOut = false) => {
+        const state = get()
+        const ne = state.nightExpedition
+        const run = ne.currentRun
+        if (!run) return null
+
+        const totalStages = run.route.length
+        const rewards = calculateExpeditionRewards(clearedStages, perfectCount, totalStages)
+
+        const entry = {
+          clearedStages,
+          perfectCount,
+          totalStages,
+          stagesCleared: clearedStages.length,
+          rewards,
+          staminaOut,
+          startTime: run.startTime,
+          endTime: Date.now(),
+          duration: Date.now() - run.startTime
+        }
+
+        set((state) => ({
+          nightExpedition: {
+            ...state.nightExpedition,
+            currentRun: null,
+            history: [entry, ...state.nightExpedition.history].slice(0, 50),
+            totalCompleted: state.nightExpedition.totalCompleted + 1,
+            highestStagesCleared: Math.max(
+              state.nightExpedition.highestStagesCleared,
+              clearedStages.length
+            ),
+            totalPerfectStages: state.nightExpedition.totalPerfectStages + perfectCount,
+            totalStardustEarned: state.nightExpedition.totalStardustEarned + rewards.stardust
+          },
+          currentTargetConstellation: null,
+          connectionPath: [],
+          mistakes: 0
+        }))
+
+        get().addLog({
+          type: 'expedition_complete',
+          timestamp: Date.now(),
+          stagesCleared: clearedStages.length,
+          totalStages,
+          perfectCount,
+          stardustEarned: rewards.stardust
+        })
+
+        get().checkAchievements()
+
+        return entry
+      },
+
+      abandonExpedition: () => {
+        const state = get()
+        const ne = state.nightExpedition
+        const run = ne.currentRun
+        if (!run || !run.active) return
+
+        if (run.clearedStages.length > 0) {
+          get().completeExpedition(run.clearedStages, run.perfectCount)
+        } else {
+          set((state) => ({
+            nightExpedition: {
+              ...state.nightExpedition,
+              currentRun: null
+            },
+            currentTargetConstellation: null,
+            connectionPath: [],
+            mistakes: 0
+          }))
+        }
+      },
+
+      recordExpeditionMistake: () => {
+        const state = get()
+        const ne = state.nightExpedition
+        const run = ne.currentRun
+        if (!run || !run.active) return false
+
+        const currentStage = run.route[run.stageIndex]
+        const newMistakes = run.mistakesInStage + 1
+
+        if (newMistakes > currentStage.allowedMistakes) {
+          get().failExpeditionStage()
+          return 'failed'
+        }
+
+        set((state) => ({
+          nightExpedition: {
+            ...state.nightExpedition,
+            currentRun: {
+              ...state.nightExpedition.currentRun,
+              mistakesInStage: newMistakes
+            }
+          }
+        }))
+
+        return 'continue'
+      },
+
+      getExpeditionProgress: () => {
+        const state = get()
+        const ne = state.nightExpedition
+        return {
+          totalCompleted: ne.totalCompleted,
+          highestStagesCleared: ne.highestStagesCleared,
+          totalPerfectStages: ne.totalPerfectStages,
+          totalStardustEarned: ne.totalStardustEarned,
+          totalRuns: ne.history.length,
+          avgStagesCleared: ne.history.length > 0
+            ? Math.round(ne.history.reduce((sum, h) => sum + h.stagesCleared, 0) / ne.history.length * 10) / 10
+            : 0
+        }
+      },
+
       discoveredConstellations: [],
       discoveredStars: [],
       connectionPath: [],
@@ -539,11 +796,20 @@ export const useGameStore = create(
           )
 
           if (!isValidEdge) {
+            const ne = state.nightExpedition
+            const inExpedition = ne.currentRun?.active
+
             set({
               mistakes: state.mistakes + 1,
               totalMistakes: state.totalMistakes + 1,
               perfectRun: false
             })
+
+            if (inExpedition) {
+              const result = get().recordExpeditionMistake()
+              if (result === 'failed') return false
+            }
+
             get().checkAchievements()
             return false
           }
@@ -639,6 +905,11 @@ export const useGameStore = create(
           }
 
           get().checkSeasonProgress()
+
+          if (state.nightExpedition.currentRun?.active) {
+            get().advanceExpeditionStage()
+          }
+
           return true
         }
         return false
@@ -827,6 +1098,18 @@ export const useGameStore = create(
                 s => state.seasonProgress[s]?.master === true
               )
               break
+            case 'expedition_complete':
+              unlocked = state.nightExpedition.totalCompleted >= value
+              break
+            case 'expedition_stages':
+              unlocked = state.nightExpedition.highestStagesCleared >= value
+              break
+            case 'expedition_perfect':
+              unlocked = state.nightExpedition.totalPerfectStages >= value
+              break
+            case 'expedition_stardust':
+              unlocked = state.nightExpedition.totalStardustEarned >= value
+              break
           }
 
           if (unlocked) {
@@ -955,6 +1238,16 @@ export const useGameStore = create(
             unlockedFamilyAchievements: [],
             quizScores: [],
             familyLog: []
+          },
+          nightExpedition: {
+            stamina: STAMINA_CONFIG.initialStamina,
+            lastStaminaUpdate: Date.now(),
+            currentRun: null,
+            history: [],
+            totalCompleted: 0,
+            highestStagesCleared: 0,
+            totalPerfectStages: 0,
+            totalStardustEarned: 0
           }
         })
     }),
@@ -975,7 +1268,8 @@ export const useGameStore = create(
         totalObservations: state.totalObservations,
         seasonHistory: state.seasonHistory,
         favoriteConstellations: state.favoriteConstellations,
-        familyMode: state.familyMode
+        familyMode: state.familyMode,
+        nightExpedition: state.nightExpedition
       })
     }
   )
