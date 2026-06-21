@@ -8,10 +8,12 @@ import SeasonPlan from './components/SeasonPlan'
 import StarAtlas from './components/StarAtlas'
 import BottomNav from './components/BottomNav'
 import AchievementToast from './components/AchievementToast'
+import FamilyMode from './components/FamilyMode'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
   const activePanel = useGameStore((s) => s.activePanel)
+  const familyModeEnabled = useGameStore((s) => s.familyMode.enabled)
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-space-900">
@@ -29,6 +31,7 @@ export default function App() {
       {activePanel === 'achievements' && <Achievements />}
       {activePanel === 'settings' && <SettingsPanel />}
       {activePanel === 'seasons' && <SeasonPlan />}
+      {activePanel === 'family' && <FamilyMode />}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />

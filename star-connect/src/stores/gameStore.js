@@ -12,6 +12,12 @@ import {
   getCurrentSeason,
   getSeasonPhaseProgress
 } from '../data/seasonPlan'
+import {
+  FAMILY_TASKS,
+  FAMILY_ACHIEVEMENTS,
+  getFamilyTaskById,
+  getFamilyAchievementById
+} from '../data/familyMode'
 
 let autoSaveEnabled = true
 
@@ -69,7 +75,8 @@ export const useGameStore = create(
             perfectObservations: state.perfectObservations,
             totalObservations: state.totalObservations,
             seasonHistory: state.seasonHistory,
-            favoriteConstellations: state.favoriteConstellations
+            favoriteConstellations: state.favoriteConstellations,
+            familyMode: state.familyMode
           },
           version: 0
         }
@@ -84,6 +91,413 @@ export const useGameStore = create(
             : [...state.favoriteConstellations, constellationId]
         })),
       isFavorite: (constellationId) => get().favoriteConstellations.includes(constellationId),
+
+      familyMode: {
+        enabled: false,
+        currentRole: null,
+        familyMembers: {
+          parent: { name: '家长', avatar: '👨‍👩‍👧', xp: 0, level: 1 },
+          child: { name: '孩子', avatar: '🧒', xp: 0, level: 1 }
+        },
+        activeTaskId: null,
+        currentStepIndex: 0,
+        turnRole: null,
+        collaborativeCount: 0,
+        turnCompleteCount: 0,
+        guidedCompleteCount: 0,
+        perfectStreak: 0,
+        mythologyToldCount: 0,
+        childIndependentCount: 0,
+        parentGuidedCount: 0,
+        familyDiscoveredConstellations: [],
+        totalMinutes: 0,
+        sessionStartTime: null,
+        lastActiveDate: null,
+        streakDays: 0,
+        completedTasks: [],
+        unlockedFamilyAchievements: [],
+        quizScores: [],
+        familyLog: []
+      },
+
+      setFamilyMode: (enabled) => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          enabled,
+          sessionStartTime: enabled ? Date.now() : null
+        }
+      })),
+
+      setFamilyRole: (role) => set((state) => ({
+        familyMode: { ...state.familyMode, currentRole: role }
+      })),
+
+      updateFamilyMember: (role, data) => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          familyMembers: {
+            ...state.familyMode.familyMembers,
+            [role]: { ...state.familyMode.familyMembers[role], ...data }
+          }
+        }
+      })),
+
+      addFamilyXP: (role, amount) => set((state) => {
+        const member = state.familyMode.familyMembers[role]
+        const newXP = member.xp + amount
+        const newLevel = Math.floor(newXP / 100) + 1
+        return {
+          familyMode: {
+            ...state.familyMode,
+            familyMembers: {
+              ...state.familyMode.familyMembers,
+              [role]: { ...member, xp: newXP, level: newLevel }
+            }
+          }
+        }
+      }),
+
+      startFamilyTask: (taskId) => {
+        const task = getFamilyTaskById(taskId)
+        if (!task) return false
+        
+        const firstStep = task.steps?.[0]
+        set((state) => ({
+          familyMode: {
+            ...state.familyMode,
+            activeTaskId: taskId,
+            currentStepIndex: 0,
+            turnRole: firstStep?.role || null
+          }
+        }))
+        return true
+      },
+
+      nextTaskStep: () => {
+        const state = get()
+        const task = getFamilyTaskById(state.familyMode.activeTaskId)
+        if (!task || !task.steps) return null
+        
+        const nextIndex = state.familyMode.currentStepIndex + 1
+        if (nextIndex >= task.steps.length) {
+          get().completeFamilyTask()
+          return null
+        }
+        
+        const nextStep = task.steps[nextIndex]
+        set((state) => ({
+          familyMode: {
+            ...state.familyMode,
+            currentStepIndex: nextIndex,
+            turnRole: nextStep?.role || null
+          }
+        }))
+        return nextStep
+      },
+
+      completeFamilyTask: () => {
+        const state = get()
+        const taskId = state.familyMode.activeTaskId
+        const task = getFamilyTaskById(taskId)
+        
+        if (!task) return null
+        
+        set((state) => {
+          const newState = {
+            familyMode: {
+              ...state.familyMode,
+              activeTaskId: null,
+              currentStepIndex: 0,
+              turnRole: null,
+              completedTasks: [...state.familyMode.completedTasks, {
+                taskId,
+                completedAt: Date.now(),
+                perfect: state.familyMode.perfectStreak > 0
+              }]
+            }
+          }
+          
+          if (task.type === 'collaborative') {
+            newState.familyMode.collaborativeCount = state.familyMode.collaborativeCount + 1
+          } else if (task.type === 'turn_based') {
+            newState.familyMode.turnCompleteCount = state.familyMode.turnCompleteCount + 1
+          } else if (task.type === 'guided') {
+            newState.familyMode.guidedCompleteCount = state.familyMode.guidedCompleteCount + 1
+          }
+          
+          if (task.reward?.xp) {
+            const parentMember = newState.familyMode.familyMembers.parent
+            const childMember = newState.familyMode.familyMembers.child
+            
+            const parentXP = parentMember.xp + Math.floor(task.reward.xp * 0.4)
+            const childXP = childMember.xp + Math.floor(task.reward.xp * 0.6)
+            
+            newState.familyMode.familyMembers = {
+              parent: { ...parentMember, xp: parentXP, level: Math.floor(parentXP / 100) + 1 },
+              child: { ...childMember, xp: childXP, level: Math.floor(childXP / 100) + 1 }
+            }
+          }
+          
+          return newState
+        })
+        
+        get().checkFamilyAchievements()
+        return task
+      },
+
+      recordMythologyTold: () => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          mythologyToldCount: state.familyMode.mythologyToldCount + 1
+        }
+      })),
+
+      recordChildIndependent: () => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          childIndependentCount: state.familyMode.childIndependentCount + 1
+        }
+      })),
+
+      recordParentGuided: () => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          parentGuidedCount: state.familyMode.parentGuidedCount + 1
+        }
+      })),
+
+      recordQuizScore: (score, total) => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          quizScores: [...state.familyMode.quizScores, {
+            score,
+            total,
+            percentage: Math.round((score / total) * 100),
+            date: Date.now()
+          }]
+        }
+      })),
+
+      updateFamilyPerfectStreak: (isPerfect) => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          perfectStreak: isPerfect ? state.familyMode.perfectStreak + 1 : 0
+        }
+      })),
+
+      addFamilyLog: (entry) => set((state) => ({
+        familyMode: {
+          ...state.familyMode,
+          familyLog: [entry, ...state.familyMode.familyLog].slice(0, 200)
+        }
+      })),
+
+      checkFamilyStreak: () => {
+        const today = new Date().toDateString()
+        const state = get()
+        const lastDate = state.familyMode.lastActiveDate
+        
+        if (lastDate === today) return
+        
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        
+        let newStreak = 1
+        if (lastDate === yesterday.toDateString()) {
+          newStreak = state.familyMode.streakDays + 1
+        }
+        
+        set((state) => ({
+          familyMode: {
+            ...state.familyMode,
+            lastActiveDate: today,
+            streakDays: newStreak
+          }
+        }))
+        
+        get().checkFamilyAchievements()
+      },
+
+      endFamilySession: () => {
+        const state = get()
+        if (state.familyMode.sessionStartTime) {
+          const sessionMinutes = Math.round((Date.now() - state.familyMode.sessionStartTime) / 60000)
+          set((state) => ({
+            familyMode: {
+              ...state.familyMode,
+              totalMinutes: state.familyMode.totalMinutes + sessionMinutes,
+              sessionStartTime: null
+            }
+          }))
+          get().checkFamilyAchievements()
+        }
+      },
+
+      checkFamilyAchievements: () => {
+        const state = get()
+        if (!state.familyMode.enabled) return []
+        
+        const newlyUnlocked = []
+        const fm = state.familyMode
+        
+        FAMILY_ACHIEVEMENTS.forEach((achievement) => {
+          if (fm.unlockedFamilyAchievements.includes(achievement.id)) return
+          
+          const { type, value } = achievement.condition
+          let unlocked = false
+          
+          switch (type) {
+            case 'collaborative_complete':
+              unlocked = fm.collaborativeCount >= value
+              break
+            case 'turn_complete':
+              unlocked = fm.turnCompleteCount >= value
+              break
+            case 'quiz_score':
+              const bestScore = fm.quizScores.length > 0 
+                ? Math.max(...fm.quizScores.map(s => s.percentage))
+                : 0
+              unlocked = bestScore >= value
+              break
+            case 'guided_complete':
+              unlocked = fm.guidedCompleteCount >= value
+              break
+            case 'perfect_streak':
+              unlocked = fm.perfectStreak >= value
+              break
+            case 'season_discovery': {
+              const currentSeason = getCurrentSeason()
+              const seasonConstellations = getSeasonConstellations(currentSeason)
+              const discoveredInSeason = seasonConstellations.filter(id =>
+                fm.familyDiscoveredConstellations.includes(id)
+              ).length
+              unlocked = discoveredInSeason >= seasonConstellations.length * value
+              break
+            }
+            case 'mythology_told':
+              unlocked = fm.mythologyToldCount >= value
+              break
+            case 'streak_days':
+              unlocked = fm.streakDays >= value
+              break
+            case 'total_minutes':
+              unlocked = fm.totalMinutes >= value
+              break
+            case 'child_independent':
+              unlocked = fm.childIndependentCount >= value
+              break
+            case 'parent_guided':
+              unlocked = fm.parentGuidedCount >= value
+              break
+            case 'family_discover_all':
+              unlocked = fm.familyDiscoveredConstellations.length >= value
+              break
+          }
+          
+          if (unlocked) {
+            newlyUnlocked.push(achievement.id)
+          }
+        })
+        
+        if (newlyUnlocked.length > 0) {
+          set((state) => ({
+            familyMode: {
+              ...state.familyMode,
+              unlockedFamilyAchievements: [
+                ...state.familyMode.unlockedFamilyAchievements,
+                ...newlyUnlocked
+              ]
+            }
+          }))
+          
+          newlyUnlocked.forEach((id) => {
+            const achievement = getFamilyAchievementById(id)
+            if (achievement) {
+              get().addFamilyLog({
+                type: 'family_achievement',
+                achievementId: id,
+                achievementName: achievement.name,
+                timestamp: Date.now()
+              })
+            }
+          })
+        }
+        
+        return newlyUnlocked
+      },
+
+      recordFamilyDiscovery: (constellationId, isPerfect) => {
+        set((state) => {
+          const alreadyDiscovered = state.familyMode.familyDiscoveredConstellations.includes(constellationId)
+          const newDiscovered = alreadyDiscovered
+            ? state.familyMode.familyDiscoveredConstellations
+            : [...state.familyMode.familyDiscoveredConstellations, constellationId]
+          
+          return {
+            familyMode: {
+              ...state.familyMode,
+              familyDiscoveredConstellations: newDiscovered,
+              perfectStreak: isPerfect ? state.familyMode.perfectStreak + 1 : 0
+            }
+          }
+        })
+        get().checkFamilyAchievements()
+      },
+
+      getFamilyProgress: () => {
+        const state = get()
+        const fm = state.familyMode
+        
+        return {
+          totalAchievements: FAMILY_ACHIEVEMENTS.length,
+          unlockedAchievements: fm.unlockedFamilyAchievements.length,
+          totalTasks: FAMILY_TASKS.length,
+          completedTasks: fm.completedTasks.length,
+          parentLevel: fm.familyMembers.parent.level,
+          childLevel: fm.familyMembers.child.level,
+          parentXP: fm.familyMembers.parent.xp,
+          childXP: fm.familyMembers.child.xp,
+          totalMinutes: fm.totalMinutes,
+          streakDays: fm.streakDays,
+          discoveredConstellations: fm.familyDiscoveredConstellations.length,
+          collaborativeCount: fm.collaborativeCount,
+          turnCompleteCount: fm.turnCompleteCount,
+          guidedCompleteCount: fm.guidedCompleteCount
+        }
+      },
+
+      getFamilyGrowthData: () => {
+        const state = get()
+        const fm = state.familyMode
+        
+        const weeklyData = []
+        const today = new Date()
+        
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today)
+          date.setDate(date.getDate() - i)
+          const dateStr = date.toDateString()
+          
+          const dayLogs = fm.familyLog.filter(log => {
+            const logDate = new Date(log.timestamp).toDateString()
+            return logDate === dateStr
+          })
+          
+          weeklyData.push({
+            date: date.toLocaleDateString('zh-CN', { weekday: 'short' }),
+            sessions: dayLogs.length,
+            discoveries: dayLogs.filter(l => l.type === 'discovery').length
+          })
+        }
+        
+        return {
+          weeklyData,
+          totalSessions: Math.floor(fm.totalMinutes / 30),
+          avgSessionLength: fm.totalMinutes > 0 
+            ? Math.round(fm.totalMinutes / Math.max(1, Math.floor(fm.totalMinutes / 30)))
+            : 0
+        }
+      },
 
       discoveredConstellations: [],
       discoveredStars: [],
@@ -191,6 +605,17 @@ export const useGameStore = create(
               type: 'reobservation',
               constellationId,
               perfect: isPerfect,
+              timestamp: Date.now()
+            })
+          }
+
+          if (state.familyMode.enabled) {
+            get().recordFamilyDiscovery(constellationId, isPerfect)
+            get().addFamilyLog({
+              type: alreadyDiscovered ? 'reobservation' : 'discovery',
+              constellationId,
+              perfect: isPerfect,
+              role: state.familyMode.turnRole || state.familyMode.currentRole,
               timestamp: Date.now()
             })
           }
@@ -485,7 +910,34 @@ export const useGameStore = create(
           perfectObservations: {},
           totalObservations: {},
           seasonHistory: [],
-          favoriteConstellations: []
+          favoriteConstellations: [],
+          familyMode: {
+            enabled: false,
+            currentRole: null,
+            familyMembers: {
+              parent: { name: '家长', avatar: '👨‍👩‍👧', xp: 0, level: 1 },
+              child: { name: '孩子', avatar: '🧒', xp: 0, level: 1 }
+            },
+            activeTaskId: null,
+            currentStepIndex: 0,
+            turnRole: null,
+            collaborativeCount: 0,
+            turnCompleteCount: 0,
+            guidedCompleteCount: 0,
+            perfectStreak: 0,
+            mythologyToldCount: 0,
+            childIndependentCount: 0,
+            parentGuidedCount: 0,
+            familyDiscoveredConstellations: [],
+            totalMinutes: 0,
+            sessionStartTime: null,
+            lastActiveDate: null,
+            streakDays: 0,
+            completedTasks: [],
+            unlockedFamilyAchievements: [],
+            quizScores: [],
+            familyLog: []
+          }
         })
     }),
     {
@@ -504,7 +956,8 @@ export const useGameStore = create(
         perfectObservations: state.perfectObservations,
         totalObservations: state.totalObservations,
         seasonHistory: state.seasonHistory,
-        favoriteConstellations: state.favoriteConstellations
+        favoriteConstellations: state.favoriteConstellations,
+        familyMode: state.familyMode
       })
     }
   )

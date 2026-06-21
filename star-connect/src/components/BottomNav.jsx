@@ -3,8 +3,9 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress } = useGameStore()
   const progress = getProgress()
+  const familyProgress = getFamilyProgress()
   const currentSeason = getCurrentSeason()
   const seasonStats = getSeasonStats()
   const currentSeasonProgress = seasonStats[currentSeason]
@@ -26,10 +27,13 @@ export default function BottomNav() {
       badge: favoriteConstellations.length > 0 ? favoriteConstellations.length.toString() : null
     },
     {
-      id: 'log',
-      label: '日志',
-      icon: '📖',
-      badge: observationLogs.length > 0 ? observationLogs.length.toString() : null
+      id: 'family',
+      label: '亲子',
+      icon: '👨‍👩‍👧',
+      badge: familyProgress.unlockedAchievements > 0 && !familyMode.enabled
+        ? familyProgress.unlockedAchievements.toString()
+        : familyMode.enabled ? 'ON' : null,
+      badgeColor: familyMode.enabled ? 'bg-green-500 text-white' : null
     },
     {
       id: null,
@@ -67,6 +71,16 @@ export default function BottomNav() {
       audioManager.playPanelOpen()
     }
     const isClosingAtlas = panelId === 'atlas' && activePanel === 'atlas'
+    
+    if (panelId === 'family') {
+      if (activePanel === 'family') {
+        setActivePanel(null)
+      } else {
+        setActivePanel('family')
+      }
+      return
+    }
+    
     if (isClosingAtlas) {
       setActivePanel(null)
     } else if (panelId === 'atlas') {
@@ -104,9 +118,9 @@ export default function BottomNav() {
                   {item.label}
                 </span>
                 {item.badge && !isActive && (
-                  <span className="absolute -top-0.5 -right-0.5 px-1 h-4 min-w-[16px] rounded-full
-                                 bg-star-gold text-space-900 text-[8px] font-bold
-                                 flex items-center justify-center">
+                  <span className={`absolute -top-0.5 -right-0.5 px-1 h-4 min-w-[16px] rounded-full
+                                 text-[8px] font-bold flex items-center justify-center
+                                 ${item.badgeColor || 'bg-star-gold text-space-900'}`}>
                     {item.badge.length > 3 ? '99+' : item.badge}
                   </span>
                 )}
