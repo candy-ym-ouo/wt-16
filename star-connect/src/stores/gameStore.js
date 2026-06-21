@@ -49,6 +49,16 @@ import {
   getTeamTaskById,
   getTeamAchievementById
 } from '../data/team'
+import {
+  INITIAL_GALLERY_PHOTOS,
+  getGalleryStats,
+  filterGalleryPhotos,
+  getPhotoById,
+  toggleFeatured,
+  addPhoto,
+  updatePhoto,
+  deletePhoto
+} from '../data/starGallery'
 
 let autoSaveEnabled = true
 
@@ -110,7 +120,8 @@ export const useGameStore = create(
             familyMode: state.familyMode,
             nightExpedition: state.nightExpedition,
             observationCalendar: state.observationCalendar,
-            quiz: state.quiz
+            quiz: state.quiz,
+            starGallery: state.starGallery
           },
           version: 0
         }
@@ -2512,6 +2523,165 @@ export const useGameStore = create(
         }
       },
 
+      starGallery: {
+        photos: INITIAL_GALLERY_PHOTOS,
+        activeGalleryPanel: 'grid',
+        selectedPhotoId: null,
+        galleryFilters: {
+          season: 'all',
+          difficulty: 'all',
+          category: 'all',
+          featuredOnly: false,
+          search: '',
+          sortBy: 'featured'
+        }
+      },
+
+      setActiveGalleryPanel: (panel) => set((state) => ({
+        starGallery: { ...state.starGallery, activeGalleryPanel: panel }
+      })),
+
+      setSelectedPhotoId: (photoId) => set((state) => ({
+        starGallery: { ...state.starGallery, selectedPhotoId: photoId }
+      })),
+
+      setGalleryFilters: (filters) => set((state) => ({
+        starGallery: {
+          ...state.starGallery,
+          galleryFilters: { ...state.starGallery.galleryFilters, ...filters }
+        }
+      })),
+
+      resetGalleryFilters: () => set((state) => ({
+        starGallery: {
+          ...state.starGallery,
+          galleryFilters: {
+            season: 'all',
+            difficulty: 'all',
+            category: 'all',
+            featuredOnly: false,
+            search: '',
+            sortBy: 'featured'
+          }
+        }
+      })),
+
+      addGalleryPhoto: (photoData) => {
+        const state = get()
+        const newPhotos = addPhoto(state.starGallery.photos, photoData)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+        get().addLog({
+          type: 'gallery_photo_added',
+          title: photoData.title,
+          timestamp: Date.now()
+        })
+        get().checkGalleryAchievements()
+        return newPhotos[0]
+      },
+
+      updateGalleryPhoto: (photoId, updates) => {
+        const state = get()
+        const newPhotos = updatePhoto(state.starGallery.photos, photoId, updates)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+      },
+
+      deleteGalleryPhoto: (photoId) => {
+        const state = get()
+        const newPhotos = deletePhoto(state.starGallery.photos, photoId)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+      },
+
+      togglePhotoFeatured: (photoId) => {
+        const state = get()
+        const newPhotos = toggleFeatured(state.starGallery.photos, photoId)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+        get().addLog({
+          type: 'gallery_featured',
+          photoId,
+          timestamp: Date.now()
+        })
+        get().checkGalleryAchievements()
+      },
+
+      incrementPhotoViews: (photoId) => {
+        const state = get()
+        const photo = getPhotoById(state.starGallery.photos, photoId)
+        if (photo) {
+          set((state) => ({
+            starGallery: {
+              ...state.starGallery,
+              photos: state.starGallery.photos.map(p =>
+                p.id === photoId ? { ...p, views: p.views + 1 } : p
+              )
+            }
+          }))
+        }
+      },
+
+      likePhoto: (photoId) => {
+        const state = get()
+        const photo = getPhotoById(state.starGallery.photos, photoId)
+        if (photo) {
+          set((state) => ({
+            starGallery: {
+              ...state.starGallery,
+              photos: state.starGallery.photos.map(p =>
+                p.id === photoId ? { ...p, likes: p.likes + 1 } : p
+              )
+            }
+          }))
+        }
+      },
+
+      getGalleryStats: () => {
+        const state = get()
+        return getGalleryStats(
+          state.starGallery.photos,
+          state.discoveredConstellations,
+          state.perfectObservations
+        )
+      },
+
+      getFilteredPhotos: () => {
+        const state = get()
+        return filterGalleryPhotos(
+          state.starGallery.photos,
+          state.starGallery.galleryFilters
+        )
+      },
+
+      getPhotoById: (photoId) => {
+        const state = get()
+        return getPhotoById(state.starGallery.photos, photoId)
+      },
+
+      getPhotosByConstellation: (constellationId) => {
+        const state = get()
+        return state.starGallery.photos.filter(p => p.constellationId === constellationId)
+      },
+
+      getPhotosBySeason: (season) => {
+        const state = get()
+        return state.starGallery.photos.filter(p => p.season === season)
+      },
+
+      getFeaturedPhotos: () => {
+        const state = get()
+        return state.starGallery.photos.filter(p => p.featured)
+      },
+
+      checkGalleryAchievements: () => {
+        return []
+      },
+
       activePanel: null,
       setActivePanel: (panel) =>
         set((state) => {
@@ -2681,6 +2851,19 @@ export const useGameStore = create(
             teamStreakDays: 0,
             lastActiveDate: null,
             teamExpeditionsCompleted: 0
+          },
+          starGallery: {
+            photos: [],
+            activeGalleryPanel: 'grid',
+            selectedPhotoId: null,
+            galleryFilters: {
+              season: 'all',
+              difficulty: 'all',
+              category: 'all',
+              featuredOnly: false,
+              search: '',
+              sortBy: 'featured'
+            }
           }
         })
     }),
@@ -2705,7 +2888,8 @@ export const useGameStore = create(
         nightExpedition: state.nightExpedition,
         observationCalendar: state.observationCalendar,
         quiz: state.quiz,
-        team: state.team
+        team: state.team,
+        starGallery: state.starGallery
       })
     }
   )

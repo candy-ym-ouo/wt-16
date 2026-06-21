@@ -13,6 +13,7 @@ import NightExpedition from './components/NightExpedition'
 import ObservationCalendar from './components/ObservationCalendar'
 import StarQuiz from './components/StarQuiz'
 import ObservationTeam from './components/ObservationTeam'
+import StarGallery from './components/StarGallery'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
       {activePanel === 'calendar' && <ObservationCalendar />}
       {activePanel === 'quiz' && <StarQuiz />}
       {activePanel === 'team' && <ObservationTeam />}
+      {activePanel === 'gallery' && <StarGallery />}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />
