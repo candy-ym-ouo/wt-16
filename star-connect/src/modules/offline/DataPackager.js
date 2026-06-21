@@ -246,10 +246,29 @@ class DataPackager {
       version: OFFLINE_CACHE_VERSION,
       data: {
         progress,
-        logs,
+        logs: logs.map(l => {
+          const { _synced, _createdAt, ...clean } = l
+          return clean
+        }),
         settings
       }
     }
+  }
+
+  _generateLogFingerprint(entry) {
+    const parts = [
+      entry.type || 'unknown',
+      entry.constellationId || '',
+      entry.timestamp ? String(entry.timestamp) : '',
+      entry.achievementId || '',
+      entry.seasonId || '',
+      entry.phaseId || '',
+      entry.rewardId || '',
+      entry.perfect ? '1' : '0',
+      entry.routeName || '',
+      entry.eventName || ''
+    ]
+    return parts.join('|')
   }
 
   async importUserData(exportData, options = {}) {
@@ -265,21 +284,83 @@ class DataPackager {
     }
 
     let importedCount = 0
+    let duplicatedCount = 0
+    let errorsCount = 0
 
     if (data.progress) {
-      await storageAdapter.bulkPut(OBJECT_STORES.PROGRESS, data.progress)
-      importedCount += data.progress.length
-    }
-    if (data.logs) {
-      await storageAdapter.bulkPut(OBJECT_STORES.OBSERVATION_LOGS, data.logs)
-      importedCount += data.logs.length
-    }
-    if (data.settings) {
-      await storageAdapter.bulkPut(OBJECT_STORES.SETTINGS, data.settings)
-      importedCount += data.settings.length
+      for (const item of data.progress) {
+        try {
+          await storageAdapter.put(OBJECT_STORES.PROGRESS, item, item.key)
+          importedCount++
+        } catch (e) {
+          errorsCount++
+        }
+      }
     }
 
-    return { importedCount }
+    if (data.settings) {
+      for (const item of data.settings) {
+        try {
+          await storageAdapter.put(OBJECT_STORES.SETTINGS, item, item.key)
+          importedCount++
+        } catch (e) {
+          errorsCount++
+        }
+      }
+    }
+
+    if (data.logs) {
+      const existing = await storageAdapter.getAll(OBJECT_STORES.OBSERVATION_LOGS)
+      const existingFps = new Set(
+        existing.map(l => l._fingerprint || this._generateLogFingerprint(l))
+      )
+      const existingIds = new Set(existing.map(l => l.id))
+      const importBatch = []
+
+      for (const entry of data.logs) {
+        try {
+          const fingerprint = this._generateLogFingerprint(entry)
+          const id = entry.id || `log_${entry.timestamp || Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+
+          if (existingFps.has(fingerprint) || existingIds.has(id)) {
+            duplicatedCount++
+            continue
+          }
+          if (importBatch.some(i => (i._fingerprint || '') === fingerprint)) {
+            duplicatedCount++
+            continue
+          }
+
+          importBatch.push({
+            ...entry,
+            id,
+            _fingerprint: fingerprint,
+            _synced: false,
+            _createdAt: Date.now()
+          })
+        } catch (e) {
+          errorsCount++
+        }
+      }
+
+      if (importBatch.length > 0) {
+        try {
+          await storageAdapter.bulkPut(OBJECT_STORES.OBSERVATION_LOGS, importBatch)
+          importedCount += importBatch.length
+        } catch (e) {
+          for (const item of importBatch) {
+            try {
+              await storageAdapter.put(OBJECT_STORES.OBSERVATION_LOGS, item, item.id)
+              importedCount++
+            } catch (e2) {
+              errorsCount++
+            }
+          }
+        }
+      }
+    }
+
+    return { importedCount, duplicatedCount, errorsCount }
   }
 
   async getPackageInfo() {

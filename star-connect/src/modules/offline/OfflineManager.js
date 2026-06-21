@@ -269,28 +269,193 @@ class OfflineManager {
     return result
   }
 
-  async saveObservationLog(entry) {
-    await this.init()
-    const result = await storageAdapter.add(OBJECT_STORES.OBSERVATION_LOGS, {
-      ...entry,
-      id: entry.id || `log_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-      _synced: false
-    })
+  _generateLogFingerprint(entry) {
+    const parts = [
+      entry.type || 'unknown',
+      entry.constellationId || '',
+      entry.timestamp ? String(entry.timestamp) : '',
+      entry.achievementId || '',
+      entry.seasonId || '',
+      entry.phaseId || '',
+      entry.rewardId || '',
+      entry.perfect ? '1' : '0',
+      entry.routeName || '',
+      entry.eventName || ''
+    ]
+    return parts.join('|')
+  }
 
-    if (this.currentSyncStrategy === SYNC_STRATEGY.IMMEDIATE && networkMonitor.isOnline()) {
-      await this._syncEntry('observation_log', entry)
-    } else {
-      await indexedDBManager.addToSyncQueue('observation_log', entry)
+  async _findDuplicateLog(fingerprint, entry) {
+    await this.init()
+    const allLogs = await storageAdapter.getAll(OBJECT_STORES.OBSERVATION_LOGS)
+
+    if (entry.id) {
+      const byId = allLogs.find(l => l.id === entry.id)
+      if (byId) return byId
     }
 
-    return result
+    const byFp = allLogs.find(l => (l._fingerprint === fingerprint) && (l._fingerprint !== undefined))
+    if (byFp) return byFp
+
+    return allLogs.find(l =>
+      l.type === entry.type &&
+      l.timestamp === entry.timestamp &&
+      l.constellationId === entry.constellationId &&
+      l.achievementId === entry.achievementId &&
+      l.seasonId === entry.seasonId
+    )
+  }
+
+  async saveObservationLog(entry, options = {}) {
+    await this.init()
+
+    const fingerprint = this._generateLogFingerprint(entry)
+    const id = entry.id || `log_${entry.timestamp || Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+
+    if (!options.skipDedup) {
+      const existing = await this._findDuplicateLog(fingerprint, entry)
+      if (existing) {
+        return { id: existing.id, duplicated: true, existing: true }
+      }
+    }
+
+    const finalEntry = {
+      ...entry,
+      id,
+      _fingerprint: fingerprint,
+      _synced: false,
+      _createdAt: Date.now()
+    }
+
+    try {
+      await storageAdapter.put(OBJECT_STORES.OBSERVATION_LOGS, finalEntry, id)
+    } catch (e) {
+      try {
+        await storageAdapter.add(OBJECT_STORES.OBSERVATION_LOGS, finalEntry)
+      } catch (e2) {
+        const existing2 = await this._findDuplicateLog(fingerprint, entry)
+        if (existing2) {
+          return { id: existing2.id, duplicated: true, existing: true }
+        }
+        throw e2
+      }
+    }
+
+    if (this.currentSyncStrategy === SYNC_STRATEGY.IMMEDIATE && networkMonitor.isOnline()) {
+      const ok = await this._syncEntry('observation_log', finalEntry)
+      if (ok) {
+        finalEntry._synced = true
+        await storageAdapter.put(OBJECT_STORES.OBSERVATION_LOGS, finalEntry, id)
+      }
+    } else {
+      const alreadyQueued = (await indexedDBManager.getPendingSyncItems()).some(
+        q => q.operation === 'observation_log' &&
+             this._generateLogFingerprint(q.data || {}) === fingerprint
+      )
+      if (!alreadyQueued) {
+        await indexedDBManager.addToSyncQueue('observation_log', finalEntry)
+      }
+    }
+
+    return { id, duplicated: false, existing: false }
+  }
+
+  async bulkSaveObservationLogs(entries, options = {}) {
+    await this.init()
+
+    const results = { saved: 0, duplicated: 0, errors: 0, ids: [] }
+    const allExisting = await storageAdapter.getAll(OBJECT_STORES.OBSERVATION_LOGS)
+    const existingFps = new Set(allExisting.map(l => l._fingerprint).filter(Boolean))
+    const existingIds = new Set(allExisting.map(l => l.id))
+
+    const toSave = []
+    const syncQueuePending = options.skipSyncQueue ? [] : (await indexedDBManager.getPendingSyncItems())
+    const pendingSyncFps = new Set(
+      syncQueuePending
+        .filter(q => q.operation === 'observation_log')
+        .map(q => this._generateLogFingerprint(q.data || {}))
+    )
+
+    for (const entry of entries) {
+      try {
+        const fingerprint = this._generateLogFingerprint(entry)
+        const id = entry.id || `log_${entry.timestamp || Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+
+        if (!options.skipDedup) {
+          if (existingFps.has(fingerprint) || existingIds.has(id)) {
+            results.duplicated++
+            results.ids.push(id)
+            continue
+          }
+          if (toSave.some(i => i._fingerprint === fingerprint)) {
+            results.duplicated++
+            results.ids.push(id)
+            continue
+          }
+        }
+
+        const finalEntry = {
+          ...entry,
+          id,
+          _fingerprint: fingerprint,
+          _synced: false,
+          _createdAt: Date.now()
+        }
+        toSave.push(finalEntry)
+        results.ids.push(id)
+
+        if (!options.skipSyncQueue && !pendingSyncFps.has(fingerprint)) {
+          pendingSyncFps.add(fingerprint)
+          await indexedDBManager.addToSyncQueue('observation_log', finalEntry)
+        }
+      } catch (e) {
+        results.errors++
+      }
+    }
+
+    if (toSave.length > 0) {
+      try {
+        await storageAdapter.bulkPut(OBJECT_STORES.OBSERVATION_LOGS, toSave)
+        results.saved = toSave.length
+      } catch (e) {
+        for (const item of toSave) {
+          try {
+            await storageAdapter.put(OBJECT_STORES.OBSERVATION_LOGS, item, item.id)
+            results.saved++
+          } catch (e2) {
+            results.errors++
+          }
+        }
+      }
+    }
+
+    return results
   }
 
   async getObservationLogs(options = {}) {
     await this.init()
+    const { type, limit, constellationId, includeDuplicates = false } = options
+
     let items = await storageAdapter.getAll(OBJECT_STORES.OBSERVATION_LOGS)
 
-    const { type, limit, constellationId } = options
+    if (!includeDuplicates) {
+      const seen = new Map()
+      items = items.filter(item => {
+        const fp = item._fingerprint || this._generateLogFingerprint(item)
+        if (seen.has(fp)) {
+          const existing = seen.get(fp)
+          return (item._createdAt || item.timestamp || 0) > (existing._createdAt || existing.timestamp || 0)
+            ? (seen.set(fp, item), false)
+            : false
+        }
+        seen.set(fp, item)
+        return true
+      }).map(item => {
+        const fp = item._fingerprint || this._generateLogFingerprint(item)
+        return seen.get(fp)
+      }).filter((item, index, self) => self.findIndex(i => i?.id === item?.id) === index)
+    }
+
     if (type) items = items.filter(i => i.type === type)
     if (constellationId) items = items.filter(i => i.constellationId === constellationId)
 
@@ -299,6 +464,27 @@ class OfflineManager {
     if (limit) items = items.slice(0, limit)
 
     return items
+  }
+
+  async getObservationStats() {
+    const logs = await this.getObservationLogs()
+    return {
+      total: logs.length,
+      discovery: logs.filter(l => l.type === 'discovery').length,
+      reobservation: logs.filter(l => l.type === 'reobservation').length,
+      achievement: logs.filter(l => l.type === 'achievement').length,
+      seasonReward: logs.filter(l => l.type === 'season_reward').length,
+      expedition: logs.filter(l => l.type?.startsWith('expedition_')).length,
+      event: logs.filter(l => l.type?.startsWith('event_')).length,
+      quiz: logs.filter(l => l.type?.startsWith('quiz_')).length,
+      route: logs.filter(l => l.type?.startsWith('route_')).length,
+      byConstellation: logs.reduce((acc, l) => {
+        if (l.constellationId) {
+          acc[l.constellationId] = (acc[l.constellationId] || 0) + 1
+        }
+        return acc
+      }, {})
+    }
   }
 
   async saveProgress(key, value) {

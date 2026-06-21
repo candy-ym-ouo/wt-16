@@ -109,8 +109,18 @@ export function useOffline(options = {}) {
     return result
   }, [refreshStatus])
 
+  const bulkSaveObservationLogs = useCallback(async (entries, opts) => {
+    const result = await offlineManager.bulkSaveObservationLogs(entries, opts)
+    await refreshStatus()
+    return result
+  }, [refreshStatus])
+
   const getObservationLogs = useCallback(async (opts) => {
     return offlineManager.getObservationLogs(opts)
+  }, [])
+
+  const getObservationStats = useCallback(async () => {
+    return offlineManager.getObservationStats()
   }, [])
 
   const cacheImage = useCallback(async (url, opts) => {
@@ -197,7 +207,9 @@ export function useOffline(options = {}) {
     getGalleryPhotos,
     getStoryChapters,
     saveObservationLog,
+    bulkSaveObservationLogs,
     getObservationLogs,
+    getObservationStats,
     cacheImage,
     processSyncQueue,
     exportData,
@@ -218,7 +230,9 @@ export function useOffline(options = {}) {
     getGalleryPhotos,
     getStoryChapters,
     saveObservationLog,
+    bulkSaveObservationLogs,
     getObservationLogs,
+    getObservationStats,
     cacheImage,
     processSyncQueue,
     exportData,

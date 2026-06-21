@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import NightSky from './components/NightSky'
 import ConstellationTasks from './components/ConstellationTasks'
 import TasksPanel from './components/TasksPanel'
@@ -58,15 +58,34 @@ export default function App() {
     init()
   }, [])
 
+  const lastSyncedObservationLength = React.useRef(0)
   useEffect(() => {
-    if (observationLogs && observationLogs.length > 0) {
-      observationLogs.forEach(async (log) => {
-        try {
-          await offlineManager.saveObservationLog(log)
-        } catch (e) {}
-      })
-    }
-  }, [observationLogs.length])
+    let cancelled = false
+    ;(async () => {
+      try {
+        await offlineManager.init()
+        if (cancelled || !observationLogs || observationLogs.length === 0) return
+
+        if (lastSyncedObservationLength.current === 0) {
+          const result = await offlineManager.bulkSaveObservationLogs(observationLogs)
+          if (result.saved > 0 || result.duplicated > 0) {
+            lastSyncedObservationLength.current = observationLogs.length
+          }
+        } else {
+          const newCount = observationLogs.length - lastSyncedObservationLength.current
+          if (newCount > 0) {
+            const newLogs = observationLogs.slice(lastSyncedObservationLength.current)
+            await offlineManager.bulkSaveObservationLogs(newLogs)
+            lastSyncedObservationLength.current = observationLogs.length
+          } else if (newCount < 0) {
+            const result = await offlineManager.bulkSaveObservationLogs(observationLogs)
+            lastSyncedObservationLength.current = observationLogs.length
+          }
+        }
+      } catch (e) {}
+    })()
+    return () => { cancelled = true }
+  }, [observationLogs])
 
   useEffect(() => {
     refreshNightSkyEvents()
