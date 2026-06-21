@@ -24,6 +24,16 @@ import {
   calculateExpeditionRewards,
   getRecoveredStamina
 } from '../data/nightExpedition'
+import {
+  CHECKIN_REWARDS,
+  generateDailyRecommendation,
+  getZodiacByDate,
+  generateLuckyMessage,
+  generateLuckyStars,
+  formatDateKey,
+  isSameDay,
+  getDaysInMonth,
+} from '../data/observationCalendar'
 
 let autoSaveEnabled = true
 
@@ -83,7 +93,8 @@ export const useGameStore = create(
             seasonHistory: state.seasonHistory,
             favoriteConstellations: state.favoriteConstellations,
             familyMode: state.familyMode,
-            nightExpedition: state.nightExpedition
+            nightExpedition: state.nightExpedition,
+            observationCalendar: state.observationCalendar
           },
           version: 0
         }
@@ -757,6 +768,385 @@ export const useGameStore = create(
         }
       },
 
+      observationCalendar: {
+        checkinRecords: {},
+        checkinStreak: 0,
+        lastCheckinDate: null,
+        totalCheckinDays: 0,
+        stardust: 0,
+        badges: [],
+        dailyRecommendation: null,
+        dailyRecommendationDate: null,
+        customLogs: {},
+        zodiac: null,
+      },
+
+      getOrCreateDailyData: () => {
+        const state = get()
+        const todayKey = formatDateKey(new Date())
+        
+        let recommendation = state.observationCalendar.dailyRecommendation
+        let zodiac = state.observationCalendar.zodiac
+        
+        if (state.observationCalendar.dailyRecommendationDate !== todayKey || !recommendation) {
+          recommendation = generateDailyRecommendation(
+            state.discoveredConstellations,
+            state.perfectObservations,
+            state.totalObservations
+          )
+          zodiac = getZodiacByDate(new Date())
+          
+          set((s) => ({
+            observationCalendar: {
+              ...s.observationCalendar,
+              dailyRecommendation: recommendation,
+              dailyRecommendationDate: todayKey,
+              zodiac,
+            }
+          }))
+        }
+        
+        return { recommendation, zodiac }
+      },
+
+      checkin: () => {
+        const state = get()
+        const today = new Date()
+        const todayKey = formatDateKey(today)
+        const oc = state.observationCalendar
+
+        if (oc.checkinRecords[todayKey]?.checkedIn) {
+          return { success: false, reason: 'already_checked_in' }
+        }
+
+        let newStreak = 1
+        let yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayKey = formatDateKey(yesterday)
+
+        if (oc.checkinRecords[yesterdayKey]?.checkedIn) {
+          newStreak = oc.checkinStreak + 1
+        }
+
+        const rewardsEarned = []
+        let newStardust = oc.stardust
+
+        const baseReward = 10
+        newStardust += baseReward
+        rewardsEarned.push({ type: 'stardust', amount: baseReward, label: '每日签到', icon: '💫' })
+
+        Object.entries(CHECKIN_REWARDS).forEach(([key, reward]) => {
+          const dayNum = parseInt(key.replace('day', ''))
+          if (newStreak === dayNum) {
+            if (reward.type === 'stardust') {
+              newStardust += reward.amount
+              rewardsEarned.push({ ...reward })
+            } else if (reward.type === 'badge' && !oc.badges.includes(reward.id)) {
+              rewardsEarned.push({ ...reward })
+            }
+          }
+        })
+
+        const newBadges = [...oc.badges]
+        rewardsEarned.forEach(r => {
+          if (r.type === 'badge' && !newBadges.includes(r.id)) {
+            newBadges.push(r.id)
+          }
+        })
+
+        const luckyZodiac = getZodiacByDate(today)
+        const luckyMessage = generateLuckyMessage(luckyZodiac)
+        const luckyStars = generateLuckyStars()
+
+        const newRecord = {
+          checkedIn: true,
+          checkinTime: Date.now(),
+          streak: newStreak,
+          luckyMessage,
+          luckyStars,
+          zodiacId: luckyZodiac.id,
+          rewards: rewardsEarned,
+        }
+
+        set((s) => ({
+          observationCalendar: {
+            ...s.observationCalendar,
+            checkinRecords: {
+              ...s.observationCalendar.checkinRecords,
+              [todayKey]: newRecord,
+            },
+            checkinStreak: newStreak,
+            lastCheckinDate: todayKey,
+            totalCheckinDays: s.observationCalendar.totalCheckinDays + 1,
+            stardust: newStardust,
+            badges: newBadges,
+          }
+        }))
+
+        get().addLog({
+          type: 'checkin',
+          date: todayKey,
+          streak: newStreak,
+          rewards: rewardsEarned,
+          timestamp: Date.now(),
+        })
+
+        return {
+          success: true,
+          streak: newStreak,
+          rewards: rewardsEarned,
+          totalStardust: newStardust,
+          luckyMessage,
+          luckyStars,
+          zodiac: luckyZodiac,
+        }
+      },
+
+      getCheckinStatus: (date) => {
+        const state = get()
+        const d = date || new Date()
+        const key = formatDateKey(d)
+        const record = state.observationCalendar.checkinRecords[key]
+        const todayKey = formatDateKey(new Date())
+
+        return {
+          date: key,
+          checkedIn: !!record?.checkedIn,
+          isToday: key === todayKey,
+          record: record || null,
+          canCheckin: key === todayKey && !record?.checkedIn,
+        }
+      },
+
+      getStreakInfo: () => {
+        const state = get()
+        const oc = state.observationCalendar
+        const today = new Date()
+        const todayKey = formatDateKey(today)
+
+        let currentStreak = oc.checkinStreak
+        if (!oc.checkinRecords[todayKey]?.checkedIn) {
+          let yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          if (!oc.checkinRecords[formatDateKey(yesterday)]?.checkedIn) {
+            currentStreak = 0
+          }
+        }
+
+        const milestones = Object.entries(CHECKIN_REWARDS).map(([key, reward]) => ({
+          days: parseInt(key.replace('day', '')),
+          ...reward,
+          achieved: currentStreak >= parseInt(key.replace('day', '')),
+        }))
+
+        const nextMilestone = milestones.find(m => !m.achieved)
+        const daysToNext = nextMilestone ? nextMilestone.days - currentStreak : 0
+
+        return {
+          currentStreak,
+          totalDays: oc.totalCheckinDays,
+          longestStreak: currentStreak,
+          milestones,
+          nextMilestone,
+          daysToNext,
+        }
+      },
+
+      addCustomLog: (date, logData) => {
+        const state = get()
+        const key = formatDateKey(date)
+        const existingLogs = state.observationCalendar.customLogs[key] || []
+
+        const newLog = {
+          id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          createdAt: Date.now(),
+          ...logData,
+        }
+
+        set((s) => ({
+          observationCalendar: {
+            ...s.observationCalendar,
+            customLogs: {
+              ...s.observationCalendar.customLogs,
+              [key]: [...existingLogs, newLog],
+            },
+          }
+        }))
+
+        return newLog
+      },
+
+      updateCustomLog: (date, logId, updates) => {
+        const state = get()
+        const key = formatDateKey(date)
+        const logs = state.observationCalendar.customLogs[key] || []
+
+        set((s) => ({
+          observationCalendar: {
+            ...s.observationCalendar,
+            customLogs: {
+              ...s.observationCalendar.customLogs,
+              [key]: logs.map(log =>
+                log.id === logId ? { ...log, ...updates, updatedAt: Date.now() } : log
+              ),
+            },
+          }
+        }))
+      },
+
+      deleteCustomLog: (date, logId) => {
+        const state = get()
+        const key = formatDateKey(date)
+        const logs = state.observationCalendar.customLogs[key] || []
+
+        set((s) => ({
+          observationCalendar: {
+            ...s.observationCalendar,
+            customLogs: {
+              ...s.observationCalendar.customLogs,
+              [key]: logs.filter(log => log.id !== logId),
+            },
+          }
+        }))
+      },
+
+      getDateLogs: (date) => {
+        const state = get()
+        const key = formatDateKey(date)
+        const customLogs = state.observationCalendar.customLogs[key] || []
+        
+        const observationLogs = state.observationLogs.filter(log => {
+          if (!log.timestamp) return false
+          const logDate = new Date(log.timestamp)
+          return formatDateKey(logDate) === key
+        })
+
+        return {
+          customLogs,
+          observationLogs,
+          checkinRecord: state.observationCalendar.checkinRecords[key] || null,
+        }
+      },
+
+      getMonthlyStats: (year, month) => {
+        const state = get()
+        const oc = state.observationCalendar
+        const daysInMonth = getDaysInMonth(year, month)
+        
+        let checkinDays = 0
+        let discoveryCount = 0
+        let reobservationCount = 0
+        let perfectCount = 0
+        let totalCustomLogs = 0
+        let stardustEarned = 0
+
+        const dailyData = []
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day)
+          const key = formatDateKey(date)
+          
+          const checkinRecord = oc.checkinRecords[key]
+          const dateLogs = state.getDateLogs(date)
+          
+          if (checkinRecord?.checkedIn) {
+            checkinDays++
+            stardustEarned += checkinRecord.rewards?.reduce((sum, r) => sum + (r.amount || 0), 0) || 10
+          }
+
+          const dayDiscoveries = dateLogs.observationLogs.filter(l => l.type === 'discovery').length
+          const dayReobservations = dateLogs.observationLogs.filter(l => l.type === 'reobservation').length
+          const dayPerfect = dateLogs.observationLogs.filter(l => l.perfect).length
+          
+          discoveryCount += dayDiscoveries
+          reobservationCount += dayReobservations
+          perfectCount += dayPerfect
+          totalCustomLogs += dateLogs.customLogs.length
+
+          dailyData.push({
+            day,
+            date: key,
+            checkedIn: !!checkinRecord?.checkedIn,
+            discoveries: dayDiscoveries,
+            reobservations: dayReobservations,
+            perfect: dayPerfect,
+            customLogs: dateLogs.customLogs.length,
+            hasActivity: !!checkinRecord?.checkedIn || dayDiscoveries > 0 || dayReobservations > 0 || dateLogs.customLogs.length > 0,
+          })
+        }
+
+        const totalObservationDays = dailyData.filter(d => d.discoveries > 0 || d.reobservations > 0).length
+        const activeDays = dailyData.filter(d => d.hasActivity).length
+        const checkinRate = Math.round((checkinDays / daysInMonth) * 100)
+        const activityRate = Math.round((activeDays / daysInMonth) * 100)
+
+        const uniqueConstellationsThisMonth = new Set()
+        state.observationLogs.forEach(log => {
+          if (!log.timestamp || !log.constellationId) return
+          const logDate = new Date(log.timestamp)
+          if (logDate.getFullYear() === year && logDate.getMonth() === month) {
+            uniqueConstellationsThisMonth.add(log.constellationId)
+          }
+        })
+
+        return {
+          year,
+          month,
+          daysInMonth,
+          checkinDays,
+          checkinRate,
+          activeDays,
+          activityRate,
+          observationDays: totalObservationDays,
+          discoveryCount,
+          reobservationCount,
+          totalObservations: discoveryCount + reobservationCount,
+          perfectCount,
+          uniqueConstellations: uniqueConstellationsThisMonth.size,
+          totalCustomLogs,
+          stardustEarned,
+          dailyData,
+          summary: {
+            bestStreak: oc.checkinStreak,
+            avgObservationsPerActiveDay: activeDays > 0 
+              ? Math.round(((discoveryCount + reobservationCount) / activeDays) * 10) / 10 
+              : 0,
+            perfectRate: (discoveryCount + reobservationCount) > 0
+              ? Math.round((perfectCount / (discoveryCount + reobservationCount)) * 100)
+              : 0,
+          }
+        }
+      },
+
+      spendStardust: (amount) => {
+        const state = get()
+        if (state.observationCalendar.stardust >= amount) {
+          set((s) => ({
+            observationCalendar: {
+              ...s.observationCalendar,
+              stardust: s.observationCalendar.stardust - amount,
+            }
+          }))
+          return true
+        }
+        return false
+      },
+
+      addStardust: (amount, reason) => {
+        set((s) => ({
+          observationCalendar: {
+            ...s.observationCalendar,
+            stardust: s.observationCalendar.stardust + amount,
+          }
+        }))
+        get().addLog({
+          type: 'stardust',
+          amount,
+          reason: reason || '获得星尘',
+          timestamp: Date.now(),
+        })
+      },
+
       discoveredConstellations: [],
       discoveredStars: [],
       connectionPath: [],
@@ -1248,6 +1638,18 @@ export const useGameStore = create(
             highestStagesCleared: 0,
             totalPerfectStages: 0,
             totalStardustEarned: 0
+          },
+          observationCalendar: {
+            checkinRecords: {},
+            checkinStreak: 0,
+            lastCheckinDate: null,
+            totalCheckinDays: 0,
+            stardust: 0,
+            badges: [],
+            dailyRecommendation: null,
+            dailyRecommendationDate: null,
+            customLogs: {},
+            zodiac: null,
           }
         })
     }),
@@ -1269,7 +1671,8 @@ export const useGameStore = create(
         seasonHistory: state.seasonHistory,
         favoriteConstellations: state.favoriteConstellations,
         familyMode: state.familyMode,
-        nightExpedition: state.nightExpedition
+        nightExpedition: state.nightExpedition,
+        observationCalendar: state.observationCalendar
       })
     }
   )

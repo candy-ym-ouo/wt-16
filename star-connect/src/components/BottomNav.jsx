@@ -3,13 +3,15 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo } = useGameStore()
   const progress = getProgress()
   const familyProgress = getFamilyProgress()
   const currentSeason = getCurrentSeason()
   const seasonStats = getSeasonStats()
   const currentSeasonProgress = seasonStats[currentSeason]
   const totalSeasonRewards = Object.keys(SEASONS).length * 3
+  const todayCheckinStatus = getCheckinStatus(new Date())
+  const streakInfo = getStreakInfo()
 
   const items = [
     {
@@ -27,6 +29,15 @@ export default function BottomNav() {
       badge: favoriteConstellations.length > 0 ? favoriteConstellations.length.toString() : null
     },
     {
+      id: 'calendar',
+      label: '日历',
+      icon: '📅',
+      badge: !todayCheckinStatus.checkedIn
+        ? '!'
+        : streakInfo.currentStreak >= 3 ? `${streakInfo.currentStreak}🔥` : null,
+      badgeColor: !todayCheckinStatus.checkedIn ? 'bg-red-400 text-white animate-pulse' : null
+    },
+    {
       id: 'family',
       label: '亲子',
       icon: '👨‍👩‍👧',
@@ -36,6 +47,12 @@ export default function BottomNav() {
       badgeColor: familyMode.enabled ? 'bg-green-500 text-white' : null
     },
     {
+      id: null,
+      label: '夜空',
+      icon: '🌌',
+      isHome: true
+    },
+    {
       id: 'expedition',
       label: '远征',
       icon: '🌙',
@@ -43,12 +60,6 @@ export default function BottomNav() {
         ? `${nightExpedition.currentRun.stageIndex + 1}`
         : nightExpedition.stamina < 5 ? `${nightExpedition.stamina}` : null,
       badgeColor: nightExpedition.currentRun?.active ? 'bg-violet-500 text-white' : null
-    },
-    {
-      id: null,
-      label: '夜空',
-      icon: '🌌',
-      isHome: true
     },
     {
       id: 'seasons',
@@ -63,11 +74,6 @@ export default function BottomNav() {
       label: '成就',
       icon: '🏆',
       badge: unlockedAchievements.length > 0 ? unlockedAchievements.length.toString() : null
-    },
-    {
-      id: 'settings',
-      label: '设置',
-      icon: '⚙️'
     }
   ]
 
