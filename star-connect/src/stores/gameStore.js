@@ -1631,6 +1631,13 @@ export const useGameStore = create(
         const discoveryLogs = filteredLogs.filter(l => l.type === 'discovery')
         const reobservationLogs = filteredLogs.filter(l => l.type === 'reobservation')
         const perfectLogs = filteredLogs.filter(l => l.perfect)
+        const achievementLogs = filteredLogs.filter(l => l.type === 'achievement')
+
+        const discoveredIdsInRange = [...new Set(discoveryLogs.map(l => l.constellationId))]
+        const perfectIdsInRange = [...new Set(perfectLogs.filter(l => l.perfect).map(l => l.constellationId))]
+
+        const totalObservationsCountGlobal = Object.values(state.totalObservations).reduce((sum, n) => sum + n, 0)
+        const totalObservationsInRange = discoveryLogs.length + reobservationLogs.length
 
         const dailyData = {}
         const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : timeRange === 'today' ? 1 : 30
@@ -1681,21 +1688,24 @@ export const useGameStore = create(
         }).length
 
         const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length
+        const unlockedInRange = achievementLogs.length
         const achievementRate = totalAchievements > 0
-          ? Math.round((state.unlockedAchievements.length / totalAchievements) * 100)
+          ? Math.round((unlockedInRange / totalAchievements) * 100)
           : 0
 
         const discoveryRate = CONSTELLATIONS.length > 0
-          ? Math.round((state.discoveredConstellations.length / CONSTELLATIONS.length) * 100)
+          ? Math.round((discoveredIdsInRange.length / CONSTELLATIONS.length) * 100)
           : 0
 
-        const perfectRate = state.discoveredConstellations.length > 0
-          ? Math.round((Object.keys(state.perfectObservations).length / state.discoveredConstellations.length) * 100)
+        const perfectRate = discoveredIdsInRange.length > 0
+          ? Math.round((perfectIdsInRange.length / discoveredIdsInRange.length) * 100)
           : 0
 
-        const totalObservationsCount = Object.values(state.totalObservations).reduce((sum, n) => sum + n, 0)
-        const avgMistakesPerObservation = totalObservationsCount > 0
-          ? Math.round((state.totalMistakes / totalObservationsCount) * 10) / 10
+        const totalMistakesInRange = totalObservationsCountGlobal > 0
+          ? Math.round(state.totalMistakes * (totalObservationsInRange / totalObservationsCountGlobal))
+          : 0
+        const avgMistakesPerObservation = totalObservationsInRange > 0
+          ? Math.round((totalMistakesInRange / totalObservationsInRange) * 10) / 10
           : 0
 
         const difficultyDistribution = {
@@ -1707,10 +1717,10 @@ export const useGameStore = create(
         CONSTELLATIONS.forEach(c => {
           const key = c.difficulty === 1 ? 'easy' : c.difficulty === 2 ? 'medium' : 'hard'
           difficultyDistribution[key].count++
-          if (state.discoveredConstellations.includes(c.id)) {
+          if (discoveredIdsInRange.includes(c.id)) {
             difficultyDistribution[key].discovered++
           }
-          if (state.perfectObservations[c.id]) {
+          if (perfectIdsInRange.includes(c.id)) {
             difficultyDistribution[key].perfect++
           }
         })
@@ -1718,29 +1728,29 @@ export const useGameStore = create(
         const seasonDistribution = {}
         Object.keys(SEASONS).forEach(seasonId => {
           const constellationIds = getSeasonConstellations(seasonId)
-          const discovered = constellationIds.filter(id =>
-            state.discoveredConstellations.includes(id)
+          const discoveredInSeason = constellationIds.filter(id =>
+            discoveredIdsInRange.includes(id)
           ).length
           seasonDistribution[seasonId] = {
             ...SEASONS[seasonId],
             total: constellationIds.length,
-            discovered
+            discovered: discoveredInSeason
           }
         })
 
         return {
           overview: {
             totalConstellations: CONSTELLATIONS.length,
-            discoveredConstellations: state.discoveredConstellations.length,
+            discoveredConstellations: discoveredIdsInRange.length,
             discoveryRate,
-            perfectConstellations: Object.keys(state.perfectObservations).length,
+            perfectConstellations: perfectIdsInRange.length,
             perfectRate,
             totalAchievements,
-            unlockedAchievements: state.unlockedAchievements.length,
+            unlockedAchievements: unlockedInRange,
             achievementRate,
-            totalMistakes: state.totalMistakes,
+            totalMistakes: totalMistakesInRange,
             avgMistakesPerObservation,
-            totalObservations: totalObservationsCount,
+            totalObservations: totalObservationsInRange,
             activeDays,
             checkinDays,
             checkinStreak: state.observationCalendar.checkinStreak
