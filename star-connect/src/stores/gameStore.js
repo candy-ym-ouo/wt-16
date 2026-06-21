@@ -65,8 +65,7 @@ import {
   getSeasonTier,
   getNextTier,
   generateLeaderboard,
-  getChallengeDateKey,
-  getSeasonChallengeRewards
+  getChallengeDateKey
 } from '../data/constellationChallenge'
 
 let autoSaveEnabled = true
@@ -2588,7 +2587,6 @@ export const useGameStore = create(
       },
 
       startChallenge: (difficultyId) => {
-        const state = get()
         get().syncChallengeDailyAttempts()
         const synced = get().constellationChallenge
         const config = CHALLENGE_DIFFICULTIES[difficultyId]
@@ -2639,7 +2637,6 @@ export const useGameStore = create(
         const currentStage = challenge.route[challenge.stageIndex]
         const timeUsed = (Date.now() - challenge.stageStartTime) / 1000
         const isPerfect = challenge.mistakesInStage === 0
-        const config = CHALLENGE_DIFFICULTIES[challenge.difficultyId]
 
         const stageResult = {
           constellationId: currentStage.constellationId,
@@ -2733,7 +2730,6 @@ export const useGameStore = create(
 
         const score = calculateChallengeScore(challenge.difficultyId, results)
         const seasonId = getCurrentSeason()
-        const config = CHALLENGE_DIFFICULTIES[challenge.difficultyId]
 
         const record = {
           id: `ch_${Date.now()}`,
@@ -2827,10 +2823,6 @@ export const useGameStore = create(
         const reward = Object.values(CHALLENGE_SEASON_REWARDS[seasonId] || {}).find(r => r.id === rewardId)
         if (!reward) return false
 
-        const tier = Object.values(CHALLENGE_SEASON_TIERS).find(t => t.name === Object.keys(CHALLENGE_SEASON_TIERS).find(k => {
-          const t = CHALLENGE_SEASON_TIERS[k]
-          return CHALLENGE_SEASON_REWARDS[seasonId]?.[k]?.id === rewardId
-        }))
         const tierKey = Object.keys(CHALLENGE_SEASON_REWARDS[seasonId] || {}).find(k => CHALLENGE_SEASON_REWARDS[seasonId][k]?.id === rewardId)
         const requiredTier = CHALLENGE_SEASON_TIERS[tierKey]
         if (!requiredTier || seasonScore < requiredTier.minScore) return false
@@ -2850,7 +2842,6 @@ export const useGameStore = create(
       },
 
       getChallengeStats: () => {
-        const state = get()
         get().syncChallengeDailyAttempts()
         const synced = get().constellationChallenge
         const seasonId = getCurrentSeason()

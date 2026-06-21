@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
-import { CHALLENGE_DIFFICULTIES, CHALLENGE_SEASON_TIERS, CHALLENGE_SEASON_REWARDS, getSeasonTier, getNextTier } from '../data/constellationChallenge'
+import { CHALLENGE_DIFFICULTIES, CHALLENGE_SEASON_TIERS, CHALLENGE_SEASON_REWARDS } from '../data/constellationChallenge'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 import { getConstellationById } from '../data/constellations'
 
@@ -161,24 +161,35 @@ function ChallengeHome({ onStart }) {
 }
 
 function ChallengeInPlay({ onResult }) {
-  const { constellationChallenge, getConstellationById } = useGameStore()
+  const { constellationChallenge } = useGameStore()
   const challenge = constellationChallenge.currentChallenge
   const config = CHALLENGE_DIFFICULTIES[challenge?.difficultyId]
   const stage = challenge?.route?.[challenge?.stageIndex]
   const constellation = stage ? getConstellationById(stage.constellationId) : null
   const [timeLeft, setTimeLeft] = useState(config?.timeLimit || 60)
-  const [lastTick, setLastTick] = useState(Date.now())
+  const [lastStageIdx, setLastStageIdx] = useState(challenge?.stageIndex ?? -1)
+
+  useEffect(() => {
+    if (!challenge?.active || !config) return
+    if (challenge.stageIndex !== lastStageIdx) {
+      setTimeLeft(config.timeLimit)
+      setLastStageIdx(challenge.stageIndex)
+    }
+  }, [challenge?.active, challenge?.stageIndex, config?.timeLimit, lastStageIdx])
 
   useEffect(() => {
     if (!challenge?.active) return
     const interval = setInterval(() => {
-      const now = Date.now()
-      const elapsed = (now - lastTick) / 1000
-      setLastTick(now)
-      setTimeLeft(prev => {
-        const next = prev - elapsed
+      setTimeLeft((prev) => {
+        if (prev <= 0) return prev
+        const next = prev - 0.1
         if (next <= 0) {
-          useGameStore.getState().failChallengeStage()
+          queueMicrotask(() => {
+            const state = useGameStore.getState()
+            if (state.constellationChallenge.currentChallenge?.active) {
+              state.failChallengeStage()
+            }
+          })
           return 0
         }
         return next
@@ -188,21 +199,13 @@ function ChallengeInPlay({ onResult }) {
   }, [challenge?.active, challenge?.stageIndex])
 
   useEffect(() => {
-    if (timeLeft <= 0 && challenge?.active) {
-      onResult(useGameStore.getState().completeChallenge(
-        challenge.results || []
-      ))
-    }
-  }, [timeLeft])
-
-  useEffect(() => {
-    if (!challenge?.active && constellationChallenge.currentChallenge === null) {
+    if (!challenge?.active) {
       const records = useGameStore.getState().constellationChallenge.records
       if (records.length > 0) {
         onResult(records[0])
       }
     }
-  }, [constellationChallenge.currentChallenge])
+  }, [challenge?.active])
 
   if (!challenge || !config) return null
 
@@ -218,7 +221,7 @@ function ChallengeInPlay({ onResult }) {
         </div>
         <div className="flex items-center gap-2">
           <div className={`text-lg font-mono font-bold ${isUrgent ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-            {Math.ceil(timeLeft)}s
+            {Math.ceil(Math.max(0, timeLeft))}s
           </div>
         </div>
       </div>
@@ -228,7 +231,7 @@ function ChallengeInPlay({ onResult }) {
           className={`h-full rounded-full transition-all duration-300 ${
             isUrgent ? 'bg-red-500' : `bg-gradient-to-r ${config.color}`
           }`}
-          style={{ width: `${timePct}%` }}
+          style={{ width: `${Math.max(0, timePct)}%` }}
         />
       </div>
 
@@ -240,7 +243,7 @@ function ChallengeInPlay({ onResult }) {
       </div>
       <div className="flex justify-between text-[10px] text-white/40">
         <span>关卡进度</span>
-        <span>{challenge.stageIndex} / {challenge.route.length}</span>
+        <span>{challenge.stageIndex + 1} / {challenge.route.length}</span>
       </div>
 
       <div className={`p-5 rounded-2xl border ${config.borderColor} ${config.bgColor} text-center`}>
@@ -266,10 +269,7 @@ function ChallengeInPlay({ onResult }) {
           </div>
           <div className="text-center">
             <div className="text-sm font-bold text-star-gold">
-              {challenge.results.filter(r => r.perfect).length > 0
-                ? `×${challenge.results.filter(r => r.perfect).length}`
-                : '×1'
-              }
+              ×{challenge.results.filter(r => r.perfect).length + 1}
             </div>
             <div className="text-[9px] text-white/40">连胜</div>
           </div>
@@ -578,8 +578,23 @@ export default function ConstellationChallenge() {
   const { setActivePanel, startChallenge, abandonChallenge, constellationChallenge } = useGameStore()
   const [view, setView] = useState('home')
   const [challengeResult, setChallengeResult] = useState(null)
+  const prevChallengeRef = useRef(null)
 
   const challenge = constellationChallenge.currentChallenge
+
+  useEffect(() => {
+    const prev = prevChallengeRef.current
+    const curr = challenge
+
+    if (prev?.active && !curr && view === 'playing') {
+      const records = useGameStore.getState().constellationChallenge.records
+      if (records.length > 0) {
+        setChallengeResult(records[0])
+        setView('result')
+      }
+    }
+    prevChallengeRef.current = curr
+  }, [challenge, view])
 
   const handleStart = (difficultyId) => {
     const result = startChallenge(difficultyId)
@@ -598,6 +613,7 @@ export default function ConstellationChallenge() {
 
   const handleAbandon = () => {
     if (confirm('确定要放弃本次挑战吗？已完成的关卡将保存成绩。')) {
+      prevChallengeRef.current = null
       abandonChallenge()
       setView('home')
       setChallengeResult(null)
