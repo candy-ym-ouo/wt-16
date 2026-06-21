@@ -689,23 +689,48 @@ export const useGameStore = create(
           duration: Date.now() - run.startTime
         }
 
-        set((state) => ({
-          nightExpedition: {
-            ...state.nightExpedition,
-            currentRun: null,
-            history: [entry, ...state.nightExpedition.history].slice(0, 50),
-            totalCompleted: state.nightExpedition.totalCompleted + 1,
-            highestStagesCleared: Math.max(
-              state.nightExpedition.highestStagesCleared,
-              clearedStages.length
-            ),
-            totalPerfectStages: state.nightExpedition.totalPerfectStages + perfectCount,
-            totalStardustEarned: state.nightExpedition.totalStardustEarned + rewards.stardust
-          },
-          currentTargetConstellation: null,
-          connectionPath: [],
-          mistakes: 0
-        }))
+        set((state) => {
+          const updates = {
+            nightExpedition: {
+              ...state.nightExpedition,
+              currentRun: null,
+              history: [entry, ...state.nightExpedition.history].slice(0, 50),
+              totalCompleted: state.nightExpedition.totalCompleted + 1,
+              highestStagesCleared: Math.max(
+                state.nightExpedition.highestStagesCleared,
+                clearedStages.length
+              ),
+              totalPerfectStages: state.nightExpedition.totalPerfectStages + perfectCount,
+              totalStardustEarned: state.nightExpedition.totalStardustEarned + rewards.stardust
+            },
+            currentTargetConstellation: null,
+            connectionPath: [],
+            mistakes: 0
+          }
+
+          if (state.team.enabled && clearedStages.length > 0) {
+            updates.team = {
+              ...state.team,
+              teamExpeditionsCompleted: state.team.teamExpeditionsCompleted + 1,
+              teamLogs: [
+                {
+                  type: 'expedition',
+                  stagesCleared: clearedStages.length,
+                  totalStages,
+                  perfectCount,
+                  stardust: rewards.stardust,
+                  memberId: 'player',
+                  memberName: '我',
+                  message: `完成夜间远征：通关 ${clearedStages.length}/${totalStages} 关，获得 ${rewards.stardust} 星尘`,
+                  timestamp: Date.now()
+                },
+                ...state.team.teamLogs
+              ].slice(0, 200)
+            }
+          }
+
+          return updates
+        })
 
         get().addLog({
           type: 'expedition_complete',
@@ -717,6 +742,10 @@ export const useGameStore = create(
         })
 
         get().checkAchievements()
+        if (state.team.enabled && clearedStages.length > 0) {
+          get().checkTeamAchievements()
+          get().checkTeamTaskProgress()
+        }
 
         return entry
       },
@@ -1344,9 +1373,27 @@ export const useGameStore = create(
 
       observationLogs: [],
       addLog: (entry) =>
-        set((state) => ({
-          observationLogs: [entry, ...state.observationLogs].slice(0, 100)
-        })),
+        set((state) => {
+          const updates = {
+            observationLogs: [entry, ...state.observationLogs].slice(0, 100)
+          }
+          if (state.team.enabled && (entry.type === 'discovery' || entry.type === 'reobservation' || entry.type === 'note')) {
+            const teamEntry = {
+              type: entry.type === 'discovery' ? 'discovery' : entry.type === 'reobservation' ? 'reobservation' : 'note',
+              constellationId: entry.constellationId,
+              perfect: entry.perfect,
+              note: entry.note,
+              memberId: 'player',
+              memberName: '我',
+              timestamp: entry.timestamp || Date.now()
+            }
+            updates.team = {
+              ...state.team,
+              teamLogs: [teamEntry, ...state.team.teamLogs].slice(0, 200)
+            }
+          }
+          return updates
+        }),
       clearLogs: () => set({ observationLogs: [] }),
 
       unlockedAchievements: [],
@@ -1977,20 +2024,50 @@ export const useGameStore = create(
         team: { ...state.team, teamStardust: state.team.teamStardust + amount }
       })),
 
-      startTeamTask: (taskId) => {
+      startTeamTask: (taskId, assignedMemberId = null) => {
+        const state = get()
         const task = getTeamTaskById(taskId)
-        if (!task) return false
-        set((state) => ({
+        if (!task) return { success: false, error: '任务不存在' }
+
+        if (state.team.activeTasks.some(t => t.taskId === taskId)) {
+          return { success: false, error: '任务已在进行中' }
+        }
+
+        if (task.requiredRoles && task.requiredRoles.length > 0) {
+          const availableRoles = state.team.members.map(m => m.role)
+          const hasRequiredRole = task.requiredRoles.some(role => availableRoles.includes(role))
+          if (!hasRequiredRole) {
+            const roleNames = task.requiredRoles
+              .map(r => TEAM_ROLES[r]?.name || r)
+              .join('、')
+            return {
+              success: false,
+              error: `需要队伍中有${roleNames}才能接取此任务`
+            }
+          }
+        }
+
+        set((s) => ({
           team: {
-            ...state.team,
-            activeTasks: [...state.team.activeTasks, {
+            ...s.team,
+            activeTasks: [...s.team.activeTasks, {
               taskId,
               startedAt: Date.now(),
-              progress: 0
+              progress: 0,
+              assignedMemberId: assignedMemberId
             }]
           }
         }))
-        return true
+
+        get().addTeamLog({
+          type: 'note',
+          message: `接取了任务：${task.name}`,
+          memberId: 'player',
+          memberName: '我',
+          timestamp: Date.now()
+        })
+
+        return { success: true }
       },
 
       completeTeamTask: (taskId) => {
@@ -2033,7 +2110,7 @@ export const useGameStore = create(
         return { task, xp: xpGain, stardust: stardustGain }
       },
 
-      recordTeamDiscovery: (constellationId, isPerfect, memberId = 'player') => {
+      recordTeamDiscovery: (constellationId, isPerfect, memberId = 'player', simulateCollaboration = true) => {
         const state = get()
         const alreadyDiscovered = state.team.teamDiscoveries.includes(constellationId)
 
@@ -2052,7 +2129,7 @@ export const useGameStore = create(
 
         const newStreak = isPerfect ? state.team.teamPerfectStreak + 1 : 0
 
-        const members = state.team.members.map(m => {
+        let members = state.team.members.map(m => {
           if (m.id !== memberId) return m
           const discoveries = m.discoveries.includes(constellationId)
             ? m.discoveries
@@ -2062,6 +2139,37 @@ export const useGameStore = create(
           const newLevel = Math.floor(newXP / 100) + 1
           return { ...m, discoveries, xp: newXP, level: newLevel }
         })
+
+        const extraLogs = []
+        if (simulateCollaboration && !alreadyDiscovered && state.team.members.length > 1) {
+          const collaborators = state.team.members.filter(m => m.id !== memberId && m.id !== 'player')
+          collaborators.forEach(collaborator => {
+            const collaborationChance = collaborator.role === 'explorer' ? 0.5 :
+                                       collaborator.role === 'cartographer' ? 0.4 :
+                                       collaborator.role === 'recorder' ? 0.3 : 0.15
+            if (Math.random() < collaborationChance) {
+              const collabPerfect = Math.random() < 0.3
+              members = members.map(m => {
+                if (m.id !== collaborator.id) return m
+                const collabDiscoveries = m.discoveries.includes(constellationId)
+                  ? m.discoveries
+                  : [...m.discoveries, constellationId]
+                const collabXP = m.xp + (collabPerfect ? 30 : 15)
+                const collabLevel = Math.floor(collabXP / 100) + 1
+                return { ...m, discoveries: collabDiscoveries, xp: collabXP, level: collabLevel }
+              })
+              extraLogs.push({
+                type: collabPerfect ? 'discovery' : 'reobservation',
+                constellationId,
+                perfect: collabPerfect,
+                memberId: collaborator.id,
+                memberName: collaborator.name,
+                message: `协助观测了该星座${collabPerfect ? '，完成得很棒！' : ''}`,
+                timestamp: Date.now() + Math.floor(Math.random() * 5000) + 1000
+              })
+            }
+          })
+        }
 
         const today = new Date().toDateString()
         let newStreakDays = state.team.teamStreakDays
@@ -2078,6 +2186,17 @@ export const useGameStore = create(
           lastActiveDate = today
         }
 
+        const mainLog = {
+          type: alreadyDiscovered ? 'reobservation' : 'discovery',
+          constellationId,
+          perfect: isPerfect,
+          memberId,
+          memberName: members.find(m => m.id === memberId)?.name || '未知',
+          timestamp: Date.now()
+        }
+
+        const allLogs = [...extraLogs, mainLog].sort((a, b) => b.timestamp - a.timestamp)
+
         set((s) => ({
           team: {
             ...s.team,
@@ -2089,14 +2208,7 @@ export const useGameStore = create(
             lastActiveDate,
             members,
             teamLogs: [
-              {
-                type: alreadyDiscovered ? 'reobservation' : 'discovery',
-                constellationId,
-                perfect: isPerfect,
-                memberId,
-                memberName: members.find(m => m.id === memberId)?.name || '未知',
-                timestamp: Date.now()
-              },
+              ...allLogs,
               ...s.team.teamLogs
             ].slice(0, 200)
           }
@@ -2328,8 +2440,9 @@ export const useGameStore = create(
         const task = getTeamTaskById(taskId)
         if (!task) return null
 
-        const { type, value } = task.target
+        const { type, value: initialValue } = task.target
         let current = 0
+        let target = initialValue
 
         switch (type) {
           case 'team_discoveries':
@@ -2347,16 +2460,16 @@ export const useGameStore = create(
             current = team.teamPerfectStreak
             break
           case 'season_complete': {
-            const seasonConstellations = getSeasonConstellations(value)
+            const seasonConstellations = getSeasonConstellations(initialValue)
             current = seasonConstellations.filter(id =>
               team.teamDiscoveries.includes(id)
             ).length
-            value = seasonConstellations.length
+            target = seasonConstellations.length
             break
           }
           case 'all_seasons': {
             let completed = 0
-            let total = Object.keys(SEASONS).length
+            const total = Object.keys(SEASONS).length
             Object.keys(SEASONS).forEach(seasonId => {
               const seasonConstellations = getSeasonConstellations(seasonId)
               if (seasonConstellations.every(id => team.teamDiscoveries.includes(id))) {
@@ -2364,7 +2477,7 @@ export const useGameStore = create(
               }
             })
             current = completed
-            value = total
+            target = total
             break
           }
           case 'team_logs':
@@ -2374,8 +2487,8 @@ export const useGameStore = create(
             current = team.teamExpeditionsCompleted
             break
           case 'all_members_level':
-            current = team.members.filter(m => m.level >= value).length
-            value = team.members.length
+            current = team.members.filter(m => m.level >= initialValue).length
+            target = team.members.length
             break
           case 'team_streak':
             current = team.teamStreakDays
@@ -2385,14 +2498,14 @@ export const useGameStore = create(
             break
         }
 
-        const percentage = Math.min(100, Math.round((current / value) * 100))
+        const percentage = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0
         const isActive = team.activeTasks.some(t => t.taskId === taskId)
         const isCompleted = team.completedTasks.some(t => t.taskId === taskId)
 
         return {
           task,
           current,
-          target: value,
+          target,
           percentage,
           isActive,
           isCompleted

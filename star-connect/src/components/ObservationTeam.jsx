@@ -29,6 +29,12 @@ export default function ObservationTeam() {
   const [tempTeamName, setTempTeamName] = useState('')
   const [logFilter, setLogFilter] = useState('all')
   const [selectedTask, setSelectedTask] = useState(null)
+  const [toastMessage, setToastMessage] = useState(null)
+
+  const showToast = (msg) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(null), 2500)
+  }
 
   const stats = getTeamStats()
 
@@ -72,7 +78,12 @@ export default function ObservationTeam() {
   }
 
   const handleStartTask = (taskId) => {
-    startTeamTask(taskId)
+    const result = startTeamTask(taskId)
+    if (result?.success) {
+      showToast('✓ 任务已接取')
+    } else if (result?.error) {
+      showToast(`⚠ ${result.error}`)
+    }
   }
 
   const handleSaveTeamName = () => {
@@ -150,7 +161,14 @@ export default function ObservationTeam() {
   return (
     <div className="absolute inset-0 z-40 flex items-end sm:items-center justify-center p-4
                     bg-space-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg glass-panel max-h-[85vh] flex flex-col overflow-hidden">
+      {toastMessage && (
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50
+                        px-5 py-2.5 rounded-xl bg-space-800/95 border border-white/20
+                        text-sm text-white shadow-xl animate-in fade-in slide-in-from-top duration-200">
+          {toastMessage}
+        </div>
+      )}
+      <div className="w-full max-w-lg glass-panel max-h-[85vh] flex flex-col overflow-hidden relative">
         <div className="p-5 border-b border-white/10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -646,20 +664,40 @@ export default function ObservationTeam() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {task.requiredRoles && task.requiredRoles.length > 0 && (
+                        <div className="flex items-center gap-1 w-full">
+                          <span className="text-[10px] text-white/50">所需角色：</span>
+                          {task.requiredRoles.map((roleId) => {
+                            const role = TEAM_ROLES[roleId]
+                            const hasRole = team.members.some(m => m.role === roleId)
+                            return (
+                              <span
+                                key={roleId}
+                                className={`text-[10px] px-1.5 py-0.5 rounded
+                                           ${hasRole
+                                             ? 'bg-green-500/20 text-green-400'
+                                             : 'bg-red-500/20 text-red-400'}`}
+                              >
+                                {role?.icon} {role?.name}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between w-full">
                         <span className="text-[10px] text-star-gold">
                           🎁 {task.reward?.teamXP || 0} XP + {task.reward?.stardust || 0} 星尘
                         </span>
+                        <button
+                          onClick={() => handleStartTask(task.id)}
+                          className="px-3 py-1.5 rounded-lg text-[11px] text-white
+                                     bg-gradient-to-r from-nebula-purple to-nebula-cyan
+                                     hover:shadow-md active:scale-95 transition-all"
+                        >
+                          接取任务
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleStartTask(task.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] text-white
-                                   bg-gradient-to-r from-nebula-purple to-nebula-cyan
-                                   hover:shadow-md active:scale-95 transition-all"
-                      >
-                        接取任务
-                      </button>
                     </div>
                   </div>
                 )
