@@ -20,6 +20,7 @@ import StarRoute from './components/StarRoute'
 import StoryChapter from './components/StoryChapter'
 import NightSkyEvents from './components/NightSkyEvents'
 import HomeEventBanner from './components/HomeEventBanner'
+import ObservationDashboard from './components/ObservationDashboard'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -119,6 +120,8 @@ export default function App() {
       {activePanel === 'gallery' && <StarGallery />}
       {activePanel === 'tutorial' && <TutorialCamp />}
       {activePanel === 'route' && <StarRoute />}
+
+      {activePanel === 'dashboard' && <ObservationDashboard />}
 
       {showNightSkyEvents && (
         <NightSkyEvents onClose={() => setShowNightSkyEvents(false)} />

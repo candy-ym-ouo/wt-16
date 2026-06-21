@@ -83,6 +83,12 @@ export default function BottomNav() {
       badge: unlockedAchievements.length > 0 ? unlockedAchievements.length.toString() : null
     },
     {
+      id: 'dashboard',
+      label: '数据',
+      icon: '📊',
+      badge: null
+    },
+    {
       id: 'gallery',
       label: '档案',
       icon: '📷',

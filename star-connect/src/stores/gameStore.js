@@ -43,6 +43,7 @@ import {
   getEventMultiplier,
   getUpcomingMeteorShowers,
 } from '../data/nightSkyEvents'
+import { ROUTE_ACHIEVEMENTS } from '../data/starRoute'
 
 let autoSaveEnabled = true
 
@@ -1604,6 +1605,156 @@ export const useGameStore = create(
           logs: state.observationLogs.length,
           seasonRewardsClaimed: state.seasonRewardsClaimed.length,
           totalSeasonRewards: Object.keys(SEASONS).length * Object.keys(SEASON_PHASES).length
+        }
+      },
+
+      getObservationStats: (timeRange = 'all') => {
+        const state = get()
+        const now = new Date()
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+        let startDate = null
+        if (timeRange === 'today') {
+          startDate = today
+        } else if (timeRange === 'week') {
+          startDate = new Date(today)
+          startDate.setDate(startDate.getDate() - 6)
+        } else if (timeRange === 'month') {
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+        }
+
+        const filteredLogs = state.observationLogs.filter(log => {
+          if (!startDate || !log.timestamp) return true
+          return new Date(log.timestamp) >= startDate
+        })
+
+        const discoveryLogs = filteredLogs.filter(l => l.type === 'discovery')
+        const reobservationLogs = filteredLogs.filter(l => l.type === 'reobservation')
+        const perfectLogs = filteredLogs.filter(l => l.perfect)
+
+        const dailyData = {}
+        const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : timeRange === 'today' ? 1 : 30
+
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date(today)
+          d.setDate(d.getDate() - i)
+          const key = d.toISOString().split('T')[0]
+          dailyData[key] = {
+            date: key,
+            discoveries: 0,
+            reobservations: 0,
+            perfect: 0,
+            total: 0
+          }
+        }
+
+        filteredLogs.forEach(log => {
+          if (!log.timestamp) return
+          const logDate = new Date(log.timestamp)
+          const key = logDate.toISOString().split('T')[0]
+          if (dailyData[key]) {
+            if (log.type === 'discovery') dailyData[key].discoveries++
+            if (log.type === 'reobservation') dailyData[key].reobservations++
+            if (log.perfect) dailyData[key].perfect++
+            dailyData[key].total++
+          }
+        })
+
+        const dailyArray = Object.values(dailyData)
+
+        const constellationStats = {}
+        CONSTELLATIONS.forEach(c => {
+          constellationStats[c.id] = {
+            id: c.id,
+            name: c.name,
+            difficulty: c.difficulty,
+            discovered: state.discoveredConstellations.includes(c.id),
+            perfect: !!state.perfectObservations[c.id],
+            totalObservations: state.totalObservations[c.id] || 0
+          }
+        })
+
+        const activeDays = dailyArray.filter(d => d.total > 0).length
+        const checkinDays = Object.keys(state.observationCalendar.checkinRecords).filter(key => {
+          if (!startDate) return true
+          return new Date(key) >= startDate
+        }).length
+
+        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length
+        const achievementRate = totalAchievements > 0
+          ? Math.round((state.unlockedAchievements.length / totalAchievements) * 100)
+          : 0
+
+        const discoveryRate = CONSTELLATIONS.length > 0
+          ? Math.round((state.discoveredConstellations.length / CONSTELLATIONS.length) * 100)
+          : 0
+
+        const perfectRate = state.discoveredConstellations.length > 0
+          ? Math.round((Object.keys(state.perfectObservations).length / state.discoveredConstellations.length) * 100)
+          : 0
+
+        const totalObservationsCount = Object.values(state.totalObservations).reduce((sum, n) => sum + n, 0)
+        const avgMistakesPerObservation = totalObservationsCount > 0
+          ? Math.round((state.totalMistakes / totalObservationsCount) * 10) / 10
+          : 0
+
+        const difficultyDistribution = {
+          easy: { label: '难度1', count: 0, discovered: 0, perfect: 0 },
+          medium: { label: '难度2', count: 0, discovered: 0, perfect: 0 },
+          hard: { label: '难度3', count: 0, discovered: 0, perfect: 0 }
+        }
+
+        CONSTELLATIONS.forEach(c => {
+          const key = c.difficulty === 1 ? 'easy' : c.difficulty === 2 ? 'medium' : 'hard'
+          difficultyDistribution[key].count++
+          if (state.discoveredConstellations.includes(c.id)) {
+            difficultyDistribution[key].discovered++
+          }
+          if (state.perfectObservations[c.id]) {
+            difficultyDistribution[key].perfect++
+          }
+        })
+
+        const seasonDistribution = {}
+        Object.keys(SEASONS).forEach(seasonId => {
+          const constellationIds = getSeasonConstellations(seasonId)
+          const discovered = constellationIds.filter(id =>
+            state.discoveredConstellations.includes(id)
+          ).length
+          seasonDistribution[seasonId] = {
+            ...SEASONS[seasonId],
+            total: constellationIds.length,
+            discovered
+          }
+        })
+
+        return {
+          overview: {
+            totalConstellations: CONSTELLATIONS.length,
+            discoveredConstellations: state.discoveredConstellations.length,
+            discoveryRate,
+            perfectConstellations: Object.keys(state.perfectObservations).length,
+            perfectRate,
+            totalAchievements,
+            unlockedAchievements: state.unlockedAchievements.length,
+            achievementRate,
+            totalMistakes: state.totalMistakes,
+            avgMistakesPerObservation,
+            totalObservations: totalObservationsCount,
+            activeDays,
+            checkinDays,
+            checkinStreak: state.observationCalendar.checkinStreak
+          },
+          timeRangeData: {
+            discoveries: discoveryLogs.length,
+            reobservations: reobservationLogs.length,
+            perfect: perfectLogs.length,
+            total: filteredLogs.length
+          },
+          dailyData: dailyArray,
+          constellationStats: Object.values(constellationStats),
+          difficultyDistribution,
+          seasonDistribution
         }
       },
 
