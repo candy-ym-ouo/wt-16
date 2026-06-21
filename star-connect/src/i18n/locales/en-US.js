@@ -1,5 +1,3 @@
-import { registerLocale } from '../index'
-
 const enUS = {
   constellation: {
     ursa_major: {
@@ -317,7 +315,5 @@ const enUS = {
     stardustGained: 'Stardust earned',
   },
 }
-
-registerLocale('en-US', () => Promise.resolve({ default: enUS }))
 
 export default enUS

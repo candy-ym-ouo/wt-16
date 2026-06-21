@@ -1,8 +1,13 @@
-const LOCALE_LOADERS = {}
+const LOCALE_LOADERS = {
+  'zh-CN': () => import('./locales/zh-CN.js'),
+  'en-US': () => import('./locales/en-US.js'),
+}
 const loadedLocales = {}
+const localeCaches = {}
 const listeners = new Set()
 
 let currentLanguage = 'zh-CN'
+let currentCache = null
 
 const FALLBACK_CHAIN = {
   'zh-CN': ['zh-CN'],
@@ -23,10 +28,15 @@ export function getCurrentLanguage() {
   return currentLanguage
 }
 
+function notifyListeners(code) {
+  listeners.forEach((fn) => fn(code))
+}
+
 export function setLanguage(code) {
   if (code === currentLanguage) return
   currentLanguage = code
-  listeners.forEach((fn) => fn(code))
+  currentCache = localeCaches[code] || null
+  notifyListeners(code)
 }
 
 export function onLanguageChange(fn) {
@@ -34,18 +44,48 @@ export function onLanguageChange(fn) {
   return () => listeners.delete(fn)
 }
 
+function flattenLocale(obj, prefix = '', result = {}) {
+  for (const key of Object.keys(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key
+    const value = obj[key]
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      flattenLocale(value, fullKey, result)
+    } else {
+      result[fullKey] = value
+    }
+  }
+  return result
+}
+
+function buildCache(code) {
+  const locale = loadedLocales[code]
+  if (!locale) return null
+  const cache = flattenLocale(locale)
+  localeCaches[code] = cache
+  return cache
+}
+
 export async function loadLanguage(code) {
-  if (loadedLocales[code]) return loadedLocales[code]
+  if (loadedLocales[code]) {
+    if (!localeCaches[code]) buildCache(code)
+    return loadedLocales[code]
+  }
   const loader = LOCALE_LOADERS[code]
   if (!loader) return null
   const locale = await loader()
   loadedLocales[code] = locale.default || locale
+  buildCache(code)
   return loadedLocales[code]
 }
 
 export async function switchLanguage(code) {
+  if (code === currentLanguage) return
+  const currentLoaded = !!loadedLocales[code]
   await loadLanguage(code)
   setLanguage(code)
+  if (!currentLoaded) {
+    notifyListeners(code)
+  }
 }
 
 export function getLocale(code) {
@@ -53,23 +93,12 @@ export function getLocale(code) {
   return loadedLocales[lang] || null
 }
 
-function resolveValue(obj, path) {
-  if (!obj) return undefined
-  const keys = path.split('.')
-  let current = obj
-  for (const key of keys) {
-    if (current == null) return undefined
-    current = current[key]
-  }
-  return current
-}
-
-export function t(key, params) {
+function resolveValueFromCache(key, params) {
   const chain = FALLBACK_CHAIN[currentLanguage] || [currentLanguage, 'zh-CN']
   for (const lang of chain) {
-    const locale = loadedLocales[lang]
-    if (!locale) continue
-    const value = resolveValue(locale, key)
+    const cache = localeCaches[lang]
+    if (!cache) continue
+    const value = cache[key]
     if (value !== undefined) {
       if (typeof value === 'function') return value(params)
       if (params && typeof value === 'string') {
@@ -80,6 +109,12 @@ export function t(key, params) {
       return value
     }
   }
+  return undefined
+}
+
+export function t(key, params) {
+  const value = resolveValueFromCache(key, params)
+  if (value !== undefined) return value
   return key
 }
 
@@ -88,9 +123,15 @@ export function tc(category, id, field, params) {
   return t(fullKey, params)
 }
 
-export function initI18n(initialLang = 'zh-CN') {
+export async function initI18n(initialLang = 'zh-CN') {
   currentLanguage = initialLang
-  return loadLanguage(initialLang)
+  await loadLanguage(initialLang)
+  currentCache = localeCaches[initialLang] || null
+  return loadedLocales[initialLang]
+}
+
+export function isLanguageLoaded(code) {
+  return !!loadedLocales[code]
 }
 
 export { loadedLocales }

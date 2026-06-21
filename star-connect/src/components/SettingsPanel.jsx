@@ -3,7 +3,6 @@ import { useGameStore } from '../stores/gameStore'
 import { DEFAULT_SETTINGS } from '../data/constants'
 import { audioManager } from '../modules/AudioManager'
 import { useI18n } from '../i18n/useI18n'
-import { setLanguage as setI18nLanguage } from '../i18n/index'
 
 export default function SettingsPanel() {
   const {
@@ -15,7 +14,7 @@ export default function SettingsPanel() {
     getProgress,
     manualSave
   } = useGameStore()
-  const { t, language, supportedLanguages } = useI18n()
+  const { t, language, changeLanguage, supportedLanguages, isLoading } = useI18n()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showSavedToast, setShowSavedToast] = useState(false)
   const progress = getProgress()
@@ -29,7 +28,7 @@ export default function SettingsPanel() {
   const handleLanguageChange = async (code) => {
     audioManager.ensureContext()
     audioManager.playClick()
-    await setI18nLanguage(code)
+    await changeLanguage(code)
     updateSettings({ language: code })
   }
 
@@ -126,13 +125,18 @@ export default function SettingsPanel() {
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
+                    disabled={isLoading}
                     className={`py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
                       language === lang.code
                         ? 'bg-nebula-purple text-white'
                         : 'bg-space-800/60 text-white/60 hover:bg-space-700/60'
-                    }`}
+                    } ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
-                    <span>{lang.icon}</span>
+                    {isLoading && language !== lang.code ? (
+                      <span className="animate-spin">⏳</span>
+                    ) : (
+                      <span>{lang.icon}</span>
+                    )}
                     <span>{lang.name}</span>
                   </button>
                 ))}

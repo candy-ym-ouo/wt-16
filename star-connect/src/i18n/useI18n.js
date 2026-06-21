@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react'
+import { useState, useEffect, useCallback, useSyncExternalStore, useRef } from 'react'
 import {
   t as _t,
   tc as _tc,
@@ -6,6 +6,7 @@ import {
   switchLanguage,
   onLanguageChange,
   loadLanguage,
+  isLanguageLoaded,
   SUPPORTED_LANGUAGES,
 } from './index'
 
@@ -14,6 +15,8 @@ export function useI18n() {
     onLanguageChange,
     getCurrentLanguage
   )
+  const [isLoading, setIsLoading] = useState(false)
+  const loadingRef = useRef(false)
 
   const t = useCallback(
     (key, params) => _t(key, params),
@@ -26,7 +29,23 @@ export function useI18n() {
   )
 
   const changeLanguage = useCallback(async (code) => {
-    await switchLanguage(code)
+    if (loadingRef.current) return
+    if (code === language) return
+    loadingRef.current = true
+    setIsLoading(true)
+    try {
+      await switchLanguage(code)
+    } finally {
+      loadingRef.current = false
+      setIsLoading(false)
+    }
+  }, [language])
+
+  const preloadLanguage = useCallback(async (code) => {
+    if (isLanguageLoaded(code)) return
+    try {
+      await loadLanguage(code)
+    } catch (_) {}
   }, [])
 
   return {
@@ -34,6 +53,8 @@ export function useI18n() {
     tc,
     language,
     changeLanguage,
+    preloadLanguage,
+    isLoading,
     supportedLanguages: SUPPORTED_LANGUAGES,
     isZh: language === 'zh-CN',
     isEn: language === 'en-US',

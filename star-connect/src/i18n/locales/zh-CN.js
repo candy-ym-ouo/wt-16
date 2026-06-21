@@ -1,5 +1,3 @@
-import { registerLocale } from '../index'
-
 const zhCN = {
   constellation: {
     ursa_major: {
@@ -317,7 +315,5 @@ const zhCN = {
     stardustGained: '获得星尘',
   },
 }
-
-registerLocale('zh-CN', () => Promise.resolve({ default: zhCN }))
 
 export default zhCN
