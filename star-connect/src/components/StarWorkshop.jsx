@@ -44,8 +44,6 @@ export default function StarWorkshop() {
     resetWorkshopSettings()
   }
 
-  const panelStyle = PANEL_STYLES[workshop.panelStyle] || PANEL_STYLES.glass
-
   const tabs = [
     { id: 'presets', label: '主题预设', icon: '🎨' },
     { id: 'background', label: '背景风格', icon: '🌌' },
@@ -56,7 +54,7 @@ export default function StarWorkshop() {
 
   const renderPresets = () => (
     <div className="space-y-4">
-      <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20">
+      <div className="p-4 rounded-2xl glass-panel-inner">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🎨</span>
           <h4 className="font-display text-white/90 text-sm">快速应用主题</h4>
@@ -111,7 +109,7 @@ export default function StarWorkshop() {
         </div>
       </div>
 
-      <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20">
+      <div className="p-4 rounded-2xl glass-panel-inner">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">⚙️</span>
@@ -185,7 +183,7 @@ export default function StarWorkshop() {
 
   const renderStarDensity = () => (
     <div className="space-y-3">
-      <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20">
+      <div className="p-4 rounded-2xl glass-panel-inner">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-lg">⭐</span>
           <h4 className="font-display text-white/90 text-sm">星点密度</h4>
@@ -232,7 +230,7 @@ export default function StarWorkshop() {
         </div>
       </div>
 
-      <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20">
+      <div className="p-4 rounded-2xl glass-panel-inner">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🎚️</span>
           <h4 className="font-display text-white/90 text-sm">精细调节</h4>
@@ -327,18 +325,41 @@ export default function StarWorkshop() {
 
   const renderPanelStyles = () => (
     <div className="space-y-3">
+      <div className="p-4 rounded-2xl glass-panel-inner">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">🖼️</span>
+          <h4 className="font-display text-white/90 text-sm">面板外观</h4>
+          <span className="text-[10px] text-white/40 ml-auto">
+            切换后所有面板同步生效
+          </span>
+        </div>
+      </div>
+
       {Object.values(PANEL_STYLES).map((style) => {
         const isActive = workshop.panelStyle === style.id
         return (
           <button
             key={style.id}
             onClick={() => handlePanelStyleChange(style.id)}
-            className={`w-full p-4 rounded-xl text-left transition-all border ${style.borderClass} ${style.bgClass} ${
+            className={`w-full p-4 rounded-xl text-left transition-all ${
               isActive ? 'ring-2 ring-nebula-cyan/50' : ''
             }`}
+            style={{
+              background: style.vars['--panel-bg'],
+              border: `1px solid ${style.vars['--panel-border']}`,
+              backdropFilter: `blur(${style.vars['--panel-blur']})`,
+              WebkitBackdropFilter: `blur(${style.vars['--panel-blur']})`,
+              boxShadow: style.vars['--panel-shadow']
+            }}
           >
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl ${style.bgClass} ${style.borderClass} border flex items-center justify-center`}>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background: style.vars['--panel-inner-bg'],
+                  border: `1px solid ${style.vars['--panel-inner-border']}`
+                }}
+              >
                 <span className="text-lg">🖼️</span>
               </div>
               <div className="flex-1">
@@ -360,7 +381,7 @@ export default function StarWorkshop() {
   return (
     <div className="absolute inset-0 z-40 flex items-end sm:items-center justify-center p-4
                     bg-space-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`w-full max-w-lg ${panelStyle.bgClass} ${panelStyle.borderClass} border ${panelStyle.backdropBlur} ${panelStyle.shadowClass} rounded-2xl max-h-[85vh] flex flex-col overflow-hidden`}>
+      <div className="w-full max-w-lg glass-panel max-h-[85vh] flex flex-col overflow-hidden">
         <div className="p-5 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>

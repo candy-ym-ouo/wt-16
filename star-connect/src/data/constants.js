@@ -152,46 +152,71 @@ export const PANEL_STYLES = {
     id: 'glass',
     name: '玻璃拟态',
     description: '半透明毛玻璃效果',
-    backdropBlur: 'backdrop-blur-xl',
-    bgClass: 'bg-white/10',
-    borderClass: 'border-white/20',
-    shadowClass: 'shadow-2xl'
+    vars: {
+      '--panel-bg': 'rgba(255, 255, 255, 0.1)',
+      '--panel-border': 'rgba(255, 255, 255, 0.2)',
+      '--panel-blur': '24px',
+      '--panel-shadow': '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+      '--panel-inner-bg': 'rgba(15, 21, 48, 0.3)',
+      '--panel-inner-border': 'rgba(255, 255, 255, 0.05)',
+      '--panel-accent': 'rgba(107, 91, 255, 0.4)'
+    }
   },
   dark: {
     id: 'dark',
     name: '深空暗调',
     description: '深邃的太空暗色风格',
-    backdropBlur: 'backdrop-blur-md',
-    bgClass: 'bg-space-800/90',
-    borderClass: 'border-white/10',
-    shadowClass: 'shadow-xl'
+    vars: {
+      '--panel-bg': 'rgba(10, 14, 31, 0.9)',
+      '--panel-border': 'rgba(255, 255, 255, 0.1)',
+      '--panel-blur': '12px',
+      '--panel-shadow': '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
+      '--panel-inner-bg': 'rgba(26, 34, 72, 0.3)',
+      '--panel-inner-border': 'rgba(255, 255, 255, 0.05)',
+      '--panel-accent': 'rgba(107, 91, 255, 0.3)'
+    }
   },
   cosmic: {
     id: 'cosmic',
     name: '星云紫调',
     description: '神秘的紫色星云风格',
-    backdropBlur: 'backdrop-blur-xl',
-    bgClass: 'bg-nebula-purple/10',
-    borderClass: 'border-nebula-purple/30',
-    shadowClass: 'shadow-2xl'
+    vars: {
+      '--panel-bg': 'rgba(107, 91, 255, 0.1)',
+      '--panel-border': 'rgba(107, 91, 255, 0.3)',
+      '--panel-blur': '24px',
+      '--panel-shadow': '0 25px 50px -12px rgba(107, 91, 255, 0.2)',
+      '--panel-inner-bg': 'rgba(15, 21, 48, 0.4)',
+      '--panel-inner-border': 'rgba(107, 91, 255, 0.15)',
+      '--panel-accent': 'rgba(107, 91, 255, 0.5)'
+    }
   },
   aurora: {
     id: 'aurora',
     name: '极光青蓝',
     description: '清新的极光青色调',
-    backdropBlur: 'backdrop-blur-xl',
-    bgClass: 'bg-nebula-cyan/10',
-    borderClass: 'border-nebula-cyan/30',
-    shadowClass: 'shadow-2xl'
+    vars: {
+      '--panel-bg': 'rgba(79, 240, 217, 0.1)',
+      '--panel-border': 'rgba(79, 240, 217, 0.3)',
+      '--panel-blur': '24px',
+      '--panel-shadow': '0 25px 50px -12px rgba(79, 240, 217, 0.15)',
+      '--panel-inner-bg': 'rgba(15, 21, 48, 0.4)',
+      '--panel-inner-border': 'rgba(79, 240, 217, 0.15)',
+      '--panel-accent': 'rgba(79, 240, 217, 0.4)'
+    }
   },
   gold: {
     id: 'gold',
     name: '黄金奢华',
     description: '尊贵的金色边框风格',
-    backdropBlur: 'backdrop-blur-lg',
-    bgClass: 'bg-star-gold/5',
-    borderClass: 'border-star-gold/30',
-    shadowClass: 'shadow-2xl'
+    vars: {
+      '--panel-bg': 'rgba(255, 215, 0, 0.05)',
+      '--panel-border': 'rgba(255, 215, 0, 0.3)',
+      '--panel-blur': '16px',
+      '--panel-shadow': '0 25px 50px -12px rgba(255, 215, 0, 0.15)',
+      '--panel-inner-bg': 'rgba(15, 21, 48, 0.3)',
+      '--panel-inner-border': 'rgba(255, 215, 0, 0.1)',
+      '--panel-accent': 'rgba(255, 215, 0, 0.4)'
+    }
   }
 }
 

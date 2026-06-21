@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { ACHIEVEMENTS } from '../data/achievements'
-import { DEFAULT_SETTINGS, STORAGE_KEYS, PRESET_THEMES } from '../data/constants'
+import { DEFAULT_SETTINGS, STORAGE_KEYS } from '../data/constants'
 import {
   SEASONS,
   SEASON_PHASES,
@@ -50,23 +50,42 @@ import {
   getTeamAchievementById
 } from '../data/team'
 import {
-  ALL_SHOP_ITEMS,
-  SHOP_SKINS,
-  SHOP_ITEMS,
-  SHOP_DECORATIONS,
-  getShopItemById
-} from '../data/shop'
+  INITIAL_GALLERY_PHOTOS,
+  getGalleryStats,
+  filterGalleryPhotos,
+  getPhotoById,
+  toggleFeatured,
+  addPhoto,
+  updatePhoto,
+  deletePhoto
+} from '../data/starGallery'
 import {
-  CHALLENGE_DIFFICULTIES,
-  CHALLENGE_SEASON_TIERS,
-  CHALLENGE_SEASON_REWARDS,
-  generateChallengeRoute,
-  calculateChallengeScore,
-  getSeasonTier,
-  getNextTier,
-  generateLeaderboard,
-  getChallengeDateKey
-} from '../data/constellationChallenge'
+  TUTORIAL_STEPS,
+  ADVANCED_TASKS,
+  TUTORIAL_REWARDS,
+  getTutorialStepById,
+  getAdvancedTaskById,
+  calculateTutorialProgress,
+  getErrorHint
+} from '../data/tutorial'
+import {
+  generateRoute,
+  calculateRouteProgress,
+  isRoutePerfect,
+  getRouteStats,
+  ROUTE_ACHIEVEMENTS,
+  getRouteAchievementById,
+  DIFFICULTY_PREFERENCE
+} from '../data/starRoute'
+import {
+  STORY_ARCS,
+  FINAL_CHAPTER,
+  getChapter,
+  getSeasonForConstellation,
+  isSeasonComplete,
+  isAllSeasonsComplete,
+  getChapterCount
+} from '../data/storyChapters'
 
 let autoSaveEnabled = true
 
@@ -108,45 +127,6 @@ export const useGameStore = create(
       resetSettings: () =>
         set({ settings: { ...DEFAULT_SETTINGS } }),
 
-      updateWorkshopSettings: (newWorkshopSettings) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            workshop: {
-              ...state.settings.workshop,
-              ...newWorkshopSettings
-            }
-          }
-        })),
-
-      applyPresetTheme: (presetId) => {
-        const preset = PRESET_THEMES.find(p => p.id === presetId)
-        if (preset) {
-          set((state) => ({
-            settings: {
-              ...state.settings,
-              workshop: {
-                ...state.settings.workshop,
-                backgroundStyle: preset.backgroundStyle,
-                starDensity: preset.starDensity,
-                connectionEffect: preset.connectionEffect,
-                panelStyle: preset.panelStyle
-              }
-            }
-          }))
-          return true
-        }
-        return false
-      },
-
-      resetWorkshopSettings: () =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            workshop: { ...DEFAULT_SETTINGS.workshop }
-          }
-        })),
-
       manualSave: () => {
         const state = get()
         const persistConfig = {
@@ -167,7 +147,11 @@ export const useGameStore = create(
             familyMode: state.familyMode,
             nightExpedition: state.nightExpedition,
             observationCalendar: state.observationCalendar,
-            quiz: state.quiz
+            quiz: state.quiz,
+            starGallery: state.starGallery,
+            tutorial: state.tutorial,
+            storyProgress: state.storyProgress,
+            starRoute: state.starRoute
           },
           version: 0
         }
@@ -1281,6 +1265,7 @@ export const useGameStore = create(
           mistakes: 0,
           perfectRun: true
         })
+        get().checkTutorialProgress()
       },
 
       connectStar: (starId) => {
@@ -1314,14 +1299,13 @@ export const useGameStore = create(
               perfectRun: false
             })
 
-            if (inExpedition) {
-              const result = get().recordExpeditionMistake()
-              if (result === 'failed') return false
+            if (state.tutorial.started && !state.tutorial.completed) {
+              get().recordTutorialMistake()
+              get().showTutorialError('wrong_connection')
             }
 
-            const inChallenge = state.constellationChallenge.currentChallenge?.active
-            if (inChallenge) {
-              const result = get().recordChallengeMistake()
+            if (inExpedition) {
+              const result = get().recordExpeditionMistake()
               if (result === 'failed') return false
             }
 
@@ -1339,6 +1323,8 @@ export const useGameStore = create(
 
         get().checkConstellationComplete()
         get().checkAchievements()
+        get().checkTutorialProgress()
+        get().checkAdvancedTasks()
         return true
       },
 
@@ -1429,9 +1415,11 @@ export const useGameStore = create(
             get().advanceExpeditionStage()
           }
 
-          if (state.constellationChallenge.currentChallenge?.active) {
-            get().advanceChallengeStage()
+          if (state.starRoute.currentRoute) {
+            get().updateRouteStep(constellationId, isPerfect)
           }
+
+          get().checkStoryProgress()
 
           return true
         }
@@ -1464,6 +1452,255 @@ export const useGameStore = create(
       clearLogs: () => set({ observationLogs: [] }),
 
       unlockedAchievements: [],
+
+      storyProgress: {
+        unlockedChapters: [],
+        readChapters: [],
+        unlockedEpilogues: [],
+        readEpilogues: [],
+        unlockedPrologues: [],
+        readPrologues: [],
+        finalChapterUnlocked: false,
+        finalChapterRead: false,
+        narrativeChoices: {},
+        pendingUnlock: null
+      },
+
+      setPendingStoryUnlock: (unlockData) => set({
+        storyProgress: {
+          ...get().storyProgress,
+          pendingUnlock: unlockData
+        }
+      }),
+
+      clearPendingStoryUnlock: () => set({
+        storyProgress: {
+          ...get().storyProgress,
+          pendingUnlock: null
+        }
+      }),
+
+      unlockChapter: (chapterId) => {
+        const state = get()
+        if (state.storyProgress.unlockedChapters.includes(chapterId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            unlockedChapters: [...state.storyProgress.unlockedChapters, chapterId]
+          }
+        })
+        get().addLog({
+          type: 'story_chapter_unlocked',
+          chapterId,
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markChapterAsRead: (chapterId) => {
+        const state = get()
+        if (state.storyProgress.readChapters.includes(chapterId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            readChapters: [...state.storyProgress.readChapters, chapterId]
+          }
+        })
+        for (const arc of Object.values(STORY_ARCS)) {
+          for (const chapter of Object.values(arc.chapters)) {
+            if (chapter.id === chapterId && chapter.reward?.stardust) {
+              get().addStardust(chapter.reward.stardust, `剧情章节：${chapter.title}`)
+              break
+            }
+          }
+        }
+        return true
+      },
+
+      unlockPrologue: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.unlockedPrologues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            unlockedPrologues: [...state.storyProgress.unlockedPrologues, seasonId]
+          }
+        })
+        get().addLog({
+          type: 'story_prologue_unlocked',
+          seasonId,
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markPrologueAsRead: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.readPrologues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            readPrologues: [...state.storyProgress.readPrologues, seasonId]
+          }
+        })
+        return true
+      },
+
+      unlockEpilogue: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.unlockedEpilogues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            unlockedEpilogues: [...state.storyProgress.unlockedEpilogues, seasonId]
+          }
+        })
+        get().addLog({
+          type: 'story_epilogue_unlocked',
+          seasonId,
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markEpilogueAsRead: (seasonId) => {
+        const state = get()
+        if (state.storyProgress.readEpilogues.includes(seasonId)) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            readEpilogues: [...state.storyProgress.readEpilogues, seasonId]
+          }
+        })
+        const arc = STORY_ARCS[seasonId]
+        if (arc?.epilogue?.reward?.stardust) {
+          get().addStardust(arc.epilogue.reward.stardust, `季节终章：${arc.epilogue.title}`)
+        }
+        get().checkStoryProgress()
+        return true
+      },
+
+      unlockFinalChapter: () => {
+        const state = get()
+        if (state.storyProgress.finalChapterUnlocked) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            finalChapterUnlocked: true
+          }
+        })
+        get().addLog({
+          type: 'story_final_unlocked',
+          timestamp: Date.now()
+        })
+        return true
+      },
+
+      markFinalChapterAsRead: () => {
+        const state = get()
+        if (state.storyProgress.finalChapterRead) return false
+        set({
+          storyProgress: {
+            ...state.storyProgress,
+            finalChapterRead: true
+          }
+        })
+        if (FINAL_CHAPTER.reward?.stardust) {
+          get().addStardust(FINAL_CHAPTER.reward.stardust, '最终章：星辰之书')
+        }
+        return true
+      },
+
+      setNarrativeChoice: (chapterId, choiceId) => {
+        set((state) => ({
+          storyProgress: {
+            ...state.storyProgress,
+            narrativeChoices: {
+              ...state.storyProgress.narrativeChoices,
+              [chapterId]: choiceId
+            }
+          }
+        }))
+      },
+
+      checkStoryProgress: () => {
+        const state = get()
+        const discoveries = state.discoveredConstellations
+        const newlyUnlocked = []
+
+        Object.entries(STORY_ARCS).forEach(([seasonId, arc]) => {
+          if (!state.storyProgress.unlockedPrologues.includes(seasonId)) {
+            const seasonConstellations = Object.keys(arc.chapters)
+            const discoveredInSeason = seasonConstellations.some(id =>
+              discoveries.includes(id)
+            )
+            if (discoveredInSeason) {
+              if (get().unlockPrologue(seasonId)) {
+                newlyUnlocked.push({ type: 'prologue', seasonId, data: arc.prologue })
+              }
+            }
+          }
+
+          Object.entries(arc.chapters).forEach(([constellationId, chapter]) => {
+            if (!state.storyProgress.unlockedChapters.includes(chapter.id) &&
+                discoveries.includes(constellationId)) {
+              if (get().unlockChapter(chapter.id)) {
+                newlyUnlocked.push({ type: 'chapter', chapterId: chapter.id, data: chapter })
+              }
+            }
+          })
+
+          if (!state.storyProgress.unlockedEpilogues.includes(seasonId) &&
+              isSeasonComplete(seasonId, discoveries)) {
+            if (get().unlockEpilogue(seasonId)) {
+              newlyUnlocked.push({ type: 'epilogue', seasonId, data: arc.epilogue })
+            }
+          }
+        })
+
+        if (!state.storyProgress.finalChapterUnlocked &&
+            isAllSeasonsComplete(discoveries)) {
+          if (get().unlockFinalChapter()) {
+            newlyUnlocked.push({ type: 'final', data: FINAL_CHAPTER })
+          }
+        }
+
+        if (newlyUnlocked.length > 0) {
+          get().setPendingStoryUnlock(newlyUnlocked)
+        }
+
+        return newlyUnlocked
+      },
+
+      getStoryStats: () => {
+        const state = get()
+        const sp = state.storyProgress
+        const totalChapters = getChapterCount()
+        const unlockedChapters = sp.unlockedChapters.length
+        const readChapters = sp.readChapters.length
+        const unlockedPrologues = sp.unlockedPrologues.length
+        const readPrologues = sp.readPrologues.length
+        const unlockedEpilogues = sp.unlockedEpilogues.length
+        const readEpilogues = sp.readEpilogues.length
+        const totalStoryContent = totalChapters + 4 + 4 + 1
+
+        return {
+          totalChapters,
+          unlockedChapters,
+          readChapters,
+          unlockedPrologues,
+          readPrologues,
+          unlockedEpilogues,
+          readEpilogues,
+          finalChapterUnlocked: sp.finalChapterUnlocked,
+          finalChapterRead: sp.finalChapterRead,
+          totalUnlocked: unlockedChapters + unlockedPrologues + unlockedEpilogues + (sp.finalChapterUnlocked ? 1 : 0),
+          totalRead: readChapters + readPrologues + readEpilogues + (sp.finalChapterRead ? 1 : 0),
+          overallProgress: totalStoryContent > 0
+            ? Math.round(((readChapters + readPrologues + readEpilogues + (sp.finalChapterRead ? 1 : 0)) / totalStoryContent) * 100)
+            : 0
+        }
+      },
 
       seasonProgress: {
         spring: { beginner: false, intermediate: false, master: false },
@@ -1593,7 +1830,7 @@ export const useGameStore = create(
         const state = get()
         const newlyUnlocked = []
 
-        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS]
+        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS, ...ROUTE_ACHIEVEMENTS]
 
         allAchievements.forEach((achievement) => {
           if (state.unlockedAchievements.includes(achievement.id)) return
@@ -1667,6 +1904,19 @@ export const useGameStore = create(
             case 'quiz_exchange':
               unlocked = (state.quiz?.redeemedRewards?.length || 0) >= value
               break
+            case 'route_complete':
+              unlocked = state.starRoute?.totalRoutesCompleted >= value
+              break
+            case 'route_type_complete': {
+              const completedOfType = state.starRoute?.routeHistory?.filter(
+                r => r.status === 'completed' && r.type === value
+              ).length || 0
+              unlocked = completedOfType >= 1
+              break
+            }
+            case 'route_perfect':
+              unlocked = state.starRoute?.perfectRoutes >= value
+              break
           }
 
           if (unlocked) {
@@ -1682,19 +1932,9 @@ export const useGameStore = create(
             ]
           }))
           newlyUnlocked.forEach((id) => {
-            const achievement = allAchievements.find(a => a.id === id)
-            if (achievement?.reward) {
-              if (achievement.reward.type === 'stardust') {
-                get().addStardust(achievement.reward.amount, `成就奖励：${achievement.name}`)
-              }
-              if (achievement.reward.type === 'item') {
-                get().addShopReward(achievement.reward.itemId, `成就奖励：${achievement.name}`)
-              }
-            }
             get().addLog({
               type: 'achievement',
               achievementId: id,
-              reward: achievement?.reward,
               timestamp: Date.now()
             })
           })
@@ -2589,588 +2829,183 @@ export const useGameStore = create(
         }
       },
 
-      shop: {
-        inventory: {},
-        unlockedSkins: ['skin_default'],
-        unlockedDecorations: [],
-        currentSkin: 'skin_default',
-        activeDecorations: [],
-        purchaseHistory: [],
-        hints: 0,
-        perfectCharms: 0,
-        doubleStardustUntil: 0
+      starGallery: {
+        photos: INITIAL_GALLERY_PHOTOS,
+        activeGalleryPanel: 'grid',
+        selectedPhotoId: null,
+        prefillConstellationId: null,
+        galleryFilters: {
+          season: 'all',
+          difficulty: 'all',
+          category: 'all',
+          featuredOnly: false,
+          search: '',
+          sortBy: 'featured'
+        }
       },
 
-      constellationChallenge: {
-        dailyAttempts: {},
-        lastAttemptDate: null,
-        bestScores: { novice: 0, elite: 0, master: 0 },
-        seasonScores: {},
-        records: [],
-        seasonRewardsClaimed: [],
-        currentChallenge: null
-      },
+      setActiveGalleryPanel: (panel) => set((state) => ({
+        starGallery: { ...state.starGallery, activeGalleryPanel: panel }
+      })),
 
-      syncChallengeDailyAttempts: () => {
-        const state = get()
-        const todayKey = getChallengeDateKey()
-        if (state.constellationChallenge.lastAttemptDate === todayKey) return
+      setSelectedPhotoId: (photoId) => set((state) => ({
+        starGallery: { ...state.starGallery, selectedPhotoId: photoId }
+      })),
 
-        set((s) => ({
-          constellationChallenge: {
-            ...s.constellationChallenge,
-            dailyAttempts: {},
-            lastAttemptDate: todayKey
+      setGalleryFilters: (filters) => set((state) => ({
+        starGallery: {
+          ...state.starGallery,
+          galleryFilters: { ...state.starGallery.galleryFilters, ...filters }
+        }
+      })),
+
+      resetGalleryFilters: () => set((state) => ({
+        starGallery: {
+          ...state.starGallery,
+          galleryFilters: {
+            season: 'all',
+            difficulty: 'all',
+            category: 'all',
+            featuredOnly: false,
+            search: '',
+            sortBy: 'featured'
           }
+        }
+      })),
+
+      addGalleryPhoto: (photoData) => {
+        const state = get()
+        const newPhotos = addPhoto(state.starGallery.photos, photoData)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
         }))
-      },
-
-      startChallenge: (difficultyId) => {
-        get().syncChallengeDailyAttempts()
-        const synced = get().constellationChallenge
-        const config = CHALLENGE_DIFFICULTIES[difficultyId]
-        if (!config) return { success: false, reason: 'invalid_difficulty' }
-
-        const todayAttempts = synced.dailyAttempts[difficultyId] || 0
-        if (todayAttempts >= config.dailyAttempts) {
-          return { success: false, reason: 'no_attempts' }
-        }
-
-        const route = generateChallengeRoute(difficultyId)
-        if (route.length === 0) return { success: false, reason: 'no_constellations' }
-
-        const firstStage = route[0]
-
-        set((s) => ({
-          constellationChallenge: {
-            ...s.constellationChallenge,
-            dailyAttempts: {
-              ...s.constellationChallenge.dailyAttempts,
-              [difficultyId]: (s.constellationChallenge.dailyAttempts[difficultyId] || 0) + 1
-            },
-            currentChallenge: {
-              difficultyId,
-              route,
-              stageIndex: 0,
-              mistakesInStage: 0,
-              stageStartTime: Date.now(),
-              results: [],
-              active: true
-            }
-          },
-          currentTargetConstellation: firstStage.constellationId,
-          connectionPath: [],
-          mistakes: 0,
-          perfectRun: true
-        }))
-
-        return { success: true, route, difficultyId }
-      },
-
-      advanceChallengeStage: () => {
-        const state = get()
-        const cc = state.constellationChallenge
-        const challenge = cc.currentChallenge
-        if (!challenge || !challenge.active) return null
-
-        const currentStage = challenge.route[challenge.stageIndex]
-        const timeUsed = (Date.now() - challenge.stageStartTime) / 1000
-        const isPerfect = challenge.mistakesInStage === 0
-
-        const stageResult = {
-          constellationId: currentStage.constellationId,
-          completed: true,
-          perfect: isPerfect,
-          mistakes: challenge.mistakesInStage,
-          timeUsed: Math.round(timeUsed * 10) / 10
-        }
-
-        const newResults = [...challenge.results, stageResult]
-        const nextIndex = challenge.stageIndex + 1
-
-        if (nextIndex >= challenge.route.length) {
-          return get().completeChallenge(newResults)
-        }
-
-        const nextStage = challenge.route[nextIndex]
-
-        set((s) => ({
-          constellationChallenge: {
-            ...s.constellationChallenge,
-            currentChallenge: {
-              ...s.constellationChallenge.currentChallenge,
-              stageIndex: nextIndex,
-              mistakesInStage: 0,
-              stageStartTime: Date.now(),
-              results: newResults
-            }
-          },
-          currentTargetConstellation: nextStage.constellationId,
-          connectionPath: [],
-          mistakes: 0,
-          perfectRun: true
-        }))
-
-        return { nextStage, stageIndex: nextIndex }
-      },
-
-      failChallengeStage: () => {
-        const state = get()
-        const cc = state.constellationChallenge
-        const challenge = cc.currentChallenge
-        if (!challenge || !challenge.active) return null
-
-        const timeUsed = (Date.now() - challenge.stageStartTime) / 1000
-
-        const stageResult = {
-          constellationId: challenge.route[challenge.stageIndex].constellationId,
-          completed: false,
-          perfect: false,
-          mistakes: challenge.mistakesInStage,
-          timeUsed: Math.round(timeUsed * 10) / 10
-        }
-
-        const newResults = [...challenge.results, stageResult]
-        return get().completeChallenge(newResults)
-      },
-
-      recordChallengeMistake: () => {
-        const state = get()
-        const cc = state.constellationChallenge
-        const challenge = cc.currentChallenge
-        if (!challenge || !challenge.active) return 'no_challenge'
-
-        const currentStage = challenge.route[challenge.stageIndex]
-        const newMistakes = challenge.mistakesInStage + 1
-
-        if (newMistakes > currentStage.allowedMistakes) {
-          get().failChallengeStage()
-          return 'failed'
-        }
-
-        set((s) => ({
-          constellationChallenge: {
-            ...s.constellationChallenge,
-            currentChallenge: {
-              ...s.constellationChallenge.currentChallenge,
-              mistakesInStage: newMistakes
-            }
-          }
-        }))
-
-        return 'continue'
-      },
-
-      completeChallenge: (results) => {
-        const state = get()
-        const cc = state.constellationChallenge
-        const challenge = cc.currentChallenge
-        if (!challenge) return null
-
-        const score = calculateChallengeScore(challenge.difficultyId, results)
-        const seasonId = getCurrentSeason()
-
-        const record = {
-          id: `ch_${Date.now()}`,
-          difficultyId: challenge.difficultyId,
-          score,
-          results,
-          completedStages: results.filter(r => r.completed).length,
-          totalStages: challenge.route.length,
-          perfectStages: results.filter(r => r.perfect).length,
-          timestamp: Date.now()
-        }
-
-        set((s) => {
-          const prevBest = s.constellationChallenge.bestScores[challenge.difficultyId] || 0
-          const newBestScores = { ...s.constellationChallenge.bestScores }
-          if (score > prevBest) {
-            newBestScores[challenge.difficultyId] = score
-          }
-
-          const prevSeasonScore = s.constellationChallenge.seasonScores[seasonId] || 0
-          const newSeasonScores = {
-            ...s.constellationChallenge.seasonScores,
-            [seasonId]: prevSeasonScore + score
-          }
-
-          return {
-            constellationChallenge: {
-              ...s.constellationChallenge,
-              currentChallenge: null,
-              bestScores: newBestScores,
-              seasonScores: newSeasonScores,
-              records: [record, ...s.constellationChallenge.records].slice(0, 100)
-            },
-            currentTargetConstellation: null,
-            connectionPath: [],
-            mistakes: 0
-          }
-        })
-
-        get().addStardust(Math.floor(score / 10), `挑战赛奖励`)
         get().addLog({
-          type: 'challenge_complete',
-          difficultyId: challenge.difficultyId,
-          score,
-          completedStages: record.completedStages,
-          totalStages: record.totalStages,
+          type: 'gallery_photo_added',
+          title: photoData.title,
           timestamp: Date.now()
         })
-        get().checkAchievements()
-
-        return record
+        get().checkGalleryAchievements()
+        return newPhotos[0]
       },
 
-      abandonChallenge: () => {
+      updateGalleryPhoto: (photoId, updates) => {
         const state = get()
-        const cc = state.constellationChallenge
-        const challenge = cc.currentChallenge
-        if (!challenge || !challenge.active) return
+        const newPhotos = updatePhoto(state.starGallery.photos, photoId, updates)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+      },
 
-        if (challenge.results.length > 0) {
-          get().completeChallenge(challenge.results)
-        } else {
-          set((s) => ({
-            constellationChallenge: {
-              ...s.constellationChallenge,
-              currentChallenge: null
-            },
-            currentTargetConstellation: null,
-            connectionPath: [],
-            mistakes: 0
+      deleteGalleryPhoto: (photoId) => {
+        const state = get()
+        const newPhotos = deletePhoto(state.starGallery.photos, photoId)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+      },
+
+      setPrefillConstellation: (constellationId) => set((state) => ({
+        starGallery: { ...state.starGallery, prefillConstellationId: constellationId }
+      })),
+
+      clearPrefillConstellation: () => set((state) => ({
+        starGallery: { ...state.starGallery, prefillConstellationId: null }
+      })),
+
+      openGalleryWithConstellation: (constellationId) => {
+        set((state) => ({
+          starGallery: {
+            ...state.starGallery,
+            prefillConstellationId: constellationId,
+            activeGalleryPanel: 'grid'
+          }
+        }))
+        get().setActivePanel('gallery')
+      },
+
+      togglePhotoFeatured: (photoId) => {
+        const state = get()
+        const newPhotos = toggleFeatured(state.starGallery.photos, photoId)
+        set((state) => ({
+          starGallery: { ...state.starGallery, photos: newPhotos }
+        }))
+        get().addLog({
+          type: 'gallery_featured',
+          photoId,
+          timestamp: Date.now()
+        })
+        get().checkGalleryAchievements()
+      },
+
+      incrementPhotoViews: (photoId) => {
+        const state = get()
+        const photo = getPhotoById(state.starGallery.photos, photoId)
+        if (photo) {
+          set((state) => ({
+            starGallery: {
+              ...state.starGallery,
+              photos: state.starGallery.photos.map(p =>
+                p.id === photoId ? { ...p, views: p.views + 1 } : p
+              )
+            }
           }))
         }
       },
 
-      claimChallengeSeasonReward: (rewardId) => {
+      likePhoto: (photoId) => {
         const state = get()
-        if (state.constellationChallenge.seasonRewardsClaimed.includes(rewardId)) {
-          return false
-        }
-
-        let found = false
-        Object.values(CHALLENGE_SEASON_REWARDS).forEach(tiers => {
-          Object.values(tiers).forEach(reward => {
-            if (reward.id === rewardId) found = true
-          })
-        })
-        if (!found) return false
-
-        const seasonId = getCurrentSeason()
-        const seasonScore = state.constellationChallenge.seasonScores[seasonId] || 0
-        const reward = Object.values(CHALLENGE_SEASON_REWARDS[seasonId] || {}).find(r => r.id === rewardId)
-        if (!reward) return false
-
-        const tierKey = Object.keys(CHALLENGE_SEASON_REWARDS[seasonId] || {}).find(k => CHALLENGE_SEASON_REWARDS[seasonId][k]?.id === rewardId)
-        const requiredTier = CHALLENGE_SEASON_TIERS[tierKey]
-        if (!requiredTier || seasonScore < requiredTier.minScore) return false
-
-        set((s) => ({
-          constellationChallenge: {
-            ...s.constellationChallenge,
-            seasonRewardsClaimed: [...s.constellationChallenge.seasonRewardsClaimed, rewardId]
-          }
-        }))
-
-        if (reward.stardust) {
-          get().addStardust(reward.stardust, `挑战赛段位奖励：${reward.name}`)
-        }
-
-        return true
-      },
-
-      getChallengeStats: () => {
-        get().syncChallengeDailyAttempts()
-        const synced = get().constellationChallenge
-        const seasonId = getCurrentSeason()
-        const seasonScore = synced.seasonScores[seasonId] || 0
-        const currentTier = getSeasonTier(seasonScore)
-        const nextTier = getNextTier(seasonScore)
-
-        const totalChallenges = synced.records.length
-        const totalScore = synced.records.reduce((sum, r) => sum + r.score, 0)
-        const perfectStages = synced.records.reduce((sum, r) => sum + r.perfectStages, 0)
-
-        return {
-          bestScores: synced.bestScores,
-          seasonScore,
-          currentTier,
-          nextTier,
-          totalChallenges,
-          totalScore,
-          perfectStages,
-          dailyAttempts: synced.dailyAttempts,
-          records: synced.records.slice(0, 20),
-          seasonRewardsClaimed: synced.seasonRewardsClaimed
-        }
-      },
-
-      getChallengeLeaderboard: (difficultyId) => {
-        const state = get()
-        const bestScore = state.constellationChallenge.bestScores[difficultyId] || 0
-        return generateLeaderboard(difficultyId, bestScore)
-      },
-
-      getChallengeRemainingAttempts: (difficultyId) => {
-        get().syncChallengeDailyAttempts()
-        const synced = get().constellationChallenge
-        const config = CHALLENGE_DIFFICULTIES[difficultyId]
-        if (!config) return 0
-        const used = synced.dailyAttempts[difficultyId] || 0
-        return Math.max(0, config.dailyAttempts - used)
-      },
-
-      buyShopItem: (itemId) => {
-        const state = get()
-        const item = getShopItemById(itemId)
-        if (!item) return { success: false, reason: 'item_not_found' }
-
-        const oc = state.observationCalendar
-        if (item.priceType === 'stardust' && oc.stardust < item.price) {
-          return { success: false, reason: 'not_enough_stardust' }
-        }
-
-        if (item.type === 'skin') {
-          if (state.shop.unlockedSkins.includes(itemId)) {
-            return { success: false, reason: 'already_owned' }
-          }
-        }
-        if (item.type === 'decoration') {
-          if (state.shop.unlockedDecorations.includes(itemId)) {
-            return { success: false, reason: 'already_owned' }
-          }
-        }
-
-        if (item.type === 'consumable') {
-          const currentCount = state.shop.inventory[itemId] || 0
-          if (currentCount >= item.maxStack) {
-            return { success: false, reason: 'max_stack_reached' }
-          }
-        }
-
-        set((s) => {
-          const newShop = { ...s.shop }
-          const newOC = { ...s.observationCalendar }
-
-          if (item.priceType === 'stardust') {
-            newOC.stardust -= item.price
-          }
-
-          if (item.type === 'skin') {
-            newShop.unlockedSkins = [...newShop.unlockedSkins, itemId]
-          } else if (item.type === 'decoration') {
-            newShop.unlockedDecorations = [...newShop.unlockedDecorations, itemId]
-          } else if (item.type === 'consumable') {
-            newShop.inventory = {
-              ...newShop.inventory,
-              [itemId]: (newShop.inventory[itemId] || 0) + 1
-            }
-            if (item.effect?.type === 'hint') {
-              newShop.hints = newShop.hints + 1
-            }
-            if (item.effect?.type === 'perfect_charm') {
-              newShop.perfectCharms = newShop.perfectCharms + 1
-            }
-          }
-
-          newShop.purchaseHistory = [
-            { itemId, price: item.price, timestamp: Date.now() },
-            ...newShop.purchaseHistory
-          ].slice(0, 50)
-
-          return {
-            shop: newShop,
-            observationCalendar: newOC
-          }
-        })
-
-        get().addLog({
-          type: 'shop_purchase',
-          itemId,
-          itemName: item.name,
-          price: item.price,
-          timestamp: Date.now()
-        })
-
-        return { success: true, item }
-      },
-
-      useShopItem: (itemId) => {
-        const state = get()
-        const item = getShopItemById(itemId)
-        if (!item) return { success: false, reason: 'item_not_found' }
-        if (item.type !== 'consumable') return { success: false, reason: 'not_consumable' }
-
-        const count = state.shop.inventory[itemId] || 0
-        if (count <= 0) return { success: false, reason: 'not_enough' }
-
-        let result = { success: true }
-
-        if (item.effect?.type === 'stardust') {
-          get().addStardust(item.effect.amount, `使用${item.name}`)
-        }
-        if (item.effect?.type === 'double_stardust') {
-          const until = Date.now() + item.effect.duration
-          set((s) => ({
-            shop: {
-              ...s.shop,
-              doubleStardustUntil: Math.max(s.shop.doubleStardustUntil, Date.now()) + item.effect.duration
+        const photo = getPhotoById(state.starGallery.photos, photoId)
+        if (photo) {
+          set((state) => ({
+            starGallery: {
+              ...state.starGallery,
+              photos: state.starGallery.photos.map(p =>
+                p.id === photoId ? { ...p, likes: p.likes + 1 } : p
+              )
             }
           }))
-          result.effect = { type: 'double_stardust', until }
-        }
-
-        set((s) => {
-          const newShop = { ...s.shop }
-          const newCount = (newShop.inventory[itemId] || 0) - 1
-          if (newCount <= 0) {
-            delete newShop.inventory[itemId]
-          } else {
-            newShop.inventory = { ...newShop.inventory, [itemId]: newCount }
-          }
-
-          if (item.effect?.type === 'hint') {
-            newShop.hints = Math.max(0, newShop.hints - 1)
-          }
-          if (item.effect?.type === 'perfect_charm') {
-            newShop.perfectCharms = Math.max(0, newShop.perfectCharms - 1)
-          }
-
-          return { shop: newShop }
-        })
-
-        get().addLog({
-          type: 'shop_use',
-          itemId,
-          itemName: item.name,
-          timestamp: Date.now()
-        })
-
-        return result
-      },
-
-      setCurrentSkin: (skinId) => {
-        const state = get()
-        if (!state.shop.unlockedSkins.includes(skinId)) return false
-        set((s) => ({
-          shop: { ...s.shop, currentSkin: skinId }
-        }))
-        return true
-      },
-
-      toggleDecoration: (decoId) => {
-        const state = get()
-        if (!state.shop.unlockedDecorations.includes(decoId)) return false
-
-        const isActive = state.shop.activeDecorations.includes(decoId)
-        set((s) => ({
-          shop: {
-            ...s.shop,
-            activeDecorations: isActive
-              ? s.shop.activeDecorations.filter(id => id !== decoId)
-              : [...s.shop.activeDecorations, decoId]
-          }
-        }))
-        return true
-      },
-
-      getShopInventory: () => {
-        const state = get()
-        return state.shop.inventory
-      },
-
-      getCurrentSkin: () => {
-        const state = get()
-        return SHOP_SKINS.find(s => s.id === state.shop.currentSkin) || SHOP_SKINS[0]
-      },
-
-      getShopProgress: () => {
-        const state = get()
-        const totalSkins = SHOP_SKINS.length
-        const unlockedSkins = state.shop.unlockedSkins.length
-        const totalDecorations = SHOP_DECORATIONS.length
-        const unlockedDecorations = state.shop.unlockedDecorations.length
-        const totalItems = SHOP_ITEMS.length
-        const ownedItems = Object.keys(state.shop.inventory).length
-
-        return {
-          totalSkins,
-          unlockedSkins,
-          totalDecorations,
-          unlockedDecorations,
-          totalItems,
-          ownedItems,
-          stardust: state.observationCalendar.stardust
         }
       },
 
-      addShopReward: (itemId, reason) => {
-        const item = getShopItemById(itemId)
-        if (!item) return false
-
-        set((s) => {
-          const newShop = { ...s.shop }
-
-          if (item.type === 'skin') {
-            if (!newShop.unlockedSkins.includes(itemId)) {
-              newShop.unlockedSkins = [...newShop.unlockedSkins, itemId]
-            }
-          } else if (item.type === 'decoration') {
-            if (!newShop.unlockedDecorations.includes(itemId)) {
-              newShop.unlockedDecorations = [...newShop.unlockedDecorations, itemId]
-            }
-          } else if (item.type === 'consumable') {
-            const currentCount = newShop.inventory[itemId] || 0
-            if (currentCount < item.maxStack) {
-              newShop.inventory = {
-                ...newShop.inventory,
-                [itemId]: currentCount + 1
-              }
-              if (item.effect?.type === 'hint') {
-                newShop.hints = newShop.hints + 1
-              }
-              if (item.effect?.type === 'perfect_charm') {
-                newShop.perfectCharms = newShop.perfectCharms + 1
-              }
-            }
-          }
-
-          return { shop: newShop }
-        })
-
-        get().addLog({
-          type: 'shop_reward',
-          itemId,
-          itemName: item.name,
-          reason: reason || '奖励',
-          timestamp: Date.now()
-        })
-
-        return true
+      getGalleryStats: () => {
+        const state = get()
+        return getGalleryStats(
+          state.starGallery.photos,
+          state.discoveredConstellations,
+          state.perfectObservations
+        )
       },
 
-      useHint: () => {
+      getFilteredPhotos: () => {
         const state = get()
-        if (state.shop.hints <= 0) return false
-        set((s) => ({
-          shop: { ...s.shop, hints: s.shop.hints - 1 }
-        }))
-        return true
+        return filterGalleryPhotos(
+          state.starGallery.photos,
+          state.starGallery.galleryFilters
+        )
       },
 
-      usePerfectCharm: () => {
+      getPhotoById: (photoId) => {
         const state = get()
-        if (state.shop.perfectCharms <= 0) return false
-        set((s) => ({
-          shop: { ...s.shop, perfectCharms: s.shop.perfectCharms - 1 }
-        }))
-        return true
+        return getPhotoById(state.starGallery.photos, photoId)
       },
 
-      isDoubleStardustActive: () => {
+      getPhotosByConstellation: (constellationId) => {
         const state = get()
-        return state.shop.doubleStardustUntil > Date.now()
+        return state.starGallery.photos.filter(p => p.constellationId === constellationId)
+      },
+
+      getPhotosBySeason: (season) => {
+        const state = get()
+        return state.starGallery.photos.filter(p => p.season === season)
+      },
+
+      getFeaturedPhotos: () => {
+        const state = get()
+        return state.starGallery.photos.filter(p => p.featured)
+      },
+
+      checkGalleryAchievements: () => {
+        return []
       },
 
       activePanel: null,
@@ -3206,12 +3041,529 @@ export const useGameStore = create(
       setActiveAtlasPanel: (panel) => set({ activeAtlasPanel: panel }),
       setSelectedConstellationDetail: (constellationId) => set({ selectedConstellationDetail: constellationId }),
 
+      tutorial: {
+        started: false,
+        completed: false,
+        currentStepId: null,
+        completedSteps: [],
+        advancedTasksCompleted: [],
+        rewardsClaimed: [],
+        mistakesDuringTutorial: 0,
+        startedAt: null,
+        completedAt: null,
+        panelsVisited: [],
+        lastErrorHint: null,
+        lastErrorTime: null
+      },
+
+      startTutorial: () => {
+        const firstStep = TUTORIAL_STEPS[0]
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            started: true,
+            currentStepId: firstStep.id,
+            completedSteps: [],
+            advancedTasksCompleted: [],
+            rewardsClaimed: [],
+            mistakesDuringTutorial: 0,
+            startedAt: Date.now(),
+            completedAt: null,
+            panelsVisited: [],
+            lastErrorHint: null,
+            lastErrorTime: null
+          }
+        }))
+        return firstStep
+      },
+
+      resetTutorial: () => {
+        set({
+          tutorial: {
+            started: false,
+            completed: false,
+            currentStepId: null,
+            completedSteps: [],
+            advancedTasksCompleted: [],
+            rewardsClaimed: [],
+            mistakesDuringTutorial: 0,
+            startedAt: null,
+            completedAt: null,
+            panelsVisited: [],
+            lastErrorHint: null,
+            lastErrorTime: null
+          }
+        })
+      },
+
+      completeTutorialStep: (stepId) => {
+        const state = get()
+        const step = getTutorialStepById(stepId)
+        if (!step) return null
+
+        const currentIndex = TUTORIAL_STEPS.findIndex(s => s.id === stepId)
+        const nextStep = TUTORIAL_STEPS[currentIndex + 1]
+
+        const newCompletedSteps = state.tutorial.completedSteps.includes(stepId)
+          ? state.tutorial.completedSteps
+          : [...state.tutorial.completedSteps, stepId]
+
+        const isCompleted = step.isFinal || !nextStep
+
+        set((s) => ({
+          tutorial: {
+            ...s.tutorial,
+            completedSteps: newCompletedSteps,
+            currentStepId: isCompleted ? null : nextStep?.id || null,
+            completed: isCompleted,
+            completedAt: isCompleted ? Date.now() : s.tutorial.completedAt
+          }
+        }))
+
+        if (isCompleted) {
+          get().addLog({
+            type: 'tutorial_complete',
+            timestamp: Date.now()
+          })
+        }
+
+        get().checkAdvancedTasks()
+        return nextStep || null
+      },
+
+      setCurrentTutorialStep: (stepId) => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            currentStepId: stepId
+          }
+        }))
+      },
+
+      recordTutorialPanelVisit: (panelId) => {
+        set((state) => {
+          if (state.tutorial.panelsVisited.includes(panelId)) {
+            return state
+          }
+          return {
+            tutorial: {
+              ...state.tutorial,
+              panelsVisited: [...state.tutorial.panelsVisited, panelId]
+            }
+          }
+        })
+        get().checkTutorialProgress()
+      },
+
+      showTutorialError: (errorType) => {
+        const hint = getErrorHint(errorType)
+        if (!hint) return
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            lastErrorHint: hint,
+            lastErrorTime: Date.now()
+          }
+        }))
+      },
+
+      clearTutorialError: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            lastErrorHint: null,
+            lastErrorTime: null
+          }
+        }))
+      },
+
+      recordTutorialMistake: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            mistakesDuringTutorial: state.tutorial.mistakesDuringTutorial + 1
+          }
+        }))
+      },
+
+      checkTutorialProgress: () => {
+        const state = get()
+        if (!state.tutorial.started || state.tutorial.completed) return
+
+        const currentStep = getTutorialStepById(state.tutorial.currentStepId)
+        if (!currentStep) return
+
+        const validation = currentStep.validation
+        if (!validation) return
+
+        let shouldAdvance = false
+
+        switch (validation.type) {
+          case 'target_selected':
+            shouldAdvance = !!state.currentTargetConstellation
+            break
+          case 'star_connected':
+            shouldAdvance = state.connectionPath.length >= (validation.count || 1)
+            break
+          case 'constellation_complete':
+            shouldAdvance = state.observationLogs.length > 0 &&
+              ['discovery', 'reobservation'].includes(state.observationLogs[0].type)
+            break
+          case 'perfect_observation': {
+            const hasPerfect = Object.keys(state.perfectObservations).length > 0
+            shouldAdvance = hasPerfect
+            break
+          }
+          case 'panel_opened':
+            shouldAdvance = state.tutorial.panelsVisited.includes(validation.panel)
+            break
+        }
+
+        if (shouldAdvance) {
+          get().completeTutorialStep(currentStep.id)
+        }
+      },
+
+      checkAdvancedTasks: () => {
+        const state = get()
+        const newlyCompleted = []
+
+        ADVANCED_TASKS.forEach((task) => {
+          if (state.tutorial.advancedTasksCompleted.includes(task.id)) return
+
+          const { type, value } = task.condition
+          let completed = false
+
+          switch (type) {
+            case 'discover_count':
+              completed = state.discoveredConstellations.length >= value
+              break
+            case 'perfect_count':
+              completed = Object.keys(state.perfectObservations).length >= value
+              break
+            case 'log_count':
+              completed = state.observationLogs.filter(
+                l => l.type === 'discovery' || l.type === 'reobservation'
+              ).length >= value
+              break
+            case 'checkin_count':
+              completed = state.observationCalendar.totalCheckinDays >= value
+              break
+          }
+
+          if (completed) {
+            newlyCompleted.push(task)
+          }
+        })
+
+        if (newlyCompleted.length > 0) {
+          set((state) => ({
+            tutorial: {
+              ...state.tutorial,
+              advancedTasksCompleted: [
+                ...state.tutorial.advancedTasksCompleted,
+                ...newlyCompleted.map(t => t.id)
+              ]
+            }
+          }))
+
+          newlyCompleted.forEach((task) => {
+            if (task.reward?.stardust) {
+              get().addStardust(task.reward.stardust, `进阶任务：${task.name}`)
+            }
+            get().addLog({
+              type: 'tutorial_advanced_task',
+              taskId: task.id,
+              taskName: task.name,
+              reward: task.reward,
+              timestamp: Date.now()
+            })
+          })
+        }
+
+        return newlyCompleted
+      },
+
+      claimTutorialReward: (rewardKey) => {
+        const state = get()
+        const reward = TUTORIAL_REWARDS[rewardKey]
+        if (!reward) return { success: false, reason: 'reward_not_found' }
+
+        if (state.tutorial.rewardsClaimed.includes(reward.id)) {
+          return { success: false, reason: 'already_claimed' }
+        }
+
+        let canClaim = false
+        switch (rewardKey) {
+          case 'completion':
+            canClaim = state.tutorial.completed
+            break
+          case 'perfect':
+            canClaim = state.tutorial.completed && state.tutorial.mistakesDuringTutorial === 0
+            break
+          case 'advanced':
+            canClaim = state.tutorial.advancedTasksCompleted.length === ADVANCED_TASKS.length
+            break
+        }
+
+        if (!canClaim) {
+          return { success: false, reason: 'not_eligible' }
+        }
+
+        if (reward.stardust) {
+          get().addStardust(reward.stardust, `结业奖励：${reward.name}`)
+        }
+
+        set((s) => ({
+          tutorial: {
+            ...s.tutorial,
+            rewardsClaimed: [...s.tutorial.rewardsClaimed, reward.id]
+          }
+        }))
+
+        get().addLog({
+          type: 'tutorial_reward',
+          rewardId: reward.id,
+          rewardName: reward.name,
+          timestamp: Date.now()
+        })
+
+        return { success: true, reward }
+      },
+
+      getTutorialProgress: () => {
+        const state = get()
+        return calculateTutorialProgress(state.tutorial.completedSteps)
+      },
+
+      getTutorialStats: () => {
+        const state = get()
+        const t = state.tutorial
+        const progress = calculateTutorialProgress(t.completedSteps)
+        const allAdvancedCompleted = t.advancedTasksCompleted.length === ADVANCED_TASKS.length
+        const isPerfect = t.completed && t.mistakesDuringTutorial === 0
+
+        return {
+          started: t.started,
+          completed: t.completed,
+          progress,
+          currentStepId: t.currentStepId,
+          completedStepsCount: t.completedSteps.length,
+          totalSteps: TUTORIAL_STEPS.length,
+          mistakesDuringTutorial: t.mistakesDuringTutorial,
+          advancedTasksCompleted: t.advancedTasksCompleted.length,
+          totalAdvancedTasks: ADVANCED_TASKS.length,
+          allAdvancedCompleted,
+          isPerfect,
+          rewardsClaimed: t.rewardsClaimed.length,
+          totalRewards: Object.keys(TUTORIAL_REWARDS).length,
+          startedAt: t.startedAt,
+          completedAt: t.completedAt
+        }
+      },
+
+      starRoute: {
+        currentRoute: null,
+        routeHistory: [],
+        difficultyPreference: 'balanced',
+        totalRoutesCompleted: 0,
+        perfectRoutes: 0
+      },
+
+      setDifficultyPreference: (preferenceId) => {
+        if (!DIFFICULTY_PREFERENCE[preferenceId]) return false
+        set((state) => ({
+          starRoute: { ...state.starRoute, difficultyPreference: preferenceId }
+        }))
+        return true
+      },
+
+      generateNewRoute: (routeType) => {
+        const state = get()
+        const route = generateRoute(
+          routeType,
+          state.starRoute.difficultyPreference,
+          state.discoveredConstellations,
+          state.perfectObservations,
+          state.totalObservations
+        )
+
+        set((state) => ({
+          starRoute: { ...state.starRoute, currentRoute: route }
+        }))
+
+        get().addLog({
+          type: 'route_start',
+          routeId: route.id,
+          routeName: route.name,
+          routeType: route.type,
+          totalSteps: route.steps.length,
+          timestamp: Date.now()
+        })
+
+        return route
+      },
+
+      getCurrentRoute: () => {
+        return get().starRoute.currentRoute
+      },
+
+      getCurrentRouteProgress: () => {
+        const route = get().starRoute.currentRoute
+        return calculateRouteProgress(route)
+      },
+
+      updateRouteStep: (constellationId, isPerfect) => {
+        const state = get()
+        const route = state.starRoute.currentRoute
+        if (!route || route.status !== 'active') return null
+
+        const stepIndex = route.steps.findIndex(s => s.constellationId === constellationId)
+        if (stepIndex === -1) return null
+
+        if (stepIndex !== route.currentStepIndex) return null
+
+        const step = route.steps[stepIndex]
+        if (step.status === 'completed') return null
+
+        const updatedSteps = route.steps.map((s, i) =>
+          i === stepIndex
+            ? { ...s, status: 'completed', perfect: isPerfect, completedAt: Date.now() }
+            : s
+        )
+
+        const completedCount = updatedSteps.filter(s => s.status === 'completed').length
+        const isComplete = completedCount === updatedSteps.length
+
+        const updatedRoute = {
+          ...route,
+          steps: updatedSteps,
+          currentStepIndex: isComplete ? route.steps.length : Math.min(stepIndex + 1, route.steps.length - 1),
+          status: isComplete ? 'completed' : 'active',
+          completedAt: isComplete ? Date.now() : null
+        }
+
+        set((state) => ({
+          starRoute: {
+            ...state.starRoute,
+            currentRoute: isComplete ? null : updatedRoute,
+            routeHistory: isComplete
+              ? [updatedRoute, ...state.starRoute.routeHistory].slice(0, 50)
+              : state.starRoute.routeHistory,
+            totalRoutesCompleted: isComplete
+              ? state.starRoute.totalRoutesCompleted + 1
+              : state.starRoute.totalRoutesCompleted,
+            perfectRoutes: isComplete && isRoutePerfect(updatedRoute)
+              ? state.starRoute.perfectRoutes + 1
+              : state.starRoute.perfectRoutes
+          }
+        }))
+
+        if (isComplete) {
+          get().addLog({
+            type: 'route_complete',
+            routeId: updatedRoute.id,
+            routeName: updatedRoute.name,
+            routeType: updatedRoute.type,
+            perfect: isRoutePerfect(updatedRoute),
+            completedSteps: completedCount,
+            timestamp: Date.now()
+          })
+
+          get().checkRouteAchievements()
+        }
+
+        return { updatedRoute, stepIndex, isComplete }
+      },
+
+      abandonRoute: () => {
+        const state = get()
+        const route = state.starRoute.currentRoute
+        if (!route) return false
+
+        get().addLog({
+          type: 'route_abandon',
+          routeId: route.id,
+          routeName: route.name,
+          completedSteps: route.steps.filter(s => s.status === 'completed').length,
+          totalSteps: route.steps.length,
+          timestamp: Date.now()
+        })
+
+        set((state) => ({
+          starRoute: { ...state.starRoute, currentRoute: null }
+        }))
+        return true
+      },
+
+      getRouteHistory: () => {
+        return get().starRoute.routeHistory
+      },
+
+      getRouteStats: () => {
+        const state = get()
+        return getRouteStats(state.starRoute.routeHistory)
+      },
+
+      checkRouteAchievements: () => {
+        const state = get()
+        const sr = state.starRoute
+        const newlyUnlocked = []
+
+        ROUTE_ACHIEVEMENTS.forEach((achievement) => {
+          if (state.unlockedAchievements.includes(achievement.id)) return
+
+          const { type, value } = achievement.condition
+          let unlocked = false
+
+          switch (type) {
+            case 'route_complete':
+              unlocked = sr.totalRoutesCompleted >= value
+              break
+            case 'route_type_complete': {
+              const completedOfType = sr.routeHistory.filter(
+                r => r.status === 'completed' && r.type === value
+              ).length
+              unlocked = completedOfType >= 1
+              break
+            }
+            case 'route_perfect':
+              unlocked = sr.perfectRoutes >= value
+              break
+          }
+
+          if (unlocked) {
+            newlyUnlocked.push(achievement.id)
+          }
+        })
+
+        if (newlyUnlocked.length > 0) {
+          set((state) => ({
+            unlockedAchievements: [...state.unlockedAchievements, ...newlyUnlocked]
+          }))
+
+          newlyUnlocked.forEach((id) => {
+            const achievement = getRouteAchievementById(id)
+            if (achievement) {
+              get().addLog({
+                type: 'achievement',
+                achievementId: id,
+                achievementName: achievement.name,
+                timestamp: Date.now()
+              })
+            }
+          })
+        }
+
+        return newlyUnlocked
+      },
+
       isConstellationComplete: (constellationId) =>
         get().discoveredConstellations.includes(constellationId),
 
       getProgress: () => {
         const state = get()
-        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length
+        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length
         return {
           constellations: state.discoveredConstellations.length,
           totalConstellations: CONSTELLATIONS.length,
@@ -3222,7 +3574,9 @@ export const useGameStore = create(
           totalSeasonRewards: Object.keys(SEASONS).length * Object.keys(SEASON_PHASES).length,
           quizPoints: state.quiz?.points || 0,
           quizCompleted: state.quiz?.totalCompleted || 0,
-          quizCorrect: state.quiz?.totalCorrect || 0
+          quizCorrect: state.quiz?.totalCorrect || 0,
+          routesCompleted: state.starRoute?.totalRoutesCompleted || 0,
+          perfectRoutes: state.starRoute?.perfectRoutes || 0
         }
       },
 
@@ -3343,25 +3697,40 @@ export const useGameStore = create(
             lastActiveDate: null,
             teamExpeditionsCompleted: 0
           },
-          shop: {
-            inventory: {},
-            unlockedSkins: ['skin_default'],
-            unlockedDecorations: [],
-            currentSkin: 'skin_default',
-            activeDecorations: [],
-            purchaseHistory: [],
-            hints: 0,
-            perfectCharms: 0,
-            doubleStardustUntil: 0
+          starGallery: {
+            photos: [],
+            activeGalleryPanel: 'grid',
+            selectedPhotoId: null,
+            prefillConstellationId: null,
+            galleryFilters: {
+              season: 'all',
+              difficulty: 'all',
+              category: 'all',
+              featuredOnly: false,
+              search: '',
+              sortBy: 'featured'
+            }
           },
-          constellationChallenge: {
-            dailyAttempts: {},
-            lastAttemptDate: null,
-            bestScores: { novice: 0, elite: 0, master: 0 },
-            seasonScores: {},
-            records: [],
-            seasonRewardsClaimed: [],
-            currentChallenge: null
+          tutorial: {
+            started: false,
+            completed: false,
+            currentStepId: null,
+            completedSteps: [],
+            advancedTasksCompleted: [],
+            rewardsClaimed: [],
+            mistakesDuringTutorial: 0,
+            startedAt: null,
+            completedAt: null,
+            panelsVisited: [],
+            lastErrorHint: null,
+            lastErrorTime: null
+          },
+          starRoute: {
+            currentRoute: null,
+            routeHistory: [],
+            difficultyPreference: 'balanced',
+            totalRoutesCompleted: 0,
+            perfectRoutes: 0
           }
         })
     }),
@@ -3387,8 +3756,9 @@ export const useGameStore = create(
         observationCalendar: state.observationCalendar,
         quiz: state.quiz,
         team: state.team,
-        shop: state.shop,
-        constellationChallenge: state.constellationChallenge
+        starGallery: state.starGallery,
+        tutorial: state.tutorial,
+        starRoute: state.starRoute
       })
     }
   )
