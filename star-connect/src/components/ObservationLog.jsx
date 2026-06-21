@@ -5,12 +5,10 @@ import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../
 import { formatDate } from '../utils/math'
 
 export default function ObservationLog() {
-  const { observationLogs, setActivePanel, clearLogs, seasonRewardsClaimed, setActiveAtlasPanel, setSelectedConstellationDetail } = useGameStore()
+  const { observationLogs, setActivePanel, clearLogs, seasonRewardsClaimed, openAtlasList, openAtlasDetail } = useGameStore()
 
   const handleViewInAtlas = (constellationId) => {
-    setSelectedConstellationDetail(constellationId)
-    setActiveAtlasPanel('detail')
-    setActivePanel('atlas')
+    openAtlasDetail(constellationId)
   }
 
   const renderLogEntry = (log, index) => {
@@ -198,7 +196,7 @@ export default function ObservationLog() {
 
           <div className="mt-3">
             <button
-              onClick={() => setActivePanel('atlas')}
+              onClick={openAtlasList}
               className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-nebula-purple/20 to-nebula-cyan/20
                        border border-nebula-purple/30 text-white text-sm
                        hover:from-nebula-purple/30 hover:to-nebula-cyan/30

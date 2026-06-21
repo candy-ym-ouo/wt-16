@@ -13,10 +13,10 @@ export default function StarAtlas() {
     isConstellationComplete,
     setTargetConstellation,
     activeAtlasPanel,
-    setActiveAtlasPanel,
     selectedConstellationDetail,
-    setSelectedConstellationDetail,
-    setActivePanel
+    setActivePanel,
+    resetAtlasState,
+    openAtlasDetail
   } = useGameStore()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -121,14 +121,12 @@ export default function StarAtlas() {
   ]
 
   const handleViewConstellation = (constellationId) => {
-    setSelectedConstellationDetail(constellationId)
-    setActiveAtlasPanel('detail')
+    openAtlasDetail(constellationId)
   }
 
   const handleStartObservation = (constellationId) => {
     setTargetConstellation(constellationId)
-    setActiveAtlasPanel(null)
-    setSelectedConstellationDetail(null)
+    resetAtlasState()
     setActivePanel(null)
   }
 
@@ -151,7 +149,10 @@ export default function StarAtlas() {
               </p>
             </div>
             <button
-              onClick={() => setActivePanel(null)}
+              onClick={() => {
+                resetAtlasState()
+                setActivePanel(null)
+              }}
               className="icon-btn"
               aria-label="关闭"
             >

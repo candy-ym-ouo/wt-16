@@ -23,15 +23,13 @@ export default function SeasonPlan() {
     perfectObservations,
     getSeasonStats,
     setTargetConstellation,
-    setActiveAtlasPanel,
-    setSelectedConstellationDetail
+    openAtlasList,
+    openAtlasDetail
   } = useGameStore()
 
   const handleViewInAtlas = (constellationId, e) => {
     e.stopPropagation()
-    setSelectedConstellationDetail(constellationId)
-    setActiveAtlasPanel('detail')
-    setActivePanel('atlas')
+    openAtlasDetail(constellationId)
   }
 
   const currentSeason = getCurrentSeason()
@@ -481,7 +479,7 @@ export default function SeasonPlan() {
 
           <div className="mt-3">
             <button
-              onClick={() => setActivePanel('atlas')}
+              onClick={openAtlasList}
               className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-nebula-purple/20 to-nebula-cyan/20
                        border border-nebula-purple/30 text-white text-sm
                        hover:from-nebula-purple/30 hover:to-nebula-cyan/30

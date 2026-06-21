@@ -414,7 +414,32 @@ export const useGameStore = create(
       setShowAchievementToast: (id) => set({ showAchievementToast: id }),
 
       activePanel: null,
-      setActivePanel: (panel) => set({ activePanel: panel }),
+      setActivePanel: (panel) =>
+        set((state) => {
+          const newState = { activePanel: panel }
+          if (panel !== 'atlas' && state.activePanel === 'atlas') {
+            newState.activeAtlasPanel = null
+            newState.selectedConstellationDetail = null
+          }
+          return newState
+        }),
+      openAtlasList: () =>
+        set({
+          activePanel: 'atlas',
+          activeAtlasPanel: null,
+          selectedConstellationDetail: null
+        }),
+      openAtlasDetail: (constellationId) =>
+        set({
+          activePanel: 'atlas',
+          activeAtlasPanel: 'detail',
+          selectedConstellationDetail: constellationId
+        }),
+      resetAtlasState: () =>
+        set({
+          activeAtlasPanel: null,
+          selectedConstellationDetail: null
+        }),
 
       activeAtlasPanel: null,
       selectedConstellationDetail: null,

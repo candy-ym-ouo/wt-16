@@ -3,7 +3,7 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations } = useGameStore()
   const progress = getProgress()
   const currentSeason = getCurrentSeason()
   const seasonStats = getSeasonStats()
@@ -66,7 +66,14 @@ export default function BottomNav() {
     } else {
       audioManager.playPanelOpen()
     }
-    setActivePanel(activePanel === panelId ? null : panelId)
+    const isClosingAtlas = panelId === 'atlas' && activePanel === 'atlas'
+    if (isClosingAtlas) {
+      setActivePanel(null)
+    } else if (panelId === 'atlas') {
+      openAtlasList()
+    } else {
+      setActivePanel(activePanel === panelId ? null : panelId)
+    }
   }
 
   return (

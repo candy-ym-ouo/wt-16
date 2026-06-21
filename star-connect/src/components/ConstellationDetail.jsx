@@ -13,10 +13,10 @@ export default function ConstellationDetail({ constellationId }) {
     totalObservations,
     perfectObservations,
     setTargetConstellation,
-    setActiveAtlasPanel,
-    setSelectedConstellationDetail,
     setActivePanel,
-    observationLogs
+    observationLogs,
+    resetAtlasState,
+    openAtlasList
   } = useGameStore()
 
   const constellation = useMemo(() => 
@@ -50,10 +50,7 @@ export default function ConstellationDetail({ constellationId }) {
           <div className="text-4xl mb-3">🌌</div>
           <p className="text-white/50">星座信息加载失败</p>
           <button
-            onClick={() => {
-              setActiveAtlasPanel(null)
-              setSelectedConstellationDetail(null)
-            }}
+            onClick={openAtlasList}
             className="mt-4 btn-secondary text-sm"
           >
             返回图鉴
@@ -64,20 +61,17 @@ export default function ConstellationDetail({ constellationId }) {
   }
 
   const handleBack = () => {
-    setActiveAtlasPanel('list')
-    setSelectedConstellationDetail(null)
+    openAtlasList()
   }
 
   const handleStartObservation = () => {
     setTargetConstellation(constellation.id)
-    setActiveAtlasPanel(null)
-    setSelectedConstellationDetail(null)
+    resetAtlasState()
     setActivePanel(null)
   }
 
   const handleClose = () => {
-    setActiveAtlasPanel(null)
-    setSelectedConstellationDetail(null)
+    resetAtlasState()
     setActivePanel(null)
   }
 
