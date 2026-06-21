@@ -5,6 +5,7 @@ import ObservationLog from './components/ObservationLog'
 import Achievements from './components/Achievements'
 import SettingsPanel from './components/SettingsPanel'
 import SeasonPlan from './components/SeasonPlan'
+import StarAtlas from './components/StarAtlas'
 import BottomNav from './components/BottomNav'
 import AchievementToast from './components/AchievementToast'
 import { useGameStore } from './stores/gameStore'
@@ -23,6 +24,7 @@ export default function App() {
       <AchievementToast />
 
       {activePanel === 'tasks' && <TasksPanel />}
+      {activePanel === 'atlas' && <StarAtlas />}
       {activePanel === 'log' && <ObservationLog />}
       {activePanel === 'achievements' && <Achievements />}
       {activePanel === 'settings' && <SettingsPanel />}

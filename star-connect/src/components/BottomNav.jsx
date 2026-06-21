@@ -3,7 +3,7 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats } = useGameStore()
+  const { activePanel, setActivePanel, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations } = useGameStore()
   const progress = getProgress()
   const currentSeason = getCurrentSeason()
   const seasonStats = getSeasonStats()
@@ -20,10 +20,22 @@ export default function BottomNav() {
         : null
     },
     {
+      id: 'atlas',
+      label: '图鉴',
+      icon: '📚',
+      badge: favoriteConstellations.length > 0 ? favoriteConstellations.length.toString() : null
+    },
+    {
       id: 'log',
       label: '日志',
       icon: '📖',
       badge: observationLogs.length > 0 ? observationLogs.length.toString() : null
+    },
+    {
+      id: null,
+      label: '夜空',
+      icon: '🌌',
+      isHome: true
     },
     {
       id: 'seasons',
@@ -32,12 +44,6 @@ export default function BottomNav() {
       badge: seasonRewardsClaimed.length < totalSeasonRewards && currentSeasonProgress?.overallPercentage > 0
         ? `${currentSeasonProgress?.overallPercentage || 0}%`
         : null
-    },
-    {
-      id: null,
-      label: '夜空',
-      icon: '🌌',
-      isHome: true
     },
     {
       id: 'achievements',

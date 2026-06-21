@@ -68,12 +68,22 @@ export const useGameStore = create(
             seasonRewardsClaimed: state.seasonRewardsClaimed,
             perfectObservations: state.perfectObservations,
             totalObservations: state.totalObservations,
-            seasonHistory: state.seasonHistory
+            seasonHistory: state.seasonHistory,
+            favoriteConstellations: state.favoriteConstellations
           },
           version: 0
         }
         localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(persistConfig))
       },
+
+      favoriteConstellations: [],
+      toggleFavorite: (constellationId) =>
+        set((state) => ({
+          favoriteConstellations: state.favoriteConstellations.includes(constellationId)
+            ? state.favoriteConstellations.filter((id) => id !== constellationId)
+            : [...state.favoriteConstellations, constellationId]
+        })),
+      isFavorite: (constellationId) => get().favoriteConstellations.includes(constellationId),
 
       discoveredConstellations: [],
       discoveredStars: [],
@@ -406,6 +416,11 @@ export const useGameStore = create(
       activePanel: null,
       setActivePanel: (panel) => set({ activePanel: panel }),
 
+      activeAtlasPanel: null,
+      selectedConstellationDetail: null,
+      setActiveAtlasPanel: (panel) => set({ activeAtlasPanel: panel }),
+      setSelectedConstellationDetail: (constellationId) => set({ selectedConstellationDetail: constellationId }),
+
       isConstellationComplete: (constellationId) =>
         get().discoveredConstellations.includes(constellationId),
 
@@ -444,7 +459,8 @@ export const useGameStore = create(
           seasonRewardsClaimed: [],
           perfectObservations: {},
           totalObservations: {},
-          seasonHistory: []
+          seasonHistory: [],
+          favoriteConstellations: []
         })
     }),
     {
@@ -462,7 +478,8 @@ export const useGameStore = create(
         seasonRewardsClaimed: state.seasonRewardsClaimed,
         perfectObservations: state.perfectObservations,
         totalObservations: state.totalObservations,
-        seasonHistory: state.seasonHistory
+        seasonHistory: state.seasonHistory,
+        favoriteConstellations: state.favoriteConstellations
       })
     }
   )

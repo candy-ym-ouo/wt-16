@@ -5,7 +5,13 @@ import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../
 import { formatDate } from '../utils/math'
 
 export default function ObservationLog() {
-  const { observationLogs, setActivePanel, clearLogs, seasonRewardsClaimed } = useGameStore()
+  const { observationLogs, setActivePanel, clearLogs, seasonRewardsClaimed, setActiveAtlasPanel, setSelectedConstellationDetail } = useGameStore()
+
+  const handleViewInAtlas = (constellationId) => {
+    setSelectedConstellationDetail(constellationId)
+    setActiveAtlasPanel('detail')
+    setActivePanel('atlas')
+  }
 
   const renderLogEntry = (log, index) => {
     if (log.type === 'discovery' || log.type === 'reobservation') {
@@ -22,9 +28,9 @@ export default function ObservationLog() {
           }`}
         >
           <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 flex-1">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+                className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
                   isDiscovery
                     ? 'bg-gradient-to-br from-nebula-purple to-nebula-cyan text-white'
                     : 'bg-space-600/50 text-white/70'
@@ -32,7 +38,7 @@ export default function ObservationLog() {
               >
                 {isDiscovery ? '✨' : '🔭'}
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-display text-white text-sm">
                     {c.name}
@@ -51,6 +57,15 @@ export default function ObservationLog() {
                 </div>
               </div>
             </div>
+            <button
+              onClick={() => handleViewInAtlas(log.constellationId)}
+              className="ml-2 px-2 py-1 rounded-lg bg-space-600/50 text-white/50 text-[10px]
+                       hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
+                       flex-shrink-0"
+              title="在图鉴中查看"
+            >
+              📚
+            </button>
           </div>
         </div>
       )
@@ -179,6 +194,20 @@ export default function ObservationLog() {
               </div>
               <div className="text-[10px] text-white/50">季节奖励</div>
             </div>
+          </div>
+
+          <div className="mt-3">
+            <button
+              onClick={() => setActivePanel('atlas')}
+              className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-nebula-purple/20 to-nebula-cyan/20
+                       border border-nebula-purple/30 text-white text-sm
+                       hover:from-nebula-purple/30 hover:to-nebula-cyan/30
+                       transition-all flex items-center justify-center gap-2"
+            >
+              <span>📚</span>
+              <span>浏览星空图鉴</span>
+              <span className="text-nebula-cyan">→</span>
+            </button>
           </div>
         </div>
 

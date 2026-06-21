@@ -22,8 +22,17 @@ export default function SeasonPlan() {
     totalObservations,
     perfectObservations,
     getSeasonStats,
-    setTargetConstellation
+    setTargetConstellation,
+    setActiveAtlasPanel,
+    setSelectedConstellationDetail
   } = useGameStore()
+
+  const handleViewInAtlas = (constellationId, e) => {
+    e.stopPropagation()
+    setSelectedConstellationDetail(constellationId)
+    setActiveAtlasPanel('detail')
+    setActivePanel('atlas')
+  }
 
   const currentSeason = getCurrentSeason()
   const [selectedSeason, setSelectedSeason] = useState(currentSeason)
@@ -194,12 +203,8 @@ export default function SeasonPlan() {
             const observed = totalObservations[cId] || 0
 
             return (
-              <button
+              <div
                 key={cId}
-                onClick={() => {
-                  setTargetConstellation(cId)
-                  setActivePanel(null)
-                }}
                 className={`p-3 rounded-xl border text-left transition-all card-hover ${
                   discovered
                     ? 'border-nebula-purple/40 bg-nebula-purple/5'
@@ -207,30 +212,50 @@ export default function SeasonPlan() {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm ${discovered ? '' : 'opacity-50 grayscale'}`}>
-                    {discovered ? '⭐' : '☆'}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-medium truncate ${
-                      discovered ? 'text-white' : 'text-white/50'
-                    }`}>
-                      {c.name}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      {perfect && (
-                        <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
-                          完美
-                        </span>
-                      )}
-                      {observed > 1 && (
-                        <span className="text-[9px] text-white/40">
-                          ×{observed}
-                        </span>
-                      )}
+                  <button
+                    onClick={() => {
+                      setTargetConstellation(cId)
+                      setActivePanel(null)
+                    }}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm ${discovered ? '' : 'opacity-50 grayscale'}`}>
+                        {discovered ? '⭐' : '☆'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium truncate ${
+                          discovered ? 'text-white' : 'text-white/50'
+                        }`}>
+                          {c.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {perfect && (
+                            <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                              完美
+                            </span>
+                          )}
+                          {observed > 1 && (
+                            <span className="text-[9px] text-white/40">
+                              ×{observed}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </button>
+                  <button
+                    onClick={(e) => handleViewInAtlas(cId, e)}
+                    className="w-6 h-6 flex items-center justify-center rounded-lg
+                             bg-space-600/30 text-white/40 text-[10px]
+                             hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
+                             flex-shrink-0"
+                    title="在图鉴中查看详情"
+                  >
+                    📚
+                  </button>
                 </div>
-              </button>
+              </div>
             )
           })}
         </div>
@@ -452,6 +477,20 @@ export default function SeasonPlan() {
                 </div>
               </button>
             ))}
+          </div>
+
+          <div className="mt-3">
+            <button
+              onClick={() => setActivePanel('atlas')}
+              className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-nebula-purple/20 to-nebula-cyan/20
+                       border border-nebula-purple/30 text-white text-sm
+                       hover:from-nebula-purple/30 hover:to-nebula-cyan/30
+                       transition-all flex items-center justify-center gap-2"
+            >
+              <span>📚</span>
+              <span>查看星空图鉴</span>
+              <span className="text-nebula-cyan">→</span>
+            </button>
           </div>
 
           <div className="mt-4 flex gap-2">
