@@ -3,6 +3,15 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { ACHIEVEMENTS } from '../data/achievements'
 import { DEFAULT_SETTINGS, STORAGE_KEYS } from '../data/constants'
+import {
+  SEASONS,
+  SEASON_PHASES,
+  SEASON_REWARDS,
+  SEASON_ACHIEVEMENTS,
+  getSeasonConstellations,
+  getCurrentSeason,
+  getSeasonPhaseProgress
+} from '../data/seasonPlan'
 
 let autoSaveEnabled = true
 
@@ -53,7 +62,12 @@ export const useGameStore = create(
             discoveredStars: state.discoveredStars,
             observationLogs: state.observationLogs,
             unlockedAchievements: state.unlockedAchievements,
-            totalMistakes: state.totalMistakes
+            totalMistakes: state.totalMistakes,
+            seasonProgress: state.seasonProgress,
+            seasonRewards: state.seasonRewards,
+            perfectObservations: state.perfectObservations,
+            totalObservations: state.totalObservations,
+            seasonHistory: state.seasonHistory
           },
           version: 0
         }
@@ -136,6 +150,17 @@ export const useGameStore = create(
           const constellationId = constellation.id
           const alreadyDiscovered =
             state.discoveredConstellations.includes(constellationId)
+          const isPerfect = state.perfectRun
+
+          set((s) => ({
+            totalObservations: {
+              ...s.totalObservations,
+              [constellationId]: (s.totalObservations[constellationId] || 0) + 1
+            },
+            perfectObservations: isPerfect
+              ? { ...s.perfectObservations, [constellationId]: true }
+              : s.perfectObservations
+          }))
 
           if (!alreadyDiscovered) {
             set((state) => ({
@@ -147,17 +172,19 @@ export const useGameStore = create(
             get().addLog({
               type: 'discovery',
               constellationId,
-              perfect: state.perfectRun,
+              perfect: isPerfect,
               timestamp: Date.now()
             })
           } else {
             get().addLog({
               type: 'reobservation',
               constellationId,
-              perfect: state.perfectRun,
+              perfect: isPerfect,
               timestamp: Date.now()
             })
           }
+
+          get().checkSeasonProgress()
           return true
         }
         return false
@@ -171,6 +198,165 @@ export const useGameStore = create(
       clearLogs: () => set({ observationLogs: [] }),
 
       unlockedAchievements: [],
+
+      seasonProgress: {
+        spring: { beginner: false, intermediate: false, master: false },
+        summer: { beginner: false, intermediate: false, master: false },
+        autumn: { beginner: false, intermediate: false, master: false },
+        winter: { beginner: false, intermediate: false, master: false }
+      },
+      seasonRewards: [],
+      perfectObservations: {},
+      totalObservations: {},
+      seasonHistory: [],
+
+      getSeasonStats: () => {
+        const state = get()
+        const stats = {}
+        Object.keys(SEASONS).forEach((seasonId) => {
+          const constellationIds = getSeasonConstellations(seasonId)
+          const discovered = constellationIds.filter(id =>
+            state.discoveredConstellations.includes(id)
+          ).length
+          const perfectCount = constellationIds.filter(id =>
+            state.perfectObservations[id]
+          ).length
+          const reObservationCount = constellationIds.reduce((sum, id) => {
+            return sum + Math.max(0, (state.totalObservations[id] || 0) - 1)
+          }, 0)
+
+          const beginner = getSeasonPhaseProgress(
+            seasonId, 'beginner', state.discoveredConstellations,
+            state.perfectObservations, state.totalObservations
+          )
+          const intermediate = getSeasonPhaseProgress(
+            seasonId, 'intermediate', state.discoveredConstellations,
+            state.perfectObservations, state.totalObservations
+          )
+          const master = getSeasonPhaseProgress(
+            seasonId, 'master', state.discoveredConstellations,
+            state.perfectObservations, state.totalObservations
+          )
+
+          stats[seasonId] = {
+            constellations: constellationIds.length,
+            discovered,
+            perfectCount,
+            reObservationCount,
+            beginner,
+            intermediate,
+            master,
+            overallPercentage: Math.round(
+              (beginner.percentage + intermediate.percentage + master.percentage) / 3
+            )
+          }
+        })
+        return stats
+      },
+
+      checkSeasonProgress: () => {
+        const state = get()
+        const newProgress = { ...state.seasonProgress }
+        const newlyCompleted = []
+        const newlyUnlockedAchievements = []
+
+        Object.keys(SEASONS).forEach((seasonId) => {
+          Object.keys(SEASON_PHASES).forEach((phaseId) => {
+            if (!newProgress[seasonId][phaseId]) {
+              const progress = getSeasonPhaseProgress(
+                seasonId, phaseId, state.discoveredConstellations,
+                state.perfectObservations, state.totalObservations
+              )
+              if (progress.completed) {
+                newProgress[seasonId] = {
+                  ...newProgress[seasonId],
+                  [phaseId]: true
+                }
+                newlyCompleted.push({ seasonId, phaseId })
+
+                const reward = SEASON_REWARDS[seasonId][phaseId]
+                if (reward && !state.seasonRewards.includes(reward.id)) {
+                  state.addLog({
+                    type: 'season_reward',
+                    seasonId,
+                    phaseId,
+                    rewardId: reward.id,
+                    rewardName: reward.name,
+                    timestamp: Date.now()
+                  })
+                }
+
+                if (phaseId === 'master') {
+                  const seasonAchievement = SEASON_ACHIEVEMENTS.find(
+                    a => a.season === seasonId
+                  )
+                  if (seasonAchievement && !state.unlockedAchievements.includes(seasonAchievement.id)) {
+                    newlyUnlockedAchievements.push(seasonAchievement.id)
+                  }
+                }
+              }
+            }
+          })
+        })
+
+        const allSeasonsMaster = Object.keys(SEASONS).every(
+          s => newProgress[s].master
+        )
+        if (allSeasonsMaster) {
+          const fourSeasonsAchievement = SEASON_ACHIEVEMENTS.find(a => a.season === 'all')
+          if (fourSeasonsAchievement && !state.unlockedAchievements.includes(fourSeasonsAchievement.id)) {
+            newlyUnlockedAchievements.push(fourSeasonsAchievement.id)
+          }
+        }
+
+        if (newlyCompleted.length > 0) {
+          const allRewardIds = newlyCompleted.map(
+            ({ seasonId, phaseId }) => SEASON_REWARDS[seasonId][phaseId].id
+          )
+          const newRewards = allRewardIds.filter(id => !state.seasonRewards.includes(id))
+
+          set({
+            seasonProgress: newProgress,
+            seasonRewards: [...state.seasonRewards, ...newRewards],
+            seasonHistory: [
+              ...newlyCompleted.map(item => ({
+                ...item,
+                timestamp: Date.now()
+              })),
+              ...state.seasonHistory
+            ].slice(0, 50)
+          })
+        }
+
+        if (newlyUnlockedAchievements.length > 0) {
+          set((s) => ({
+            unlockedAchievements: [
+              ...s.unlockedAchievements,
+              ...newlyUnlockedAchievements
+            ]
+          }))
+          newlyUnlockedAchievements.forEach((id) => {
+            state.addLog({
+              type: 'achievement',
+              achievementId: id,
+              timestamp: Date.now()
+            })
+          })
+          return newlyUnlockedAchievements
+        }
+
+        return newlyCompleted.length > 0 ? newlyCompleted : []
+      },
+
+      claimSeasonReward: (rewardId) => {
+        const state = get()
+        if (!state.seasonRewards.includes(rewardId)) {
+          set({ seasonRewards: [...state.seasonRewards, rewardId] })
+          return true
+        }
+        return false
+      },
+
       checkAchievements: () => {
         const state = get()
         const newlyUnlocked = []
@@ -267,7 +453,17 @@ export const useGameStore = create(
           totalMistakes: 0,
           perfectRun: true,
           observationLogs: [],
-          unlockedAchievements: []
+          unlockedAchievements: [],
+          seasonProgress: {
+            spring: { beginner: false, intermediate: false, master: false },
+            summer: { beginner: false, intermediate: false, master: false },
+            autumn: { beginner: false, intermediate: false, master: false },
+            winter: { beginner: false, intermediate: false, master: false }
+          },
+          seasonRewards: [],
+          perfectObservations: {},
+          totalObservations: {},
+          seasonHistory: []
         })
     }),
     {
@@ -279,7 +475,12 @@ export const useGameStore = create(
         discoveredStars: state.discoveredStars,
         observationLogs: state.observationLogs,
         unlockedAchievements: state.unlockedAchievements,
-        totalMistakes: state.totalMistakes
+        totalMistakes: state.totalMistakes,
+        seasonProgress: state.seasonProgress,
+        seasonRewards: state.seasonRewards,
+        perfectObservations: state.perfectObservations,
+        totalObservations: state.totalObservations,
+        seasonHistory: state.seasonHistory
       })
     }
   )

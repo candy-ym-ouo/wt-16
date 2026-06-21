@@ -1,10 +1,11 @@
 import { useGameStore } from '../stores/gameStore'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { getAchievementById } from '../data/achievements'
+import { SEASONS, SEASON_PHASES, SEASON_REWARDS, SEASON_ACHIEVEMENTS } from '../data/seasonPlan'
 import { formatDate } from '../utils/math'
 
 export default function ObservationLog() {
-  const { observationLogs, setActivePanel, clearLogs } = useGameStore()
+  const { observationLogs, setActivePanel, clearLogs, seasonRewards } = useGameStore()
 
   const renderLogEntry = (log, index) => {
     if (log.type === 'discovery' || log.type === 'reobservation') {
@@ -57,7 +58,9 @@ export default function ObservationLog() {
 
     if (log.type === 'achievement') {
       const a = getAchievementById(log.achievementId)
-      if (!a) return null
+      const seasonAchievement = SEASON_ACHIEVEMENTS?.find(a => a.id === log.achievementId)
+      const achievement = a || seasonAchievement
+      if (!achievement) return null
       return (
         <div
           key={index}
@@ -66,14 +69,44 @@ export default function ObservationLog() {
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-star-gold to-nebula-orange
                           flex items-center justify-center text-lg">
-              {a.icon}
+              {achievement.icon}
             </div>
             <div>
               <div className="font-display text-star-gold text-sm">
-                成就解锁 · {a.name}
+                成就解锁 · {achievement.name}
               </div>
               <div className="text-[11px] text-white/50 mt-0.5">
-                {a.description}
+                {achievement.description}
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'season_reward') {
+      const s = SEASONS[log.seasonId]
+      const phase = SEASON_PHASES[log.phaseId]
+      if (!s || !phase) return null
+      return (
+        <div
+          key={index}
+          className={`p-4 rounded-xl border ${s.borderColor} ${s.bgColor}`}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg
+                            bg-gradient-to-br ${s.color}`}>
+              {s.icon}
+            </div>
+            <div>
+              <div className={`font-display text-sm ${s.textColor}`}>
+                季节奖励 · {log.rewardName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                {s.name} · {phase.name}阶段完成
               </div>
               <div className="text-[10px] text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
@@ -121,7 +154,7 @@ export default function ObservationLog() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          <div className="mt-4 grid grid-cols-4 gap-2 text-center">
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-nebula-purple">
                 {observationLogs.filter(l => l.type === 'discovery').length}
@@ -139,6 +172,12 @@ export default function ObservationLog() {
                 {observationLogs.filter(l => l.type === 'achievement').length}
               </div>
               <div className="text-[10px] text-white/50">成就解锁</div>
+            </div>
+            <div className="p-2 rounded-lg bg-space-700/40">
+              <div className="text-lg font-bold text-pink-300">
+                {seasonRewards.length}
+              </div>
+              <div className="text-[10px] text-white/50">季节奖励</div>
             </div>
           </div>
         </div>

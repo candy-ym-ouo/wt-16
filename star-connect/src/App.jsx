@@ -4,6 +4,7 @@ import TasksPanel from './components/TasksPanel'
 import ObservationLog from './components/ObservationLog'
 import Achievements from './components/Achievements'
 import SettingsPanel from './components/SettingsPanel'
+import SeasonPlan from './components/SeasonPlan'
 import BottomNav from './components/BottomNav'
 import AchievementToast from './components/AchievementToast'
 import { useGameStore } from './stores/gameStore'
@@ -25,6 +26,7 @@ export default function App() {
       {activePanel === 'log' && <ObservationLog />}
       {activePanel === 'achievements' && <Achievements />}
       {activePanel === 'settings' && <SettingsPanel />}
+      {activePanel === 'seasons' && <SeasonPlan />}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />
