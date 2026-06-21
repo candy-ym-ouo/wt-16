@@ -491,6 +491,22 @@ export default function SeasonPlan() {
             </button>
           </div>
 
+          <div className="mt-3">
+            <button
+              onClick={() => {
+                setActivePanel('route')
+              }}
+              className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-pink-500/20 to-rose-500/20
+                       border border-pink-500/30 text-white text-sm
+                       hover:from-pink-500/30 hover:to-rose-500/30
+                       transition-all flex items-center justify-center gap-2"
+            >
+              <span>🗺️</span>
+              <span>观星路线推荐</span>
+              <span className="text-pink-300">→</span>
+            </button>
+          </div>
+
           <div className="mt-4 flex gap-2">
             {[
               { id: 'overview', label: '进度', icon: '📊' },

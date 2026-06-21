@@ -68,6 +68,15 @@ import {
   calculateTutorialProgress,
   getErrorHint
 } from '../data/tutorial'
+import {
+  generateRoute,
+  calculateRouteProgress,
+  isRoutePerfect,
+  getRouteStats,
+  ROUTE_ACHIEVEMENTS,
+  getRouteAchievementById,
+  DIFFICULTY_PREFERENCE
+} from '../data/starRoute'
 
 let autoSaveEnabled = true
 
@@ -1393,6 +1402,10 @@ export const useGameStore = create(
 
           if (state.nightExpedition.currentRun?.active) {
             get().advanceExpeditionStage()
+          }
+
+          if (state.starRoute.currentRoute) {
+            get().updateRouteStep(constellationId, isPerfect)
           }
 
           return true
@@ -3074,6 +3087,200 @@ export const useGameStore = create(
         }
       },
 
+      starRoute: {
+        currentRoute: null,
+        routeHistory: [],
+        difficultyPreference: 'balanced',
+        totalRoutesCompleted: 0,
+        perfectRoutes: 0
+      },
+
+      setDifficultyPreference: (preferenceId) => {
+        if (!DIFFICULTY_PREFERENCE[preferenceId]) return false
+        set((state) => ({
+          starRoute: { ...state.starRoute, difficultyPreference: preferenceId }
+        }))
+        return true
+      },
+
+      generateNewRoute: (routeType) => {
+        const state = get()
+        const route = generateRoute(
+          routeType,
+          state.starRoute.difficultyPreference,
+          state.discoveredConstellations,
+          state.perfectObservations,
+          state.totalObservations
+        )
+
+        set((state) => ({
+          starRoute: { ...state.starRoute, currentRoute: route }
+        }))
+
+        get().addLog({
+          type: 'route_start',
+          routeId: route.id,
+          routeName: route.name,
+          routeType: route.type,
+          totalSteps: route.steps.length,
+          timestamp: Date.now()
+        })
+
+        return route
+      },
+
+      getCurrentRoute: () => {
+        return get().starRoute.currentRoute
+      },
+
+      getCurrentRouteProgress: () => {
+        const route = get().starRoute.currentRoute
+        return calculateRouteProgress(route)
+      },
+
+      updateRouteStep: (constellationId, isPerfect) => {
+        const state = get()
+        const route = state.starRoute.currentRoute
+        if (!route || route.status !== 'active') return null
+
+        const stepIndex = route.steps.findIndex(s => s.constellationId === constellationId)
+        if (stepIndex === -1) return null
+
+        const step = route.steps[stepIndex]
+        if (step.status === 'completed') return null
+
+        const updatedSteps = route.steps.map((s, i) =>
+          i === stepIndex
+            ? { ...s, status: 'completed', perfect: isPerfect, completedAt: Date.now() }
+            : s
+        )
+
+        const completedCount = updatedSteps.filter(s => s.status === 'completed').length
+        const isComplete = completedCount === updatedSteps.length
+
+        const updatedRoute = {
+          ...route,
+          steps: updatedSteps,
+          currentStepIndex: isComplete ? route.steps.length : Math.min(stepIndex + 1, route.steps.length - 1),
+          status: isComplete ? 'completed' : 'active',
+          completedAt: isComplete ? Date.now() : null
+        }
+
+        set((state) => ({
+          starRoute: {
+            ...state.starRoute,
+            currentRoute: isComplete ? null : updatedRoute,
+            routeHistory: isComplete
+              ? [updatedRoute, ...state.starRoute.routeHistory].slice(0, 50)
+              : state.starRoute.routeHistory,
+            totalRoutesCompleted: isComplete
+              ? state.starRoute.totalRoutesCompleted + 1
+              : state.starRoute.totalRoutesCompleted,
+            perfectRoutes: isComplete && isRoutePerfect(updatedRoute)
+              ? state.starRoute.perfectRoutes + 1
+              : state.starRoute.perfectRoutes
+          }
+        }))
+
+        if (isComplete) {
+          get().addLog({
+            type: 'route_complete',
+            routeId: updatedRoute.id,
+            routeName: updatedRoute.name,
+            routeType: updatedRoute.type,
+            perfect: isRoutePerfect(updatedRoute),
+            completedSteps: completedCount,
+            timestamp: Date.now()
+          })
+
+          get().checkRouteAchievements()
+        }
+
+        return { updatedRoute, stepIndex, isComplete }
+      },
+
+      abandonRoute: () => {
+        const state = get()
+        const route = state.starRoute.currentRoute
+        if (!route) return false
+
+        get().addLog({
+          type: 'route_abandon',
+          routeId: route.id,
+          routeName: route.name,
+          completedSteps: route.steps.filter(s => s.status === 'completed').length,
+          totalSteps: route.steps.length,
+          timestamp: Date.now()
+        })
+
+        set((state) => ({
+          starRoute: { ...state.starRoute, currentRoute: null }
+        }))
+        return true
+      },
+
+      getRouteHistory: () => {
+        return get().starRoute.routeHistory
+      },
+
+      getRouteStats: () => {
+        const state = get()
+        return getRouteStats(state.starRoute.routeHistory)
+      },
+
+      checkRouteAchievements: () => {
+        const state = get()
+        const sr = state.starRoute
+        const newlyUnlocked = []
+
+        ROUTE_ACHIEVEMENTS.forEach((achievement) => {
+          if (state.unlockedAchievements.includes(achievement.id)) return
+
+          const { type, value } = achievement.condition
+          let unlocked = false
+
+          switch (type) {
+            case 'route_complete':
+              unlocked = sr.totalRoutesCompleted >= value
+              break
+            case 'route_type_complete': {
+              const completedOfType = sr.routeHistory.filter(
+                r => r.status === 'completed' && r.type === value
+              ).length
+              unlocked = completedOfType >= 1
+              break
+            }
+            case 'route_perfect':
+              unlocked = sr.perfectRoutes >= value
+              break
+          }
+
+          if (unlocked) {
+            newlyUnlocked.push(achievement.id)
+          }
+        })
+
+        if (newlyUnlocked.length > 0) {
+          set((state) => ({
+            unlockedAchievements: [...state.unlockedAchievements, ...newlyUnlocked]
+          }))
+
+          newlyUnlocked.forEach((id) => {
+            const achievement = getRouteAchievementById(id)
+            if (achievement) {
+              get().addLog({
+                type: 'achievement',
+                achievementId: id,
+                achievementName: achievement.name,
+                timestamp: Date.now()
+              })
+            }
+          })
+        }
+
+        return newlyUnlocked
+      },
+
       isConstellationComplete: (constellationId) =>
         get().discoveredConstellations.includes(constellationId),
 
@@ -3238,6 +3445,13 @@ export const useGameStore = create(
             panelsVisited: [],
             lastErrorHint: null,
             lastErrorTime: null
+          },
+          starRoute: {
+            currentRoute: null,
+            routeHistory: [],
+            difficultyPreference: 'balanced',
+            totalRoutesCompleted: 0,
+            perfectRoutes: 0
           }
         })
     }),
@@ -3264,7 +3478,8 @@ export const useGameStore = create(
         quiz: state.quiz,
         team: state.team,
         starGallery: state.starGallery,
-        tutorial: state.tutorial
+        tutorial: state.tutorial,
+        starRoute: state.starRoute
       })
     }
   )
