@@ -25,6 +25,8 @@ export default function NightSky() {
   const perfectObservations = useGameStore((s) => s.perfectObservations)
   const getGuideConstellations = useGameStore((s) => s.getGuideConstellations)
   const setTargetConstellation = useGameStore((s) => s.setTargetConstellation)
+  const currentWeatherId = useGameStore((s) => s.weather.currentWeather)
+  const tryWeatherTransition = useGameStore((s) => s.tryWeatherTransition)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -224,6 +226,20 @@ export default function NightSky() {
 
     return () => clearInterval(interval)
   }, [refreshNightSkyEvents, getActiveNightSkyEvents])
+
+  useEffect(() => {
+    if (rendererRef.current && currentWeatherId) {
+      rendererRef.current.setWeather(currentWeatherId)
+    }
+  }, [currentWeatherId])
+
+  useEffect(() => {
+    const weatherInterval = setInterval(() => {
+      tryWeatherTransition()
+    }, 120000)
+
+    return () => clearInterval(weatherInterval)
+  }, [tryWeatherTransition])
 
   return (
     <div

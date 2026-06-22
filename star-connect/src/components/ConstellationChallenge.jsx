@@ -3,10 +3,12 @@ import { useGameStore } from '../stores/gameStore'
 import { CHALLENGE_DIFFICULTIES, CHALLENGE_SEASON_TIERS, CHALLENGE_SEASON_REWARDS } from '../data/constellationChallenge'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 import { getConstellationById } from '../data/constellations'
+import { WEATHER_TYPES } from '../data/constants'
 
 function ChallengeHome({ onStart }) {
-  const { getChallengeStats, getChallengeRemainingAttempts, constellationChallenge } = useGameStore()
+  const { getChallengeStats, getChallengeRemainingAttempts, constellationChallenge, getCurrentWeather } = useGameStore()
   const stats = getChallengeStats()
+  const currentWeather = getCurrentWeather()
   const currentSeason = getCurrentSeason()
   const season = SEASONS[currentSeason]
   const seasonScore = stats.seasonScore
@@ -91,6 +93,17 @@ function ChallengeHome({ onStart }) {
                     <p className="fs-10 text-white/40 mt-0.5">
                       {diff.constellationCount}关 · {diff.timeLimit}秒 · 允许{diff.allowedMistakes}次失误
                     </p>
+                    {currentWeather && currentWeather.difficultyModifier !== 0 && (
+                      <p className={`fs-9 mt-1 flex items-center gap-1 ${
+                        currentWeather.difficultyModifier > 0 ? 'text-red-400' : 'text-green-400'
+                      }`}>
+                        <span>{currentWeather.icon}</span>
+                        <span>
+                          天气{currentWeather.difficultyModifier > 0 ? '增加' : '降低'}难度 
+                          {currentWeather.difficultyModifier > 0 ? '+' : ''}{currentWeather.difficultyModifier}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -161,11 +174,12 @@ function ChallengeHome({ onStart }) {
 }
 
 function ChallengeInPlay({ onResult }) {
-  const { constellationChallenge } = useGameStore()
+  const { constellationChallenge, getCurrentWeather } = useGameStore()
   const challenge = constellationChallenge.currentChallenge
   const config = CHALLENGE_DIFFICULTIES[challenge?.difficultyId]
   const stage = challenge?.route?.[challenge?.stageIndex]
   const constellation = stage ? getConstellationById(stage.constellationId) : null
+  const currentWeather = getCurrentWeather()
   const [timeLeft, setTimeLeft] = useState(config?.timeLimit || 60)
   const [lastStageIdx, setLastStageIdx] = useState(challenge?.stageIndex ?? -1)
 
@@ -246,6 +260,26 @@ function ChallengeInPlay({ onResult }) {
         <span>{challenge.stageIndex + 1} / {challenge.route.length}</span>
       </div>
 
+      {currentWeather && currentWeather.difficultyModifier !== 0 && (
+        <div className={`p-2 rounded-lg text-center border ${
+          currentWeather.difficultyModifier > 0
+            ? 'bg-red-500/10 border-red-500/20'
+            : 'bg-green-500/10 border-green-500/20'
+        }`}>
+          <div className="flex items-center justify-center gap-2 text-xs">
+            <span>{currentWeather.icon}</span>
+            <span className={currentWeather.difficultyModifier > 0 ? 'text-red-400' : 'text-green-400'}>
+              {currentWeather.name}天气
+              {currentWeather.difficultyModifier > 0 ? '增加' : '降低'}难度
+              {currentWeather.difficultyModifier > 0 ? '+' : ''}{currentWeather.difficultyModifier}
+            </span>
+            {currentWeather.scoreMultiplier !== 1.0 && (
+              <span className="text-star-gold">×{currentWeather.scoreMultiplier}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={`p-5 rounded-2xl border ${config.borderColor} ${config.bgColor} text-center`}>
         <div className="text-4xl mb-3">⭐</div>
         <h3 className="font-display text-white text-lg">
@@ -312,8 +346,9 @@ function ChallengeInPlay({ onResult }) {
 }
 
 function ChallengeResult({ result, onHome }) {
-  const { getChallengeStats } = useGameStore()
+  const { getChallengeStats, getCurrentWeather } = useGameStore()
   const stats = getChallengeStats()
+  const currentWeather = getCurrentWeather()
   const config = CHALLENGE_DIFFICULTIES[result?.difficultyId]
 
   if (!result) return null
@@ -333,6 +368,35 @@ function ChallengeResult({ result, onHome }) {
         <div className="text-white/60 text-sm">
           {config.name} · 通关 {result.completedStages}/{result.totalStages} 关
         </div>
+        {currentWeather && (
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <div className="flex items-center justify-center gap-2 text-white/50 text-xs">
+              <span className="text-lg">{currentWeather.icon}</span>
+              <span>
+                本次挑战天气：{currentWeather.name}
+                {currentWeather.difficultyModifier > 0 && ` · 难度+${currentWeather.difficultyModifier}`}
+                {currentWeather.difficultyModifier < 0 && ` · 难度${currentWeather.difficultyModifier}`}
+              </span>
+            </div>
+            {currentWeather.scoreMultiplier !== 1.0 && (
+              <div className="text-star-gold/80 text-xs mt-1">
+                得分倍率：×{currentWeather.scoreMultiplier}
+              </div>
+            )}
+            {accuracy < 50 && currentWeather.cloudCoverage > 0.3 && (
+              <div className="text-yellow-400/70 text-xs mt-2 flex items-center justify-center gap-1">
+                <span>💡</span>
+                <span>云层较厚，星光可见度低，建议选择晴朗天气挑战</span>
+              </div>
+            )}
+            {accuracy >= 80 && currentWeather.difficultyModifier > 0 && (
+              <div className="text-green-400/80 text-xs mt-2 flex items-center justify-center gap-1">
+                <span>🌟</span>
+                <span>在{currentWeather.name}天气下取得好成绩，太棒了！</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

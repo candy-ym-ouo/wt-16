@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { getConstellationById } from '../data/constellations'
-import { GRAPHICS_OPTIONS, BACKGROUND_STYLES, CONNECTION_EFFECTS, DEFAULT_SETTINGS, HINT_INTENSITY_OPTIONS } from '../data/constants'
+import { GRAPHICS_OPTIONS, BACKGROUND_STYLES, CONNECTION_EFFECTS, DEFAULT_SETTINGS, HINT_INTENSITY_OPTIONS, WEATHER_TYPES, CLOUD_LAYERS } from '../data/constants'
 import { clamp, randomRange } from '../utils/math'
 import { audioManager } from './AudioManager'
 
@@ -74,6 +74,12 @@ export class NightSkyRenderer {
     this.connectionParticles = []
 
     this.hintConfig = HINT_INTENSITY_OPTIONS[this.settings.hintIntensity] || HINT_INTENSITY_OPTIONS.medium
+
+    this.currentWeather = WEATHER_TYPES.clear
+    this.cloudLayers = []
+    this.cloudsCreated = false
+    this.weatherTransitionProgress = 0
+    this.targetWeather = WEATHER_TYPES.clear
 
     this.init()
   }
@@ -1544,6 +1550,8 @@ export class NightSkyRenderer {
     this.updateEventEffects()
     this.updateConnectionParticles()
     this.updateConnectionLineAnimations()
+    this.updateWeatherEffects()
+    this.updateCloudLayers()
 
     this.renderer.render(this.scene, this.camera)
   }
@@ -1591,6 +1599,183 @@ export class NightSkyRenderer {
       const variation = 0.1 + hintValue * 0.2
       this.tempLine.material.opacity = baseOpacity + Math.sin(time) * variation
     }
+  }
+
+  createCloudTexture(seed = 0) {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 256)
+    gradient.addColorStop(0, 'rgba(255,255,255,0)')
+    gradient.addColorStop(0.3, 'rgba(255,255,255,0.1)')
+    gradient.addColorStop(0.5, 'rgba(255,255,255,0.2)')
+    gradient.addColorStop(0.7, 'rgba(255,255,255,0.15)')
+    gradient.addColorStop(1, 'rgba(255,255,255,0)')
+
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, 512, 256)
+
+    for (let i = 0; i < 30; i++) {
+      const x = (i * 50 + seed * 17) % 512
+      const y = 30 + Math.sin(i * 0.5 + seed) * 80 + 80
+      const radius = 20 + Math.sin(i * 0.8 + seed * 0.5) * 15
+      const cloudGradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
+      cloudGradient.addColorStop(0, 'rgba(255,255,255,0.4)')
+      cloudGradient.addColorStop(0.5, 'rgba(255,255,255,0.2)')
+      cloudGradient.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.fillStyle = cloudGradient
+      ctx.beginPath()
+      ctx.arc(x, y, radius, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.ClampToEdgeWrapping
+    return texture
+  }
+
+  createCloudLayer(config, index) {
+    const geometry = new THREE.PlaneGeometry(30 * config.scale, 8 * config.scale, 1, 1)
+    const texture = this.createCloudTexture(index * 3)
+
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: config.opacity * this.currentWeather.cloudCoverage,
+      blending: THREE.NormalBlending,
+      depthWrite: false
+    })
+
+    const cloud = new THREE.Mesh(geometry, material)
+    cloud.position.set(-15 * config.scale, config.y * 3, -5 - index * 0.5)
+    cloud.userData = {
+      speed: config.speed,
+      baseOpacity: config.opacity,
+      offset: 0,
+      scale: config.scale,
+      layerIndex: index
+    }
+
+    return cloud
+  }
+
+  createCloudLayers() {
+    if (this.cloudsCreated) return
+
+    CLOUD_LAYERS.forEach((config, index) => {
+      const cloud = this.createCloudLayer(config, index)
+      this.scene.add(cloud)
+      this.cloudLayers.push(cloud)
+    })
+
+    this.cloudsCreated = true
+  }
+
+  removeCloudLayers() {
+    this.cloudLayers.forEach(cloud => {
+      this.scene.remove(cloud)
+      if (cloud.geometry) cloud.geometry.dispose()
+      if (cloud.material) {
+        if (cloud.material.map) cloud.material.map.dispose()
+        cloud.material.dispose()
+      }
+    })
+    this.cloudLayers = []
+    this.cloudsCreated = false
+  }
+
+  setWeather(weatherId) {
+    const weather = WEATHER_TYPES[weatherId]
+    if (!weather) return
+
+    this.targetWeather = weather
+    this.weatherTransitionProgress = 0
+
+    if (weather.cloudCoverage > 0 && !this.cloudsCreated) {
+      this.createCloudLayers()
+    }
+  }
+
+  updateWeatherEffects() {
+    const twinkleIntensity = this.currentWeather.twinkleIntensity
+    const starVisibility = this.currentWeather.starVisibility
+
+    if (this.weatherTransitionProgress < 1) {
+      this.weatherTransitionProgress += 0.002
+      if (this.weatherTransitionProgress > 1) this.weatherTransitionProgress = 1
+
+      const t = this.weatherTransitionProgress
+      this.currentWeather = {
+        ...this.currentWeather,
+        starVisibility: this.currentWeather.starVisibility + (this.targetWeather.starVisibility - this.currentWeather.starVisibility) * 0.01,
+        twinkleIntensity: this.currentWeather.twinkleIntensity + (this.targetWeather.twinkleIntensity - this.currentWeather.twinkleIntensity) * 0.01,
+        cloudCoverage: this.currentWeather.cloudCoverage + (this.targetWeather.cloudCoverage - this.currentWeather.cloudCoverage) * 0.01
+      }
+    }
+
+    if (this.starField && this.starField.material) {
+      const baseOpacity = 0.9 * starVisibility
+      const twinkle = Math.sin(this.time * 2) * twinkleIntensity * 0.15
+      this.starField.material.opacity = Math.max(0.1, baseOpacity + twinkle)
+    }
+
+    this.starMeshes.forEach((star, i) => {
+      if (star.material) {
+        const twinkleSpeed = 3 + (i % 5) * 0.5
+        const twinkleAmount = twinkleIntensity * 0.2
+        const twinkle = 1 + Math.sin(this.time * twinkleSpeed + i * 0.8) * twinkleAmount
+        const visibilityFactor = starVisibility
+        star.material.opacity = Math.max(0.1, 0.9 * visibilityFactor * twinkle)
+      }
+    })
+
+    this.discoveredConstellationMeshes.forEach(({ stars, isPerfect }) => {
+      stars.forEach((star, i) => {
+        if (star.material) {
+          const baseOpacity = isPerfect ? 0.85 : 0.55
+          const twinkleSpeed = isPerfect ? 2 : 4
+          const twinkleAmount = twinkleIntensity * (isPerfect ? 0.1 : 0.15)
+          const twinkle = Math.sin(this.time * twinkleSpeed + i * 0.5) * twinkleAmount
+          star.material.opacity = Math.max(0.05, baseOpacity * starVisibility + twinkle)
+        }
+      })
+    })
+
+    if (this.targetWeather.cloudCoverage <= 0 && this.cloudsCreated && this.currentWeather.cloudCoverage < 0.05) {
+      this.removeCloudLayers()
+    } else if (this.targetWeather.cloudCoverage > 0 && !this.cloudsCreated) {
+      this.createCloudLayers()
+    }
+  }
+
+  updateCloudLayers() {
+    if (!this.cloudsCreated || this.cloudLayers.length === 0) return
+
+    const coverage = this.currentWeather.cloudCoverage
+
+    this.cloudLayers.forEach((cloud, index) => {
+      if (!cloud.userData) return
+
+      cloud.userData.offset += cloud.userData.speed * this.settings.animationSpeed
+      if (cloud.userData.offset > 2) cloud.userData.offset = 0
+
+      cloud.position.x = -15 * cloud.userData.scale + cloud.userData.offset * 15 * cloud.userData.scale
+
+      if (cloud.material) {
+        cloud.material.opacity = cloud.userData.baseOpacity * coverage
+      }
+
+      if (cloud.material && cloud.material.map) {
+        cloud.material.map.offset.x = cloud.userData.offset * 0.5
+      }
+    })
+  }
+
+  getCurrentWeather() {
+    return this.currentWeather
   }
 
   setZoom(level) {

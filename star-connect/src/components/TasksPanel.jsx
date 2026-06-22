@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { CONSTELLATIONS } from '../data/constellations'
-import { DIFFICULTY_CONFIG } from '../data/constants'
+import { DIFFICULTY_CONFIG, WEATHER_TYPES } from '../data/constants'
 import { COMMISSION_DIFFICULTY } from '../data/dailyCommissions'
 import { useI18n } from '../i18n/useI18n'
 
@@ -18,7 +18,9 @@ export default function TasksPanel() {
     getOrRefreshDailyCommissions,
     getDailyCommissionProgressAll,
     claimDailyCommission,
-    getDailyCommissionStats
+    getDailyCommissionStats,
+    getCurrentWeather,
+    setWeather
   } = useGameStore()
 
   const [dailyTasks, setDailyTasks] = useState([])
@@ -96,6 +98,42 @@ export default function TasksPanel() {
             >
               ✕
             </button>
+          </div>
+
+          <div className="mt-3 p-3 rounded-xl bg-space-700/40 border border-white/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{getCurrentWeather()?.icon || '☀️'}</span>
+                <div>
+                  <div className="text-sm font-medium text-white">
+                    当前天气：{getCurrentWeather()?.name || '晴朗'}
+                  </div>
+                  <div className="fs-10 text-white/50 mt-0.5">
+                    {getCurrentWeather()?.description || '天空澄澈，星光璀璨'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="fs-10 text-white/40">难度修正</div>
+                <div className={`text-sm font-bold ${
+                  (getCurrentWeather()?.difficultyModifier || 0) > 0 ? 'text-red-400' :
+                  (getCurrentWeather()?.difficultyModifier || 0) < 0 ? 'text-green-400' : 'text-white/60'
+                }`}>
+                  {(getCurrentWeather()?.difficultyModifier || 0) > 0 ? '+' : ''}{getCurrentWeather()?.difficultyModifier || 0}
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between fs-10">
+              <span className="text-white/40">
+                星光可见度：{Math.round((getCurrentWeather()?.starVisibility || 1) * 100)}%
+              </span>
+              <span className="text-white/40">
+                得分倍率：×{getCurrentWeather()?.scoreMultiplier || 1.0}
+              </span>
+              <span className="text-white/40">
+                云层覆盖：{Math.round((getCurrentWeather()?.cloudCoverage || 0) * 100)}%
+              </span>
+            </div>
           </div>
 
           <div className="mt-4 grid grid-cols-4 gap-2 text-center">

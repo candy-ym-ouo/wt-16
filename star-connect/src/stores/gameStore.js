@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { ACHIEVEMENTS } from '../data/achievements'
-import { DEFAULT_SETTINGS, STORAGE_KEYS, SAVE_SLOT_CONFIG, DEFAULT_SAVE_SLOT } from '../data/constants'
+import { DEFAULT_SETTINGS, STORAGE_KEYS, SAVE_SLOT_CONFIG, DEFAULT_SAVE_SLOT, WEATHER_TYPES, WEATHER_TRANSITION_PROBABILITY } from '../data/constants'
 import {
   SEASONS,
   SEASON_PHASES,
@@ -279,6 +279,68 @@ export const useGameStore = create(
         }),
       resetSettings: () =>
         set({ settings: { ...DEFAULT_SETTINGS } }),
+
+      weather: {
+        currentWeather: 'clear',
+        lastWeatherChange: Date.now(),
+        weatherHistory: []
+      },
+
+      setWeather: (weatherId) => {
+        const weather = WEATHER_TYPES[weatherId]
+        if (!weather) return { success: false, error: '无效的天气类型' }
+
+        set((state) => ({
+          weather: {
+            ...state.weather,
+            currentWeather: weatherId,
+            lastWeatherChange: Date.now(),
+            weatherHistory: [
+              ...state.weather.weatherHistory,
+              { weatherId, timestamp: Date.now() }
+            ].slice(-20)
+          }
+        }))
+
+        return { success: true, weather }
+      },
+
+      getCurrentWeather: () => {
+        const state = get()
+        return WEATHER_TYPES[state.weather.currentWeather] || WEATHER_TYPES.clear
+      },
+
+      getWeatherDifficultyModifier: () => {
+        const state = get()
+        const weather = WEATHER_TYPES[state.weather.currentWeather] || WEATHER_TYPES.clear
+        return weather.difficultyModifier
+      },
+
+      getWeatherScoreMultiplier: () => {
+        const state = get()
+        const weather = WEATHER_TYPES[state.weather.currentWeather] || WEATHER_TYPES.clear
+        return weather.scoreMultiplier
+      },
+
+      tryWeatherTransition: () => {
+        const state = get()
+        const currentWeather = state.weather.currentWeather
+        const transitions = WEATHER_TRANSITION_PROBABILITY[currentWeather]
+        if (!transitions) return null
+
+        const rand = Math.random()
+        let cumulative = 0
+
+        for (const [weatherId, probability] of Object.entries(transitions)) {
+          cumulative += probability
+          if (rand < cumulative) {
+            get().setWeather(weatherId)
+            return WEATHER_TYPES[weatherId]
+          }
+        }
+
+        return null
+      },
 
       saveSlots: [],
       currentSaveId: 'default',
@@ -6258,6 +6320,7 @@ export const useGameStore = create(
       storage: conditionalStorage,
       partialize: (state) => ({
         settings: state.settings,
+        weather: state.weather,
         discoveredConstellations: state.discoveredConstellations,
         discoveredStars: state.discoveredStars,
         observationLogs: state.observationLogs,

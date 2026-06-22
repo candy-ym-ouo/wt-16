@@ -335,3 +335,75 @@ export const DEFAULT_SAVE_SLOT = {
   preview: null,
   settingsShared: true
 }
+
+export const WEATHER_TYPES = {
+  clear: {
+    id: 'clear',
+    name: '晴朗',
+    icon: '☀️',
+    description: '天空澄澈，星光璀璨',
+    starVisibility: 1.0,
+    twinkleIntensity: 0.3,
+    cloudCoverage: 0.0,
+    difficultyModifier: 0,
+    scoreMultiplier: 1.0
+  },
+  light_haze: {
+    id: 'light_haze',
+    name: '薄雾',
+    icon: '🌫️',
+    description: '轻微薄雾，星光略有朦胧',
+    starVisibility: 0.85,
+    twinkleIntensity: 0.5,
+    cloudCoverage: 0.1,
+    difficultyModifier: 1,
+    scoreMultiplier: 1.1
+  },
+  scattered_clouds: {
+    id: 'scattered_clouds',
+    name: '多云',
+    icon: '⛅',
+    description: '云朵飘散，时隐时现',
+    starVisibility: 0.7,
+    twinkleIntensity: 0.7,
+    cloudCoverage: 0.3,
+    difficultyModifier: 2,
+    scoreMultiplier: 1.3
+  },
+  cloudy: {
+    id: 'cloudy',
+    name: '阴天',
+    icon: '☁️',
+    description: '云层较厚，观测困难',
+    starVisibility: 0.5,
+    twinkleIntensity: 0.9,
+    cloudCoverage: 0.6,
+    difficultyModifier: 3,
+    scoreMultiplier: 1.6
+  },
+  stormy: {
+    id: 'stormy',
+    name: '暴风雨',
+    icon: '⛈️',
+    description: '狂风暴雨，几乎不可观测',
+    starVisibility: 0.2,
+    twinkleIntensity: 1.0,
+    cloudCoverage: 0.9,
+    difficultyModifier: 4,
+    scoreMultiplier: 2.0
+  }
+}
+
+export const WEATHER_TRANSITION_PROBABILITY = {
+  clear: { light_haze: 0.3, scattered_clouds: 0.1, cloudy: 0.02, stormy: 0 },
+  light_haze: { clear: 0.25, scattered_clouds: 0.3, cloudy: 0.1, stormy: 0.02 },
+  scattered_clouds: { clear: 0.15, light_haze: 0.25, cloudy: 0.3, stormy: 0.08 },
+  cloudy: { clear: 0.05, light_haze: 0.15, scattered_clouds: 0.3, stormy: 0.2 },
+  stormy: { clear: 0.02, light_haze: 0.08, scattered_clouds: 0.2, cloudy: 0.4 }
+}
+
+export const CLOUD_LAYERS = [
+  { speed: 0.0008, scale: 1.5, opacity: 0.6, y: 0.2 },
+  { speed: 0.0012, scale: 2.0, opacity: 0.4, y: -0.3 },
+  { speed: 0.0006, scale: 2.5, opacity: 0.3, y: 0.5 }
+]
