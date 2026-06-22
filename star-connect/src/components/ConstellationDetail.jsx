@@ -322,15 +322,174 @@ export default function ConstellationDetail({ constellationId }) {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-display text-white border-l-2 border-star-gold pl-3">
-                {t('detail.mythologyTitle')}
+              <h3 className="text-sm font-display text-white border-l-2 border-star-gold pl-3 flex items-center justify-between">
+                <span>{t('detail.mythologyTitle')}</span>
+                {constellation.storySegments && constellation.storySegments.length > 0 && (
+                  <span className="fs-10 text-white/40 font-normal">共 {constellation.storySegments.length} 章节</span>
+                )}
               </h3>
-              <div className="p-4 rounded-xl bg-space-700/30 border border-star-gold/10">
-                <p className="text-sm text-white/70 leading-relaxed">
-                  {locMythology}
-                </p>
-              </div>
+              {constellation.storySegments && constellation.storySegments.length > 0 ? (
+                <div className="space-y-3">
+                  {constellation.storySegments.map((segment, index) => (
+                    <div
+                      key={segment.id}
+                      className="p-4 rounded-xl bg-space-700/30 border border-star-gold/10"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">{segment.icon}</span>
+                        <div>
+                          <span className="text-xs text-star-gold/70">第 {index + 1} 章</span>
+                          <h4 className="text-sm font-display text-white">{segment.title}</h4>
+                        </div>
+                      </div>
+                      <p className="text-sm text-white/70 leading-relaxed pl-9">
+                        {segment.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-space-700/30 border border-star-gold/10">
+                  <p className="text-sm text-white/70 leading-relaxed">
+                    {locMythology}
+                  </p>
+                </div>
+              )}
             </div>
+
+            {constellation.observationWindow && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-display text-white border-l-2 border-nebula-cyan pl-3">
+                  🌙 观测窗口
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {constellation.observationWindow.months && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">可见月份</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.months}</p>
+                    </div>
+                  )}
+                  {constellation.observationWindow.bestMonths && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">最佳月份</p>
+                      <p className="text-sm text-nebula-cyan mt-0.5">{constellation.observationWindow.bestMonths}</p>
+                    </div>
+                  )}
+                  {constellation.observationWindow.riseTime && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">升起时间</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.riseTime}</p>
+                    </div>
+                  )}
+                  {constellation.observationWindow.setTime && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">落下时间</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.setTime}</p>
+                    </div>
+                  )}
+                  {constellation.observationWindow.bestHours && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">最佳时段</p>
+                      <p className="text-sm text-nebula-cyan mt-0.5">{constellation.observationWindow.bestHours}</p>
+                    </div>
+                  )}
+                  {constellation.observationWindow.transitInfo && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">中天信息</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.transitInfo}</p>
+                    </div>
+                  )}
+                  {constellation.observationWindow.moonConflict && (
+                    <div className="col-span-2 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
+                      <p className="text-xs text-yellow-300/80">
+                        🌕 注意：{constellation.observationWindow.moonConflict}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {constellation.brightnessHints && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-display text-white border-l-2 border-nebula-orange pl-3">
+                  ✨ 亮度与观测提示
+                </h3>
+                <div className="space-y-3">
+                  {constellation.brightnessHints.brightestStar && (
+                    <div className="p-4 rounded-xl bg-space-700/30 border border-nebula-orange/10">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{
+                            backgroundColor: '#ffcc6630',
+                            boxShadow: '0 0 15px #ffcc6640'
+                          }}
+                        >
+                          <div className="w-4 h-4 rounded-full bg-yellow-300" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-white/40">最亮星</p>
+                          <p className="text-sm text-white font-medium">
+                            {constellation.brightnessHints.brightestStar.name}
+                            <span className="ml-2 text-nebula-orange font-mono">
+                              {constellation.brightnessHints.brightestStar.mag} 等
+                            </span>
+                          </p>
+                          <p className="text-xs text-white/50 mt-0.5 leading-relaxed">
+                            {constellation.brightnessHints.brightestStar.desc}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {constellation.brightnessHints.visibleLevel && (
+                      <div className="p-3 rounded-xl bg-space-700/30">
+                        <p className="text-xs text-white/40">观测难度</p>
+                        <p className="text-sm text-green-400 mt-0.5">{constellation.brightnessHints.visibleLevel}</p>
+                      </div>
+                    )}
+                    {constellation.brightnessHints.lightPollutionTolerance && (
+                      <div className="p-3 rounded-xl bg-space-700/30">
+                        <p className="text-xs text-white/40">光污染耐受</p>
+                        <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.lightPollutionTolerance}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {constellation.brightnessHints.nakedEyeLimit && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">👁️ 肉眼可见</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.nakedEyeLimit}</p>
+                    </div>
+                  )}
+
+                  {constellation.brightnessHints.binocularTip && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">🔭 双筒望远镜</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.binocularTip}</p>
+                    </div>
+                  )}
+
+                  {constellation.brightnessHints.telescopeTip && (
+                    <div className="p-3 rounded-xl bg-space-700/30">
+                      <p className="text-xs text-white/40">🔬 望远镜</p>
+                      <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.telescopeTip}</p>
+                    </div>
+                  )}
+
+                  {constellation.brightnessHints.faintStarsNote && (
+                    <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                      <p className="text-xs text-purple-300/80">
+                        💫 暗星提示：{constellation.brightnessHints.faintStarsNote}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               <h3 className="text-sm font-display text-white border-l-2 border-nebula-cyan pl-3">

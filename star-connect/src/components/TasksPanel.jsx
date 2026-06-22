@@ -294,9 +294,25 @@ export default function TasksPanel() {
                       <p className="text-xs text-white/60 mt-2 leading-relaxed">
                         {c.description}
                       </p>
-                      <div className="mt-2 flex items-center gap-3 fs-10 text-white/40">
-                        <span>✦ {c.stars.length} 颗主要星</span>
-                        <span>⊶ {c.connections.length} 条连线</span>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="fs-10 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
+                          ✦ {c.stars.length} 颗星
+                        </span>
+                        {c.brightnessHints?.brightestStar && (
+                          <span className="fs-10 px-1.5 py-0.5 rounded bg-nebula-orange/10 text-nebula-orange/80 border border-nebula-orange/20">
+                            ✨ {c.brightnessHints.brightestStar.name} ({c.brightnessHints.brightestStar.mag}等)
+                          </span>
+                        )}
+                        {c.observationWindow?.bestHours && (
+                          <span className="fs-10 px-1.5 py-0.5 rounded bg-nebula-cyan/10 text-nebula-cyan/80 border border-nebula-cyan/20">
+                            🌙 {c.observationWindow.bestHours}
+                          </span>
+                        )}
+                        {c.storySegments && c.storySegments.length > 0 && (
+                          <span className="fs-10 px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80 border border-star-gold/20">
+                            📖 {c.storySegments.length} 章故事
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button

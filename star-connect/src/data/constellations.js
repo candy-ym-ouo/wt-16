@@ -13,6 +13,50 @@ export const CONSTELLATIONS = [
     area: '1280平方度',
     ranking: 3,
     storyChapterId: 'spring_ursa_major',
+    observationWindow: {
+      months: '1月-12月（全年可见）',
+      bestMonths: '3月-5月',
+      riseTime: '春季约18:00从东北方升起',
+      setTime: '春季约06:00从西北方落下',
+      bestHours: '21:00-23:00',
+      transitInfo: '约22:00到达上中天，此时位置最高最利于观测',
+      moonConflict: '满月时较暗的天权星可能不易分辨'
+    },
+    brightnessHints: {
+      brightestStar: { name: '玉衡', mag: 1.8, desc: '北斗七星中最亮的一颗，呈淡白色' },
+      visibleLevel: '极易观测',
+      nakedEyeLimit: '全部7颗主星均肉眼可见，城市光污染下仍可看到5-6颗',
+      lightPollutionTolerance: '高，在城市中心仍可识别北斗七星的主要形状',
+      binocularTip: '使用7x50双筒望远镜可清晰看到开阳双星和更多暗星',
+      telescopeTip: '小型望远镜可观察开阳双星的分离，以及寻找M81、M82星系',
+      faintStarsNote: '天权星（3.3等）是七星中最暗的，光污染严重时可能难以看到'
+    },
+    storySegments: [
+      {
+        id: 'ursa_story_1',
+        title: '美丽的狩猎女神',
+        content: '卡利斯托是阿耳忒弥斯（月亮与狩猎女神）的侍女，她立誓永葆贞洁，终生追随女神狩猎于山林之间。她身姿矫健，容貌美丽，连众神之王宙斯也为她倾心。',
+        icon: '🏹'
+      },
+      {
+        id: 'ursa_story_2',
+        title: '嫉妒的火焰',
+        content: '宙斯化身为阿耳忒弥斯的模样接近卡利斯托，使她生下了儿子阿卡斯。天后赫拉得知后妒火中烧，将美丽的卡利斯托变成了一只毛发粗糙的大熊，让她在森林中流离失所。',
+        icon: '🔥'
+      },
+      {
+        id: 'ursa_story_3',
+        title: '命运的重逢',
+        content: '十五年后，阿卡斯长成了英俊的青年猎手。一次狩猎中，他遇到了已变成大熊的母亲。母亲认出了儿子，张开双臂想要拥抱他，可阿卡斯只看到一头凶猛的巨熊朝他扑来。',
+        icon: '🐻'
+      },
+      {
+        id: 'ursa_story_4',
+        title: '永恒的星空守望',
+        content: '就在阿卡斯举起长矛的千钧一发之际，宙斯出现了。为了阻止这场人伦悲剧，他将阿卡斯也变成了一只小熊（小熊座），然后一手抓住大熊的尾巴，一手抓住小熊的尾巴，将他们一同抛向天空，成为永恒的星座。',
+        icon: '✨'
+      }
+    ],
     stars: [
       { id: 'um1', name: '天枢', x: -4.2, y: 1.8, z: 0, mag: 1.8, color: '#ffddaa' },
       { id: 'um2', name: '天璇', x: -3.5, y: 1.2, z: 0, mag: 2.4, color: '#ffeecc' },
@@ -59,6 +103,50 @@ export const CONSTELLATIONS = [
     area: '594平方度',
     ranking: 26,
     storyChapterId: 'winter_orion',
+    observationWindow: {
+      months: '10月-次年3月',
+      bestMonths: '12月-2月',
+      riseTime: '冬季约18:00从东方升起',
+      setTime: '冬季约06:00从西方落下',
+      bestHours: '20:00-22:00',
+      transitInfo: '约21:00到达上中天，高悬南方天空',
+      moonConflict: '满月时猎户星云的细节会受到影响，建议新月前后观测'
+    },
+    brightnessHints: {
+      brightestStar: { name: '参宿七', mag: 0.1, desc: '全天第七亮星，呈蓝白色，距离地球约860光年' },
+      visibleLevel: '极易观测',
+      nakedEyeLimit: '7颗主星全部肉眼可见，参宿四和参宿七尤其明亮',
+      lightPollutionTolerance: '极高，即使在大城市中心也能清晰看到腰带三星和主要亮星',
+      binocularTip: '双筒望远镜可欣赏猎户星云（M42）的云雾状结构和腰带附近的疏散星团',
+      telescopeTip: '小型望远镜可分辨猎户星云的梯形四合星，以及观察参宿四的红色表面',
+      faintStarsNote: '猎户星云（5.0等）在黑暗环境下肉眼可见模糊光斑，被称为"天空中的宝石"'
+    },
+    storySegments: [
+      {
+        id: 'orion_story_1',
+        title: '海神之子',
+        content: '奥利安是海神波塞冬与欧律阿勒的儿子，他继承了父亲的神力，能够在海浪上行走如履平地。他身材魁梧，相貌英俊，是世间最勇猛的猎人。',
+        icon: '🌊'
+      },
+      {
+        id: 'orion_story_2',
+        title: '傲慢的宣言',
+        content: '奥利安在一次狩猎盛宴上，借着酒意夸口道："世上没有任何野兽能够战胜我！"这句话传到了众神耳中，也传到了大地女神盖亚那里。',
+        icon: '🍷'
+      },
+      {
+        id: 'orion_story_3',
+        title: '致命的毒蝎',
+        content: '盖亚被奥利安的傲慢激怒，她从地底召唤出一只巨大的蝎子。这只蝎子拥有坚不可摧的外壳和致命的毒刺，它悄悄向奥利安发起了攻击。',
+        icon: '🦂'
+      },
+      {
+        id: 'orion_story_4',
+        title: '星空的永恒对峙',
+        content: '经过一场激烈的搏斗，奥利安被蝎子的毒刺刺中脚踝，毒发身亡。宙斯为了纪念这位英勇的猎人，将他升上天界成为猎户座。而那只蝎子也成为天蝎座，永远与猎户座相对——天蝎座升起时，猎户座便落下，永不相见。',
+        icon: '⚔️'
+      }
+    ],
     stars: [
       { id: 'o1', name: '参宿四', x: -2.5, y: 2.0, z: 0, mag: 0.5, color: '#ff8866' },
       { id: 'o2', name: '参宿五', x: 2.2, y: 2.0, z: 0, mag: 1.6, color: '#cce0ff' },
@@ -108,6 +196,50 @@ export const CONSTELLATIONS = [
     area: '598平方度',
     ranking: 25,
     storyChapterId: 'autumn_cassiopeia',
+    observationWindow: {
+      months: '全年可见（拱极星座）',
+      bestMonths: '9月-11月',
+      riseTime: '秋季约19:00从东北方升起',
+      setTime: '秋季约05:00从西北方落下',
+      bestHours: '21:00-23:00',
+      transitInfo: '约22:00到达上中天，W形朝向下方',
+      moonConflict: '月光影响较小，由于五颗主星都较为明亮'
+    },
+    brightnessHints: {
+      brightestStar: { name: '王良四', mag: 2.3, desc: '呈淡黄色，是仙后座最亮星，位于W形左上方顶点' },
+      visibleLevel: '易于观测',
+      nakedEyeLimit: '5颗主星全部肉眼可见，构成明显的W/M形',
+      lightPollutionTolerance: '较高，城市郊区可清晰看到W形的五颗星',
+      binocularTip: '双筒望远镜可看到更多暗星，以及寻找仙后座附近的疏散星团M52和M103',
+      telescopeTip: '小型望远镜可观察双星辇道增七的美丽色彩对比',
+      faintStarsNote: '五颗星亮度相近，平均2.5等左右，光污染下仍可辨认形状'
+    },
+    storySegments: [
+      {
+        id: 'cassiopeia_story_1',
+        title: '虚荣的王后',
+        content: '卡西奥佩娅是埃塞俄比亚国王克甫斯的王后，她拥有绝世容颜，但也因此变得极度虚荣。她常常对着镜子自我欣赏，觉得自己的美貌无人能及。',
+        icon: '👑'
+      },
+      {
+        id: 'cassiopeia_story_2',
+        title: '触怒海神',
+        content: '在一次海神庆典上，卡西奥佩娅当众夸口说自己和女儿安德洛墨达比海神涅柔斯的五十个女儿们更加美丽。这句话传到了海神波塞冬的耳中，他勃然大怒。',
+        icon: '😤'
+      },
+      {
+        id: 'cassiopeia_story_3',
+        title: '海怪的惩罚',
+        content: '波塞冬派出海怪刻托袭击埃塞俄比亚海岸，洪水和怪兽肆虐整个王国。神谕宣告，只有将公主安德洛墨达绑在海边献祭给海怪，才能平息神怒。',
+        icon: '🐙'
+      },
+      {
+        id: 'cassiopeia_story_4',
+        title: '永恒的旋转',
+        content: '英雄珀耳修斯救下了公主，但海神的惩罚仍未结束。他将卡西奥佩娅钉在天上的宝座上，让她永远围绕北极星旋转，有时头朝下，让世人永远记住虚荣的代价。',
+        icon: '🔄'
+      }
+    ],
     stars: [
       { id: 'c1', name: '王良一', x: -3.0, y: 1.0, z: 0, mag: 2.5, color: '#ffffff' },
       { id: 'c2', name: '王良四', x: -1.5, y: 2.2, z: 0, mag: 2.3, color: '#ffddbb' },
@@ -151,6 +283,50 @@ export const CONSTELLATIONS = [
     area: '497平方度',
     ranking: 33,
     storyChapterId: 'summer_scorpius',
+    observationWindow: {
+      months: '5月-10月',
+      bestMonths: '6月-8月',
+      riseTime: '夏季约19:00从东南方升起',
+      setTime: '夏季约05:00从西南方落下',
+      bestHours: '21:00-23:00',
+      transitInfo: '约22:00到达上中天，南方天空较高位置',
+      moonConflict: '满月时心宿二的红色会被月光掩盖，建议新月前后观测'
+    },
+    brightnessHints: {
+      brightestStar: { name: '心宿二', mag: 1.0, desc: '全天第十六亮星，著名的红超巨星，直径是太阳的700倍，呈明显的红色' },
+      visibleLevel: '易于观测',
+      nakedEyeLimit: '约10颗肉眼可见的星星，心宿二的红色非常醒目',
+      lightPollutionTolerance: '中等，城市中心可能只能看到心宿二和尾宿八九颗亮星',
+      binocularTip: '双筒望远镜可看到心宿二附近的疏散星团M6和M7（蝴蝶星团）',
+      telescopeTip: '小型望远镜可观察心宿二的红色表面，以及M6、M7星团中的几十颗恒星',
+      faintStarsNote: '蝎子尾巴末端的星链向南延伸，在黑暗环境下可看到完整的S形曲线'
+    },
+    storySegments: [
+      {
+        id: 'scorpius_story_1',
+        title: '大地的使者',
+        content: '这只巨大的蝎子是大地女神盖亚的使者。它从地缝中诞生，拥有坚硬如钢铁的外壳和见血封喉的毒刺。它平时隐藏在地下，只有当盖亚发出命令时才会现身。',
+        icon: '🌍'
+      },
+      {
+        id: 'scorpius_story_2',
+        title: '猎人的誓言',
+        content: '奥利安杀死了无数野兽，他站在战利品堆上宣称："无论多么凶猛的野兽，都无法与我抗衡！"他的声音回荡在山谷中，传到了盖亚的耳中。',
+        icon: '⚔️'
+      },
+      {
+        id: 'scorpius_story_3',
+        title: '致命的伏击',
+        content: '盖亚命令蝎子去教训狂妄的猎人。蝎子在奥利安每日狩猎的小径旁埋伏，当猎人经过时，它猛地从草丛中窜出，用毒刺刺中了奥利安的脚踝。',
+        icon: '💉'
+      },
+      {
+        id: 'scorpius_story_4',
+        title: '天空的彼岸',
+        content: '剧毒迅速蔓延，奥利安倒下了。宙斯将他们都升上天空，但为了防止他们继续争斗，宙斯让蝎子和猎人永远位于天空的两端——当天蝎座从东方升起时，猎户座便从西方落下，永不相见。',
+        icon: '🌅'
+      }
+    ],
     stars: [
       { id: 's1', name: '房宿四', x: -2.0, y: -1.0, z: 0, mag: 2.6, color: '#ffeecc' },
       { id: 's2', name: '房宿三', x: -1.0, y: -0.5, z: 0, mag: 2.3, color: '#ccdeff' },
@@ -198,6 +374,50 @@ export const CONSTELLATIONS = [
     area: '286平方度',
     ranking: 52,
     storyChapterId: 'summer_lyra',
+    observationWindow: {
+      months: '4月-10月',
+      bestMonths: '6月-8月',
+      riseTime: '夏季约18:00从东北方升起',
+      setTime: '夏季约04:00从西北方落下',
+      bestHours: '21:00-23:00',
+      transitInfo: '约22:00到达上中天，位于天顶附近，位置极佳',
+      moonConflict: '满月时较暗的渐台星可能难以看到，但织女星本身不受影响'
+    },
+    brightnessHints: {
+      brightestStar: { name: '织女一', mag: 0.0, desc: '全天第五亮星，呈蓝白色，距离地球约25光年，是夏季大三角最亮的顶点' },
+      visibleLevel: '易于观测',
+      nakedEyeLimit: '织女星极为醒目，小平行四边形在黑暗环境下可见',
+      lightPollutionTolerance: '中等，织女星在城市中仍很明亮，但小平行四边形需要较黑暗的天空',
+      binocularTip: '双筒望远镜可清晰看到织女星的蓝白色，以及寻找附近的环状星云M57',
+      telescopeTip: '小型望远镜可观察环状星云M57的烟圈形状，以及分辨双星渐台二',
+      faintStarsNote: '渐台二至渐台四约4-5等，需要避开光污染才能看到完整的竖琴形状'
+    },
+    storySegments: [
+      {
+        id: 'lyra_story_1',
+        title: '音乐的天才',
+        content: '俄耳甫斯是色雷斯国王俄阿格洛斯与缪斯女神卡利俄珀的儿子。他从小就展现出非凡的音乐天赋，阿波罗亲自赠予他一把金色的七弦琴，并教他弹奏。',
+        icon: '🎵'
+      },
+      {
+        id: 'lyra_story_2',
+        title: '能驯服万物的琴声',
+        content: '俄耳甫斯的琴声具有魔力——飞鸟走兽会驻足聆听，顽石会为之落泪，湍急的河流也会放慢脚步。他随伊阿宋的阿尔戈号远征，用琴声平息了海妖的诱惑之歌。',
+        icon: '🌊'
+      },
+      {
+        id: 'lyra_story_3',
+        title: '深入冥界的爱',
+        content: '他的妻子欧律狄刻不幸被毒蛇咬死，悲痛欲绝的俄耳甫斯带着竖琴深入冥界。他的琴声打动了复仇三女神，甚至令冷酷的冥王哈迪斯和冥后珀耳塞福涅潸然泪下。',
+        icon: '💔'
+      },
+      {
+        id: 'lyra_story_4',
+        title: '永恒的琴声',
+        content: '冥王允许他带妻子回到人间，但要求途中不可回头。然而在即将到达人间的那一刻，俄耳甫斯忍不住回头，妻子就此永远消失。他死后，宙斯将他的金竖琴升上天界，成为天琴座，让他的音乐永远回荡在宇宙中。',
+        icon: '✨'
+      }
+    ],
     stars: [
       { id: 'l1', name: '织女一', x: 0.0, y: 2.0, z: 0, mag: 0.0, color: '#aaddff' },
       { id: 'l2', name: '渐台二', x: -1.0, y: 0.5, z: 0, mag: 4.3, color: '#ffddcc' },
@@ -242,6 +462,50 @@ export const CONSTELLATIONS = [
     area: '804平方度',
     ranking: 16,
     storyChapterId: 'autumn_cygnus',
+    observationWindow: {
+      months: '6月-12月',
+      bestMonths: '9月-11月',
+      riseTime: '秋季约19:00从东北方升起',
+      setTime: '秋季约05:00从西北方落下',
+      bestHours: '21:00-23:00',
+      transitInfo: '约22:00到达上中天，北十字形直立于银河之上',
+      moonConflict: '满月时银河细节会被掩盖，建议新月前后观测以欣赏银河背景'
+    },
+    brightnessHints: {
+      brightestStar: { name: '天津四', mag: 1.3, desc: '全天第十九亮星，呈蓝白色，是一颗距离地球约1500光年的超巨星，也是夏季大三角顶点之一' },
+      visibleLevel: '易于观测',
+      nakedEyeLimit: '北十字的五颗主星全部肉眼可见，在银河中尤为醒目',
+      lightPollutionTolerance: '中等，城市中可见天津四和北十字主要形状，但银河背景不可见',
+      binocularTip: '双筒望远镜可欣赏银河的璀璨星光，以及观察双星辇道增七',
+      telescopeTip: '小型望远镜可分辨辇道增七的橙黄色和蓝白色双星，以及观察面纱星云的部分结构',
+      faintStarsNote: '银河中天鹅座内有大量暗星，黑暗环境下北十字周围仿佛镶嵌了无数钻石'
+    },
+    storySegments: [
+      {
+        id: 'cygnus_story_1',
+        title: '众神之王的化身',
+        content: '宙斯是奥林匹斯众神之王，他掌管天空与雷霆。他多情而浪漫，常常化身为各种形态降临人间，去追寻他所爱的凡人女子。',
+        icon: '⚡'
+      },
+      {
+        id: 'cygnus_story_2',
+        title: '美丽的斯巴达王后',
+        content: '斯巴达王后勒达以绝世美貌闻名，她的容颜如月光般皎洁，连神明也为之倾倒。一日，她正在河畔沐浴嬉戏，宙斯从奥林匹斯山望见了她。',
+        icon: '💎'
+      },
+      {
+        id: 'cygnus_story_3',
+        title: '雪白的天鹅',
+        content: '宙斯化身为一只雪白优雅的天鹅，降落在勒达身旁。这只天鹅羽毛如雪，姿态高贵，勒达被它的美丽吸引，温柔地将它拥入怀中。',
+        icon: '🦢'
+      },
+      {
+        id: 'cygnus_story_4',
+        title: '银河中的飞翔',
+        content: '后来勒达生下了两枚鹅蛋，孵出了海伦（引发特洛伊战争的绝世美人）和双子兄弟。为了纪念这段故事，宙斯将他化身的天鹅升上天界，让它永远飞翔于银河之上，展翅俯瞰人间。',
+        icon: '🌌'
+      }
+    ],
     stars: [
       { id: 'cy1', name: '天津四', x: 0.0, y: 2.5, z: 0, mag: 1.3, color: '#ddeeff' },
       { id: 'cy2', name: '天津九', x: -1.2, y: 1.0, z: 0, mag: 2.9, color: '#ffeecc' },

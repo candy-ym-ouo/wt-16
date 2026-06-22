@@ -181,7 +181,7 @@ export default function ObservationLog() {
                 {isDiscovery ? '✨' : '🔭'}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-display text-white text-sm">
                     {getLocalizedConstellationName(log.constellationId)}
                   </span>
@@ -190,10 +190,30 @@ export default function ObservationLog() {
                       {t('log.perfect')}
                     </span>
                   )}
+                  {c.brightnessHints?.brightestStar && (
+                    <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-orange/10 text-nebula-orange/70 border border-nebula-orange/20">
+                      ✨ {c.brightnessHints.brightestStar.name}
+                    </span>
+                  )}
+                  {c.observationWindow?.bestHours && (
+                    <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-cyan/10 text-nebula-cyan/70 border border-nebula-cyan/20">
+                      🌙 {c.observationWindow.bestHours}
+                    </span>
+                  )}
                 </div>
                 <div className="fs-11 text-white/40 mt-0.5">
                   {getLocalizedConstellationNameEn(log.constellationId)} · {isDiscovery ? t('log.firstDiscovery') : t('log.reobservation')}
                 </div>
+                {isDiscovery && c.storySegments && c.storySegments.length > 0 && (
+                  <div className="fs-10 text-star-gold/70 mt-1">
+                    📖 解锁 {c.storySegments.length} 章神话故事
+                  </div>
+                )}
+                {c.brightnessHints?.visibleLevel && (
+                  <div className="fs-10 text-green-400/70 mt-0.5">
+                    观测难度：{c.brightnessHints.visibleLevel}
+                  </div>
+                )}
                 <div className="fs-10 text-white/30 mt-1 font-mono">
                   {formatDate(log.timestamp)}
                 </div>

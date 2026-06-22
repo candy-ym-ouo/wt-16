@@ -355,6 +355,20 @@ export default function StarAtlas() {
                           {isFavorite ? '★' : '☆'}
                         </button>
                       </div>
+                      {c.brightnessHints?.brightestStar && (
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                          <span className="fs-8 px-1.5 py-0.5 rounded bg-black/40 backdrop-blur-sm text-nebula-orange/90">
+                            ✨ {c.brightnessHints.brightestStar.mag}等
+                          </span>
+                        </div>
+                      )}
+                      {c.storySegments && c.storySegments.length > 0 && (
+                        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                          <span className="fs-8 px-1.5 py-0.5 rounded bg-black/40 backdrop-blur-sm text-star-gold/90">
+                            📖 {c.storySegments.length}章
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-3">
@@ -369,7 +383,7 @@ export default function StarAtlas() {
                       <p className="fs-10 text-white/40 truncate">
                         {c.nameEn}
                       </p>
-                      <div className="mt-2 flex items-center gap-1.5">
+                      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                         <span className={`fs-9 px-1.5 py-0.5 rounded ${
                           c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                           c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
@@ -380,6 +394,11 @@ export default function StarAtlas() {
                         <span className="fs-9 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
                           {seasonInfo?.icon} {c.season}
                         </span>
+                        {c.brightnessHints?.visibleLevel && (
+                          <span className="fs-9 px-1.5 py-0.5 rounded bg-green-500/10 text-green-300/80">
+                            {c.brightnessHints.visibleLevel}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -411,12 +430,17 @@ export default function StarAtlas() {
                         <span className="text-2xl">{completed ? '✦' : '○'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-base font-display text-white truncate">
                             {c.name}
                           </h3>
                           {completed && (
                             <span className="text-star-gold text-sm">✓</span>
+                          )}
+                          {c.brightnessHints?.brightestStar && (
+                            <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-orange/10 text-nebula-orange/80 border border-nebula-orange/20">
+                              ✨ {c.brightnessHints.brightestStar.name}
+                            </span>
                           )}
                         </div>
                         <p className="fs-11 text-white/40">
@@ -439,6 +463,21 @@ export default function StarAtlas() {
                           <span className="fs-10 text-white/40">
                             ✦ {c.stars.length} 星
                           </span>
+                          {c.observationWindow?.bestHours && (
+                            <span className="fs-10 px-1.5 py-0.5 rounded bg-nebula-cyan/10 text-nebula-cyan/80 border border-nebula-cyan/20">
+                              🌙 {c.observationWindow.bestHours}
+                            </span>
+                          )}
+                          {c.storySegments && c.storySegments.length > 0 && (
+                            <span className="fs-10 px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80 border border-star-gold/20">
+                              📖 {c.storySegments.length} 章
+                            </span>
+                          )}
+                          {c.brightnessHints?.visibleLevel && (
+                            <span className="fs-10 px-1.5 py-0.5 rounded bg-green-500/10 text-green-300/80">
+                              {c.brightnessHints.visibleLevel}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
