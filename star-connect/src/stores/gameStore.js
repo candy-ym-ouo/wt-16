@@ -1382,7 +1382,7 @@ export const useGameStore = create(
           set((s) => {
             const newConsecutive = isPerfect ? s.consecutivePerfectCount + 1 : 0
             const newBest = Math.max(s.bestConsecutivePerfect, newConsecutive)
-            const newPerfectCount = isPerfect
+            const newPerfectCount = (isPerfect && alreadyDiscovered)
               ? {
                   ...s.perfectCountPerConstellation,
                   [constellationId]: (s.perfectCountPerConstellation[constellationId] || 0) + 1

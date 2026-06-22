@@ -164,7 +164,7 @@ export const HIDDEN_ACHIEVEMENTS = [
   {
     id: 'reobserve_perfect_same_5',
     name: '熟能生巧',
-    description: '对同一星座累计5次完美通关',
+    description: '对同一星座重复观测中累计5次完美通关',
     icon: '🎯',
     category: 'hidden',
     hidden: true,
@@ -174,7 +174,7 @@ export const HIDDEN_ACHIEVEMENTS = [
   {
     id: 'reobserve_perfect_same_15',
     name: '匠心独运',
-    description: '对同一星座累计15次完美通关',
+    description: '对同一星座重复观测中累计15次完美通关',
     icon: '🏆',
     category: 'hidden',
     hidden: true,
