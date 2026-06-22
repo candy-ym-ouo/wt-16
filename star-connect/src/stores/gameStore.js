@@ -170,6 +170,9 @@ export const useGameStore = create(
             seasonRewardsClaimed: state.seasonRewardsClaimed,
             perfectObservations: state.perfectObservations,
             totalObservations: state.totalObservations,
+            perfectCountPerConstellation: state.perfectCountPerConstellation,
+            consecutivePerfectCount: state.consecutivePerfectCount,
+            bestConsecutivePerfect: state.bestConsecutivePerfect,
             seasonHistory: state.seasonHistory,
             favoriteConstellations: state.favoriteConstellations,
             familyMode: state.familyMode,
@@ -1374,16 +1377,31 @@ export const useGameStore = create(
           const alreadyDiscovered =
             state.discoveredConstellations.includes(constellationId)
           const isPerfect = state.perfectRun
+          const mistakesInSession = state.mistakes
 
-          set((s) => ({
-            totalObservations: {
-              ...s.totalObservations,
-              [constellationId]: (s.totalObservations[constellationId] || 0) + 1
-            },
-            perfectObservations: isPerfect
-              ? { ...s.perfectObservations, [constellationId]: true }
-              : s.perfectObservations
-          }))
+          set((s) => {
+            const newConsecutive = isPerfect ? s.consecutivePerfectCount + 1 : 0
+            const newBest = Math.max(s.bestConsecutivePerfect, newConsecutive)
+            const newPerfectCount = isPerfect
+              ? {
+                  ...s.perfectCountPerConstellation,
+                  [constellationId]: (s.perfectCountPerConstellation[constellationId] || 0) + 1
+                }
+              : s.perfectCountPerConstellation
+
+            return {
+              totalObservations: {
+                ...s.totalObservations,
+                [constellationId]: (s.totalObservations[constellationId] || 0) + 1
+              },
+              perfectObservations: isPerfect
+                ? { ...s.perfectObservations, [constellationId]: true }
+                : s.perfectObservations,
+              perfectCountPerConstellation: newPerfectCount,
+              consecutivePerfectCount: newConsecutive,
+              bestConsecutivePerfect: newBest
+            }
+          })
 
           if (!alreadyDiscovered) {
             set((state) => ({
@@ -1396,6 +1414,7 @@ export const useGameStore = create(
               type: 'discovery',
               constellationId,
               perfect: isPerfect,
+              mistakes: mistakesInSession,
               timestamp: Date.now()
             })
           } else {
@@ -1403,6 +1422,7 @@ export const useGameStore = create(
               type: 'reobservation',
               constellationId,
               perfect: isPerfect,
+              mistakes: mistakesInSession,
               timestamp: Date.now()
             })
           }
@@ -1744,6 +1764,9 @@ export const useGameStore = create(
       seasonRewardsClaimed: [],
       perfectObservations: {},
       totalObservations: {},
+      perfectCountPerConstellation: {},
+      consecutivePerfectCount: 0,
+      bestConsecutivePerfect: 0,
       seasonHistory: [],
 
       getSeasonStats: () => {
@@ -1958,6 +1981,49 @@ export const useGameStore = create(
             case 'daily_hard_complete':
               unlocked = state.dailyCommissions?.totalHardCompleted >= value
               break
+            case 'consecutive_perfect':
+              unlocked = (state.bestConsecutivePerfect || 0) >= value
+              break
+            case 'reobserve_single': {
+              const maxObs = Math.max(
+                0,
+                ...Object.values(state.totalObservations || {}).map(v => Math.max(0, (v || 0) - 1))
+              )
+              unlocked = maxObs >= value
+              break
+            }
+            case 'reobserve_all_once': {
+              const discovered = state.discoveredConstellations
+              if (discovered.length === 0) {
+                unlocked = false
+              } else {
+                unlocked = discovered.every(id => (state.totalObservations[id] || 0) >= 2)
+              }
+              break
+            }
+            case 'total_reobserve': {
+              const total = Object.values(state.totalObservations || {}).reduce(
+                (sum, v) => sum + Math.max(0, (v || 0) - 1),
+                0
+              )
+              unlocked = total >= value
+              break
+            }
+            case 'reobserve_perfect_single': {
+              const maxPerfect = Math.max(
+                0,
+                ...Object.values(state.perfectCountPerConstellation || {}).map(v => v || 0)
+              )
+              unlocked = maxPerfect >= value
+              break
+            }
+            case 'single_session_mistakes': {
+              const recentObservations = state.observationLogs.filter(
+                l => l.type === 'discovery' || l.type === 'reobservation'
+              )
+              unlocked = recentObservations.some(l => (l.mistakes || 0) >= value)
+              break
+            }
           }
 
           if (unlocked) {
@@ -4312,6 +4378,9 @@ export const useGameStore = create(
           seasonRewardsClaimed: [],
           perfectObservations: {},
           totalObservations: {},
+          perfectCountPerConstellation: {},
+          consecutivePerfectCount: 0,
+          bestConsecutivePerfect: 0,
           seasonHistory: [],
           favoriteConstellations: [],
           familyMode: {

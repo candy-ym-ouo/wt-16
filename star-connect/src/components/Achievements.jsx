@@ -12,7 +12,8 @@ const CATEGORY_INFO = {
   special: { name: '特别成就', icon: '💫', color: 'from-yellow-500 to-orange-400' },
   season: { name: '四季成就', icon: '🌸', color: 'from-pink-500 to-cyan-400' },
   route: { name: '路线成就', icon: '🗺️', color: 'from-emerald-500 to-teal-400' },
-  daily: { name: '每日委托', icon: '📋', color: 'from-amber-500 to-yellow-400' }
+  daily: { name: '每日委托', icon: '📋', color: 'from-amber-500 to-yellow-400' },
+  hidden: { name: '隐藏成就', icon: '🔮', color: 'from-indigo-500 via-purple-500 to-fuchsia-400' }
 }
 
 export default function Achievements() {
@@ -87,12 +88,18 @@ export default function Achievements() {
                 <div className="grid grid-cols-2 gap-2">
                   {list.map((a) => {
                     const isUnlocked = unlockedAchievements.includes(a.id)
+                    const isHiddenLocked = a.hidden && !isUnlocked
+                    const displayIcon = isHiddenLocked ? '❓' : a.icon
+                    const displayName = isHiddenLocked ? '???' : a.name
+                    const displayDesc = isHiddenLocked ? '解锁后揭晓神秘成就' : a.description
                     return (
                       <div
                         key={a.id}
                         className={`p-3 rounded-xl border transition-all ${
                           isUnlocked
                             ? 'border-white/20 bg-space-700/40'
+                            : isHiddenLocked
+                            ? 'border-purple-500/20 bg-gradient-to-br from-indigo-900/20 to-purple-900/20'
                             : 'border-white/5 bg-space-900/40 opacity-50'
                         }`}
                       >
@@ -101,22 +108,41 @@ export default function Achievements() {
                             className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${
                               isUnlocked
                                 ? `bg-gradient-to-br ${info.color}`
+                                : isHiddenLocked
+                                ? 'bg-gradient-to-br from-indigo-700/60 to-purple-700/60 animate-pulse'
                                 : 'bg-space-800 grayscale'
                             }`}
                           >
-                            {a.icon}
+                            {displayIcon}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-xs font-semibold ${
-                              isUnlocked ? 'text-white' : 'text-white/50'
+                              isUnlocked
+                                ? 'text-white'
+                                : isHiddenLocked
+                                ? 'text-purple-200'
+                                : 'text-white/50'
                             }`}>
-                              {a.name}
+                              {displayName}
                             </div>
-                            <div className="text-[10px] text-white/40 mt-0.5 leading-tight">
-                              {a.description}
+                            <div className={`text-[10px] mt-0.5 leading-tight ${
+                              isUnlocked
+                                ? 'text-white/40'
+                                : isHiddenLocked
+                                ? 'text-purple-300/60 italic'
+                                : 'text-white/40'
+                            }`}>
+                              {displayDesc}
                             </div>
                           </div>
                         </div>
+                        {a.hidden && isUnlocked && (
+                          <div className="mt-2 flex items-center gap-1">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                              🔮 隐藏成就
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
