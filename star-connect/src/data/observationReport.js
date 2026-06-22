@@ -78,8 +78,49 @@ export function filterLogsByRange(logs, start, end) {
   return logs.filter(log => log.timestamp >= startTime && log.timestamp <= endTime)
 }
 
-export function aggregateExplorationJourney(logs, start, end) {
+function dateKeyInRange(dateKey, start, end) {
+  const d = new Date(dateKey + 'T00:00:00')
+  return d >= start && d <= end
+}
+
+function filterCustomLogsByRange(customLogs, start, end) {
+  const result = []
+  if (!customLogs || typeof customLogs !== 'object') return result
+  Object.entries(customLogs).forEach(([dateKey, dayLogs]) => {
+    if (!dateKeyInRange(dateKey, start, end)) return
+    if (!Array.isArray(dayLogs)) return
+    const dayTimestamp = new Date(dateKey + 'T12:00:00').getTime()
+    dayLogs.forEach(log => {
+      result.push({
+        ...log,
+        timestamp: log.createdAt || log.timestamp || dayTimestamp,
+        _dateKey: dateKey,
+        _source: 'custom'
+      })
+    })
+  })
+  return result
+}
+
+function filterCheckinsByRange(checkinRecords, start, end) {
+  const result = []
+  if (!checkinRecords || typeof checkinRecords !== 'object') return result
+  Object.entries(checkinRecords).forEach(([dateKey, record]) => {
+    if (!dateKeyInRange(dateKey, start, end)) return
+    if (!record || !record.checkedIn) return
+    result.push({
+      ...record,
+      _dateKey: dateKey,
+      _source: 'checkin'
+    })
+  })
+  return result
+}
+
+export function aggregateExplorationJourney(logs, start, end, customLogs = {}, checkinRecords = {}) {
   const rangeLogs = filterLogsByRange(logs, start, end)
+  const rangeCustomLogs = filterCustomLogsByRange(customLogs, start, end)
+  const rangeCheckins = filterCheckinsByRange(checkinRecords, start, end)
 
   const discoveries = rangeLogs.filter(l => l.type === 'discovery')
   const reobservations = rangeLogs.filter(l => l.type === 'reobservation')
@@ -91,6 +132,14 @@ export function aggregateExplorationJourney(logs, start, end) {
   const routes = rangeLogs.filter(l => l.type?.startsWith('route_'))
   const expeditions = rangeLogs.filter(l => l.type?.startsWith('expedition_'))
 
+  const customDiscoveries = rangeCustomLogs.filter(l => l.type === 'discovery')
+  const customObservations = rangeCustomLogs.filter(l => l.type === 'observation')
+  const customPerfect = rangeCustomLogs.filter(l =>
+    (l.type === 'discovery' || l.type === 'observation') && l.perfect
+  )
+  const customJournals = rangeCustomLogs.filter(l => l.type === 'journal')
+  const customNotes = rangeCustomLogs.filter(l => l.note || l.content)
+
   const discoveredConstellations = new Set()
   const reobservedConstellations = new Set()
   const perfectConstellations = new Set()
@@ -98,10 +147,19 @@ export function aggregateExplorationJourney(logs, start, end) {
   discoveries.forEach(l => {
     if (l.constellationId) discoveredConstellations.add(l.constellationId)
   })
+  customDiscoveries.forEach(l => {
+    if (l.constellationId) discoveredConstellations.add(l.constellationId)
+  })
   reobservations.forEach(l => {
     if (l.constellationId) reobservedConstellations.add(l.constellationId)
   })
+  customObservations.forEach(l => {
+    if (l.constellationId) reobservedConstellations.add(l.constellationId)
+  })
   perfectRuns.forEach(l => {
+    if (l.constellationId) perfectConstellations.add(l.constellationId)
+  })
+  customPerfect.forEach(l => {
     if (l.constellationId) perfectConstellations.add(l.constellationId)
   })
 
@@ -114,29 +172,54 @@ export function aggregateExplorationJourney(logs, start, end) {
     dailyActivity[date].count++
     dailyActivity[date].types.add(log.type)
   })
+  rangeCustomLogs.forEach(log => {
+    const date = log._dateKey
+    if (!dailyActivity[date]) {
+      dailyActivity[date] = { count: 0, types: new Set() }
+    }
+    dailyActivity[date].count++
+    dailyActivity[date].types.add(log.type)
+  })
+  rangeCheckins.forEach(record => {
+    const date = record._dateKey
+    if (!dailyActivity[date]) {
+      dailyActivity[date] = { count: 0, types: new Set() }
+    }
+    dailyActivity[date].count++
+    dailyActivity[date].types.add('checkin')
+  })
 
   const activeDays = Object.keys(dailyActivity).length
   const mostActiveDay = Object.entries(dailyActivity)
     .sort((a, b) => b[1].count - a[1].count)[0]
 
-  const timeline = [...rangeLogs]
+  const timeline = [...rangeLogs, ...rangeCustomLogs]
     .sort((a, b) => a.timestamp - b.timestamp)
     .map(log => ({
       ...log,
       time: new Date(log.timestamp)
     }))
 
+  const totalDiscoveries = discoveries.length + customDiscoveries.length
+  const totalReobservations = reobservations.length + customObservations.length
+  const totalPerfectRuns = perfectRuns.length + customPerfect.length
+
   return {
-    totalActivities: rangeLogs.length,
-    discoveries: discoveries.length,
-    reobservations: reobservations.length,
-    perfectRuns: perfectRuns.length,
+    totalActivities: rangeLogs.length + rangeCustomLogs.length + rangeCheckins.length,
+    discoveries: totalDiscoveries,
+    reobservations: totalReobservations,
+    perfectRuns: totalPerfectRuns,
     achievements: achievements.length,
     seasonRewards: seasonRewards.length,
     events: events.length,
     quizzes: quizzes.length,
     routes: routes.length,
     expeditions: expeditions.length,
+    customDiscoveries: customDiscoveries.length,
+    customObservations: customObservations.length,
+    customJournals: customJournals.length,
+    customNotes: customNotes.length,
+    checkins: rangeCheckins.length,
     discoveredConstellations: Array.from(discoveredConstellations),
     reobservedConstellations: Array.from(reobservedConstellations),
     perfectConstellations: Array.from(perfectConstellations),
@@ -155,7 +238,7 @@ export function aggregateAchievementMilestones(unlockedAchievements, logs, start
   const achievementLogs = rangeLogs.filter(l => l.type === 'achievement')
 
   const newlyUnlocked = achievementLogs.map(log => {
-    const achievement = getAchievementById(log.achievementId) || 
+    const achievement = getAchievementById(log.achievementId) ||
       ALL_ACHIEVEMENTS.find(a => a.id === log.achievementId)
     return {
       ...achievement,
@@ -187,8 +270,8 @@ export function aggregateAchievementMilestones(unlockedAchievements, logs, start
 
   const totalUnlocked = unlockedAchievements.length
   const totalAchievements = ALL_ACHIEVEMENTS.length
-  const progressPercentage = totalAchievements > 0 
-    ? Math.round((totalUnlocked / totalAchievements) * 100) 
+  const progressPercentage = totalAchievements > 0
+    ? Math.round((totalUnlocked / totalAchievements) * 100)
     : 0
 
   return {
@@ -205,9 +288,13 @@ export function aggregateAchievementMilestones(unlockedAchievements, logs, start
 
 export function aggregateLogSummary(logs, customLogs = {}, start, end) {
   const rangeLogs = filterLogsByRange(logs, start, end)
+  const rangeCustomLogs = filterCustomLogsByRange(customLogs, start, end)
 
-  const constellationLogs = rangeLogs.filter(l => 
+  const constellationLogs = rangeLogs.filter(l =>
     l.type === 'discovery' || l.type === 'reobservation'
+  )
+  const customConstellationLogs = rangeCustomLogs.filter(l =>
+    l.type === 'discovery' || l.type === 'observation'
   )
 
   const constellationStats = {}
@@ -233,6 +320,28 @@ export function aggregateLogSummary(logs, customLogs = {}, start, end) {
     stats.lastObserved = Math.max(stats.lastObserved, log.timestamp)
   })
 
+  customConstellationLogs.forEach(log => {
+    if (!log.constellationId) return
+    if (!constellationStats[log.constellationId]) {
+      constellationStats[log.constellationId] = {
+        id: log.constellationId,
+        count: 0,
+        perfect: 0,
+        discoveries: 0,
+        reobservations: 0,
+        firstObserved: log.timestamp,
+        lastObserved: log.timestamp
+      }
+    }
+    const stats = constellationStats[log.constellationId]
+    stats.count++
+    if (log.perfect) stats.perfect++
+    if (log.type === 'discovery') stats.discoveries++
+    if (log.type === 'observation') stats.reobservations++
+    stats.firstObserved = Math.min(stats.firstObserved, log.timestamp)
+    stats.lastObserved = Math.max(stats.lastObserved, log.timestamp)
+  })
+
   const topConstellations = Object.values(constellationStats)
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
@@ -242,18 +351,29 @@ export function aggregateLogSummary(logs, customLogs = {}, start, end) {
     }))
 
   const notes = []
-  Object.entries(customLogs).forEach(([dateKey, dayLogs]) => {
-    const logDate = new Date(dateKey)
-    if (logDate >= start && logDate <= end) {
-      dayLogs.forEach(log => {
-        if (log.note || log.type === 'note') {
-          notes.push({
-            ...log,
-            date: logDate
-          })
-        }
+  rangeCustomLogs.forEach(log => {
+    if (log.type === 'journal' || log.type === 'note' || log.note || log.content) {
+      notes.push({
+        ...log,
+        date: log._dateKey ? new Date(log._dateKey + 'T00:00:00') : new Date(log.timestamp)
       })
     }
+  })
+  Object.entries(customLogs || {}).forEach(([dateKey, dayLogs]) => {
+    if (!dateKeyInRange(dateKey, start, end)) return
+    if (!Array.isArray(dayLogs)) return
+    dayLogs.forEach(log => {
+      if (log.type === 'journal' || log.note || log.content) {
+        const alreadyIncluded = notes.some(n => n.id === log.id)
+        if (!alreadyIncluded) {
+          notes.push({
+            ...log,
+            timestamp: log.createdAt || log.timestamp || new Date(dateKey + 'T12:00:00').getTime(),
+            date: new Date(dateKey + 'T00:00:00')
+          })
+        }
+      }
+    })
   })
 
   const notableMoments = []
@@ -267,8 +387,19 @@ export function aggregateLogSummary(logs, customLogs = {}, start, end) {
       })
     }
   })
+  customConstellationLogs.forEach(log => {
+    if (log.perfect || log.type === 'discovery') {
+      notableMoments.push({
+        type: log.type,
+        constellation: getConstellationById(log.constellationId),
+        perfect: log.perfect,
+        timestamp: log.timestamp,
+        _source: 'custom'
+      })
+    }
+  })
 
-  const eventLogs = rangeLogs.filter(l => 
+  const eventLogs = rangeLogs.filter(l =>
     l.type === 'event_reward' || l.type === 'event_participate'
   )
   eventLogs.forEach(log => {
@@ -280,6 +411,16 @@ export function aggregateLogSummary(logs, customLogs = {}, start, end) {
     })
   })
 
+  rangeCustomLogs.filter(l => l.type === 'photo' || l.type === 'sharing').forEach(log => {
+    notableMoments.push({
+      type: log.type,
+      title: log.title,
+      content: log.content,
+      timestamp: log.timestamp,
+      _source: 'custom'
+    })
+  })
+
   notableMoments.sort((a, b) => a.timestamp - b.timestamp)
 
   return {
@@ -287,9 +428,10 @@ export function aggregateLogSummary(logs, customLogs = {}, start, end) {
     topConstellations,
     notes,
     notableMoments,
-    totalObservations: constellationLogs.length,
+    totalObservations: constellationLogs.length + customConstellationLogs.length,
     uniqueConstellations: Object.keys(constellationStats).length,
-    notesCount: notes.length
+    notesCount: notes.length,
+    customConstellationCount: customConstellationLogs.length
   }
 }
 
@@ -334,12 +476,33 @@ export function generateInsights(journey, milestones, summary) {
     })
   }
 
+  if (journey.customJournals > 0 || journey.customNotes > 0) {
+    const total = journey.customJournals + journey.customNotes
+    insights.push({
+      type: 'journal',
+      icon: '📝',
+      title: '记录点滴',
+      content: `留下了 ${total} 条观星笔记和记录，用心记录每一刻星空`,
+      color: 'text-star-gold'
+    })
+  }
+
+  if (journey.checkins > 0) {
+    insights.push({
+      type: 'checkin',
+      icon: '📅',
+      title: '坚持签到',
+      content: `完成了 ${journey.checkins} 次签到打卡，持续关注星空动态`,
+      color: 'text-green-400'
+    })
+  }
+
   if (journey.activeDays >= 5) {
     insights.push({
       type: 'consistency',
       icon: '🔥',
       title: '坚持不懈',
-      content: `本周有 ${journey.activeDays} 天在探索星空，保持这份热情！`,
+      content: `${journey.activeDays} 天在探索星空，保持这份热情！`,
       color: 'text-red-400'
     })
   } else if (journey.activeDays >= 3) {
@@ -347,7 +510,7 @@ export function generateInsights(journey, milestones, summary) {
       type: 'consistency',
       icon: '🌱',
       title: '稳步前进',
-      content: `本周探索了 ${journey.activeDays} 天，继续保持这个节奏！`,
+      content: `探索了 ${journey.activeDays} 天，继续保持这个节奏！`,
       color: 'text-green-400'
     })
   }
@@ -396,17 +559,20 @@ export function generateReport(type, date, storeState) {
     starRoute = {}
   } = storeState
 
-  const journey = aggregateExplorationJourney(observationLogs, start, end)
+  const customLogs = observationCalendar.customLogs || {}
+  const checkinRecords = observationCalendar.checkinRecords || {}
+
+  const journey = aggregateExplorationJourney(observationLogs, start, end, customLogs, checkinRecords)
   const milestones = aggregateAchievementMilestones(
-    unlockedAchievements, 
-    observationLogs, 
-    start, 
+    unlockedAchievements,
+    observationLogs,
+    start,
     end
   )
   const summary = aggregateLogSummary(
-    observationLogs, 
-    observationCalendar.customLogs || {}, 
-    start, 
+    observationLogs,
+    customLogs,
+    start,
     end
   )
   const insights = generateInsights(journey, milestones, summary)
@@ -424,6 +590,8 @@ export function generateReport(type, date, storeState) {
     totalRoutes: starRoute.history?.length || 0
   }
 
+  const isEmpty = journey.totalActivities === 0
+
   return {
     id: `report_${type}_${start.getTime()}_${end.getTime()}`,
     type,
@@ -436,7 +604,7 @@ export function generateReport(type, date, storeState) {
     summary,
     insights,
     overallStats,
-    isEmpty: journey.totalActivities === 0
+    isEmpty
   }
 }
 
@@ -455,12 +623,28 @@ export function exportReportAsText(report) {
   lines.push(`• 完美观测: ${report.journey.perfectRuns} 次`)
   lines.push(`• 解锁成就: ${report.milestones.newlyUnlockedCount} 个`)
   lines.push(`• 活跃天数: ${report.journey.activeDays} 天`)
+  if (report.journey.checkins > 0) {
+    lines.push(`• 签到打卡: ${report.journey.checkins} 次`)
+  }
+  if (report.journey.customJournals > 0 || report.journey.customNotes > 0) {
+    lines.push(`• 观星笔记: ${report.journey.customJournals + report.journey.customNotes} 条`)
+  }
   lines.push('')
 
   if (report.journey.discoveredConstellations.length > 0) {
     lines.push('✨ 新发现的星座')
     lines.push('─'.repeat(20))
     report.journey.discoveredConstellations.forEach(id => {
+      const c = getConstellationById(id)
+      if (c) lines.push(`  • ${c.name} (${c.nameEn})`)
+    })
+    lines.push('')
+  }
+
+  if (report.journey.reobservedConstellations.length > 0) {
+    lines.push('🔭 再次观测的星座')
+    lines.push('─'.repeat(20))
+    report.journey.reobservedConstellations.forEach(id => {
       const c = getConstellationById(id)
       if (c) lines.push(`  • ${c.name} (${c.nameEn})`)
     })
@@ -483,6 +667,17 @@ export function exportReportAsText(report) {
       if (s.constellation) {
         lines.push(`  ${i + 1}. ${s.constellation.name}: ${s.count} 次`)
       }
+    })
+    lines.push('')
+  }
+
+  if (report.summary.notes.length > 0) {
+    lines.push('📝 观星笔记')
+    lines.push('─'.repeat(20))
+    report.summary.notes.slice(0, 10).forEach(note => {
+      const title = note.title || '无标题'
+      const content = note.content || note.note || ''
+      lines.push(`  • ${title}${content ? ': ' + content.slice(0, 50) : ''}`)
     })
     lines.push('')
   }
@@ -511,7 +706,7 @@ export function exportReportAsText(report) {
 
 export function shareReport(report, templateId = 'explorer') {
   const template = REPORT_TEMPLATES[templateId] || REPORT_TEMPLATES.explorer
-  
+
   return {
     ...report,
     template,

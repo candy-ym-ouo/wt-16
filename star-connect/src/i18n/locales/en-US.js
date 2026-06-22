@@ -360,6 +360,10 @@ const enUS = {
     downloadReport: 'Download Report',
     myWeeklyReport: 'My Weekly Report',
     myMonthlyReport: 'My Monthly Report',
+    checkins: 'Check-ins',
+    customJournals: 'Journals',
+    reobservedConstellations: 'Reobserved Constellations',
+    notesSection: 'Stargazing Notes',
   },
 }
 

@@ -360,6 +360,10 @@ const zhCN = {
     downloadReport: '下载报告',
     myWeeklyReport: '我的星空周报',
     myMonthlyReport: '我的星空月报',
+    checkins: '签到',
+    customJournals: '笔记',
+    reobservedConstellations: '再次观测的星座',
+    notesSection: '观星笔记',
   },
 }
 

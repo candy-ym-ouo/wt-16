@@ -365,6 +365,51 @@ export default function ObservationReport() {
     )
   }
 
+  const renderNotes = () => {
+    if (!report || report.summary.notes.length === 0) return null
+
+    return (
+      <div className="mb-5">
+        <h4 className="font-display text-white/90 text-sm mb-3 flex items-center gap-2">
+          <span>📝</span>
+          <span>{t('report.notesSection')}</span>
+          <span className="text-[10px] text-white/40 ml-auto">
+            {report.summary.notes.length}
+          </span>
+        </h4>
+        <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin">
+          {report.summary.notes.slice(0, 10).map((note, i) => (
+            <div
+              key={i}
+              className="p-3 rounded-xl border border-star-gold/15 bg-star-gold/5"
+            >
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-star-gold/15 flex items-center justify-center text-sm flex-shrink-0">
+                  {note.type === 'journal' ? '📝' : note.type === 'photo' ? '📷' : '⭐'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-white/80 font-medium truncate">
+                    {note.title || note.type}
+                  </div>
+                  {(note.content || note.note) && (
+                    <div className="text-[11px] text-white/50 mt-0.5 line-clamp-2">
+                      {note.content || note.note}
+                    </div>
+                  )}
+                  {note._dateKey && (
+                    <div className="text-[9px] text-white/30 mt-1">
+                      {note._dateKey}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const renderOverallStats = () => {
     if (!report) return null
     const { overallStats } = report
@@ -476,13 +521,13 @@ export default function ObservationReport() {
                     <div className="text-lg font-bold text-white">
                       {report.journey.discoveries}
                     </div>
-                    <div className="text-[9px] text-white/70">新发现</div>
+                    <div className="text-[9px] text-white/70">{t('report.newDiscoveriesLabel')}</div>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-white/10">
                     <div className="text-lg font-bold text-white">
                       {report.journey.perfectRuns}
                     </div>
-                    <div className="text-[9px] text-white/70">完美</div>
+                    <div className="text-[9px] text-white/70">{t('report.perfectRuns')}</div>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-white/10">
                     <div className="text-lg font-bold text-white">
@@ -617,6 +662,7 @@ export default function ObservationReport() {
               {renderMilestones()}
               {renderTopConstellations()}
               {renderNotableMoments()}
+              {renderNotes()}
               {renderOverallStats()}
             </>
           )}
