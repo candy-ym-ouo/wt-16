@@ -11,12 +11,32 @@
     --panel-inner-bg: rgba(15, 21, 48, 0.3);
     --panel-inner-border: rgba(255, 255, 255, 0.05);
     --panel-accent: rgba(107, 91, 255, 0.4);
+    --text-scale: 1;
+    --eyecare-filter: none;
+    --eyecare-overlay: transparent;
+    --hint-glow-opacity: 0.35;
+    --hint-pulse-speed: 1.2s;
+    --hint-value: 0.6;
   }
 
   html {
     font-family: Georgia, 'Times New Roman', serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: calc(16px * var(--text-scale));
+  }
+
+  body {
+    filter: var(--eyecare-filter);
+  }
+
+  .eyecare-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: var(--eyecare-overlay);
+    z-index: 9999;
+    mix-blend-mode: multiply;
   }
 }
 

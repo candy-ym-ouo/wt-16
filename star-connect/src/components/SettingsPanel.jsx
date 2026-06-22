@@ -257,6 +257,50 @@ export default function SettingsPanel() {
                 value={settings.showLabels}
                 onChange={(v) => handleSettingChange('showLabels', v)}
               />
+
+              <SettingToggle
+                label={t('settings.eyeCareMode')}
+                icon="👁️"
+                description={t('settings.eyeCareModeDesc')}
+                value={settings.eyeCareMode}
+                onChange={(v) => handleSettingChange('eyeCareMode', v)}
+              />
+
+              <SettingSlider
+                label={t('settings.textScale')}
+                icon="🔤"
+                value={settings.textScale}
+                min={0.8}
+                max={1.4}
+                step={0.05}
+                onChange={(v) => handleSettingChange('textScale', v)}
+                displayValue={`${Math.round(settings.textScale * 100)}%`}
+              />
+
+              <div className="p-4 rounded-xl bg-space-700/30 border border-white/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">💡</span>
+                  <div>
+                    <div className="text-sm text-white">{t('settings.hintIntensity')}</div>
+                    <div className="text-[10px] text-white/40 mt-0.5">{t('settings.hintIntensityDesc')}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {['low', 'medium', 'high'].map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => handleSettingChange('hintIntensity', level)}
+                      className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                        settings.hintIntensity === level
+                          ? 'bg-nebula-purple text-white'
+                          : 'bg-space-800/60 text-white/60 hover:bg-space-700/60'
+                      }`}
+                    >
+                      {level === 'low' ? t('settings.hintLow') : level === 'medium' ? t('settings.hintMedium') : t('settings.hintHigh')}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 

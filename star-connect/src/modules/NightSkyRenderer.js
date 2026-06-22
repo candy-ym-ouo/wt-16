@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { getConstellationById } from '../data/constellations'
-import { GRAPHICS_OPTIONS, BACKGROUND_STYLES, CONNECTION_EFFECTS, DEFAULT_SETTINGS } from '../data/constants'
+import { GRAPHICS_OPTIONS, BACKGROUND_STYLES, CONNECTION_EFFECTS, DEFAULT_SETTINGS, HINT_INTENSITY_OPTIONS } from '../data/constants'
 import { clamp, randomRange } from '../utils/math'
 import { audioManager } from './AudioManager'
 
@@ -66,6 +66,8 @@ export class NightSkyRenderer {
     this.currentBackgroundStyle = null
     this.currentConnectionEffect = null
     this.connectionParticles = []
+
+    this.hintConfig = HINT_INTENSITY_OPTIONS[this.settings.hintIntensity] || HINT_INTENSITY_OPTIONS.medium
 
     this.init()
   }
@@ -1135,14 +1137,19 @@ export class NightSkyRenderer {
     })
 
     this.starMeshes.forEach((star, i) => {
-      const pulse = 1 + Math.sin(this.time * 2 + i * 0.7) * 0.08
+      const pulseSpeed = 2 / (this.hintConfig?.pulseSpeed || 1.2)
+      const pulseAmount = 0.04 + (this.hintConfig?.value || 0.6) * 0.08
+      const pulse = 1 + Math.sin(this.time * pulseSpeed + i * 0.7) * pulseAmount
       const connected = this.connectionPath.includes(star.userData.starId)
       const isHovered = star === this.hoveredStar
       const baseScale = star.userData.baseScale
       let scale = baseScale
-      if (connected) scale *= 1.8
-      if (isHovered) scale *= isHovered === connected ? 1.1 : (connected ? 1.2 : 1.5)
+      if (connected) scale *= 1.4 + (this.hintConfig?.value || 0.6) * 0.8
+      if (isHovered) scale *= isHovered === connected ? 1.1 : (connected ? 1.2 : 1.3 + (this.hintConfig?.value || 0.6) * 0.4)
       star.scale.set(scale * pulse, scale * pulse, 1)
+      if (star.material && star.material.uniforms?.glowOpacity) {
+        star.material.uniforms.glowOpacity.value = this.hintConfig?.glowOpacity || 0.35
+      }
     })
 
     if (this.meteorShowerActive) {
@@ -1163,20 +1170,26 @@ export class NightSkyRenderer {
   updateConnectionLineAnimations() {
     const effect = CONNECTION_EFFECTS[this.currentConnectionEffect] || CONNECTION_EFFECTS.glow
     if (!effect.animate) return
+    const hintValue = this.hintConfig?.value || 0.6
+    const pulseFactor = this.hintConfig?.pulseSpeed || 1.2
 
     this.connectionLines.forEach((line) => {
       if (line.userData.isDotted) {
-        const time = Date.now() * 0.005
-        line.material.opacity = effect.opacity * (0.5 + Math.sin(time) * 0.5)
+        const time = Date.now() * 0.005 * (1 / pulseFactor)
+        const baseOpacity = effect.opacity * (0.35 + hintValue * 0.3)
+        const variation = effect.opacity * (0.15 + hintValue * 0.35)
+        line.material.opacity = baseOpacity + Math.sin(time) * variation
       }
 
       if (line.userData.hasGlow) {
-        const time = Date.now() * 0.003
-        line.material.opacity = effect.opacity * (0.7 + Math.sin(time) * 0.3)
+        const time = Date.now() * 0.003 * (1 / pulseFactor)
+        const baseOpacity = effect.opacity * (0.55 + hintValue * 0.3)
+        const variation = effect.opacity * (0.15 + hintValue * 0.15)
+        line.material.opacity = baseOpacity + Math.sin(time) * variation
       }
 
       if (effect.gradient && line.geometry.attributes.color) {
-        const time = Date.now() * 0.002
+        const time = Date.now() * 0.002 * (1 / pulseFactor)
         const hue = (time * 0.1) % 1
         const colors = line.geometry.attributes.color.array
         const color1 = new THREE.Color().setHSL(hue, 0.8, 0.6)
@@ -1192,8 +1205,10 @@ export class NightSkyRenderer {
     })
 
     if (this.tempLine) {
-      const time = Date.now() * 0.005
-      this.tempLine.material.opacity = 0.3 + Math.sin(time) * 0.2
+      const time = Date.now() * 0.005 * (1 / pulseFactor)
+      const baseOpacity = 0.15 + hintValue * 0.3
+      const variation = 0.1 + hintValue * 0.2
+      this.tempLine.material.opacity = baseOpacity + Math.sin(time) * variation
     }
   }
 
@@ -1250,6 +1265,11 @@ export class NightSkyRenderer {
           : 1)
       }
       this.rebuildStarField()
+    }
+
+    if (newSettings.hintIntensity !== undefined &&
+        newSettings.hintIntensity !== oldSettings.hintIntensity) {
+      this.hintConfig = HINT_INTENSITY_OPTIONS[newSettings.hintIntensity] || HINT_INTENSITY_OPTIONS.medium
     }
 
     if (newSettings.workshop !== undefined) {

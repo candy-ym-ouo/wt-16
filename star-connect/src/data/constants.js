@@ -10,6 +10,9 @@ export const DEFAULT_SETTINGS = {
   hapticFeedback: true,
   autoSave: true,
   language: 'zh-CN',
+  eyeCareMode: false,
+  textScale: 1.0,
+  hintIntensity: 'medium',
   workshop: {
     backgroundStyle: 'cosmic',
     starDensity: 1.0,
@@ -21,6 +24,12 @@ export const DEFAULT_SETTINGS = {
       accent: '#ffd700'
     }
   }
+}
+
+export const HINT_INTENSITY_OPTIONS = {
+  low: { id: 'low', value: 0.3, glowOpacity: 0.15, pulseSpeed: 2.0 },
+  medium: { id: 'medium', value: 0.6, glowOpacity: 0.35, pulseSpeed: 1.2 },
+  high: { id: 'high', value: 1.0, glowOpacity: 0.6, pulseSpeed: 0.7 }
 }
 
 export const BACKGROUND_STYLES = {

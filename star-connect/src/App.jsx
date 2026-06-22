@@ -21,9 +21,11 @@ import StoryChapter from './components/StoryChapter'
 import ObservationReport from './components/ObservationReport'
 import ConstellationResearch from './components/ConstellationResearch'
 import { useGameStore } from './stores/gameStore'
+import { HINT_INTENSITY_OPTIONS } from './data/constants'
 
 export default function App() {
   const activePanel = useGameStore((s) => s.activePanel)
+  const settings = useGameStore((s) => s.settings)
   const familyModeEnabled = useGameStore((s) => s.familyMode.enabled)
   const storyProgress = useGameStore((s) => s.storyProgress)
   const clearPendingStoryUnlock = useGameStore((s) => s.clearPendingStoryUnlock)
@@ -37,6 +39,24 @@ export default function App() {
 
   const [activeStory, setActiveStory] = useState(null)
   const [currentUnlockIndex, setCurrentUnlockIndex] = useState(0)
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--text-scale', settings.textScale.toString())
+
+    if (settings.eyeCareMode) {
+      root.style.setProperty('--eyecare-filter', 'sepia(0.15) saturate(0.9) contrast(0.95) brightness(0.95)')
+      root.style.setProperty('--eyecare-overlay', 'rgba(255, 200, 120, 0.08)')
+    } else {
+      root.style.setProperty('--eyecare-filter', 'none')
+      root.style.setProperty('--eyecare-overlay', 'transparent')
+    }
+
+    const hintConfig = HINT_INTENSITY_OPTIONS[settings.hintIntensity] || HINT_INTENSITY_OPTIONS.medium
+    root.style.setProperty('--hint-glow-opacity', hintConfig.glowOpacity.toString())
+    root.style.setProperty('--hint-pulse-speed', hintConfig.pulseSpeed.toString() + 's')
+    root.style.setProperty('--hint-value', hintConfig.value.toString())
+  }, [settings.textScale, settings.eyeCareMode, settings.hintIntensity])
 
   useEffect(() => {
     if (storyProgress.pendingUnlock && 
@@ -86,6 +106,7 @@ export default function App() {
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-space-900">
+      <div className="eyecare-overlay" />
       <NightSky />
 
       <ConstellationTasks />
