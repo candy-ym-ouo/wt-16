@@ -5169,6 +5169,266 @@ export const useGameStore = create(
         }
       },
 
+      getAchievementProgress: (achievement) => {
+        const state = get()
+        const { type, value } = achievement.condition
+        let current = 0
+        let target = 1
+        let hint = ''
+        let relatedPanel = null
+
+        switch (type) {
+          case 'connect_count':
+            current = state.connectionPath.length
+            target = value
+            hint = `继续完成星星连线`
+            break
+          case 'discover_count':
+            current = state.discoveredConstellations.length
+            target = value
+            hint = current < target ? `再发现 ${target - current} 个星座即可解锁` : '已达成'
+            relatedPanel = current < target ? 'atlas' : null
+            break
+          case 'difficulty_clear': {
+            const constellationsOfDifficulty = CONSTELLATIONS.filter(c => c.difficulty === value)
+            current = constellationsOfDifficulty.filter(c => state.discoveredConstellations.includes(c.id)).length
+            target = constellationsOfDifficulty.length
+            const diffLabels = { 1: '入门', 2: '进阶', 3: '挑战' }
+            hint = current < target
+              ? `完成剩余 ${target - current} 个${diffLabels[value] || ''}难度星座`
+              : '已达成'
+            relatedPanel = current < target ? 'atlas' : null
+            break
+          }
+          case 'log_count':
+            current = state.observationLogs.length
+            target = value
+            hint = current < target ? `再记录 ${target - current} 条观测日志` : '已达成'
+            relatedPanel = current < target ? 'log' : null
+            break
+          case 'perfect_constellation': {
+            const constellation = getConstellationById(value)
+            const latestPerfect = state.observationLogs.find(
+              l => l.constellationId === value && l.perfect === true
+            )
+            current = latestPerfect ? 1 : 0
+            target = 1
+            hint = latestPerfect
+              ? '已达成'
+              : `完美通关「${constellation?.name || '该星座'}」（零错误）`
+            relatedPanel = !latestPerfect ? 'atlas' : null
+            break
+          }
+          case 'total_mistakes':
+            current = state.totalMistakes
+            target = value
+            hint = current < target ? `累计错误连线达到 ${value} 次（当前 ${current}/${target}）` : '已达成'
+            break
+          case 'season_master': {
+            const seasonData = state.seasonProgress?.[value]
+            current = seasonData?.master ? 1 : 0
+            target = 1
+            const seasonNames = { spring: '春季', summer: '夏季', autumn: '秋季', winter: '冬季' }
+            if (!seasonData?.beginner) hint = `先完成${seasonNames[value] || '该季节'}入门探索`
+            else if (!seasonData?.intermediate) hint = `完成${seasonNames[value] || '该季节'}所有星座的完美观测`
+            else if (!seasonData?.master) hint = `进行${seasonNames[value] || '该季节'}深度观测，达成大师等级`
+            else hint = '已达成'
+            relatedPanel = !seasonData?.master ? 'season' : null
+            break
+          }
+          case 'four_seasons': {
+            const seasons = Object.keys(SEASONS)
+            current = seasons.filter(s => state.seasonProgress?.[s]?.master).length
+            target = seasons.length
+            hint = current < target ? `完成剩余 ${target - current} 个季节的大师等级` : '已达成'
+            relatedPanel = current < target ? 'season' : null
+            break
+          }
+          case 'expedition_complete':
+            current = state.nightExpedition?.totalCompleted || 0
+            target = value
+            hint = current < target ? `再完成 ${target - current} 次夜间远征` : '已达成'
+            relatedPanel = current < target ? 'expedition' : null
+            break
+          case 'expedition_stages':
+            current = state.nightExpedition?.highestStagesCleared || 0
+            target = value
+            hint = current < target ? `单次远征通过 ${target} 关（当前最高 ${current} 关）` : '已达成'
+            relatedPanel = current < target ? 'expedition' : null
+            break
+          case 'expedition_perfect':
+            current = state.nightExpedition?.totalPerfectStages || 0
+            target = value
+            hint = current < target ? `累计完美通关 ${target} 个远征关卡（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'expedition' : null
+            break
+          case 'expedition_stardust':
+            current = state.nightExpedition?.totalStardustEarned || 0
+            target = value
+            hint = current < target ? `远征累计获得 ${target} 星尘（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'expedition' : null
+            break
+          case 'quiz_complete':
+            current = state.quiz?.totalCompleted || 0
+            target = value
+            hint = current < target ? `再完成 ${target - current} 次知识问答` : '已达成'
+            relatedPanel = current < target ? 'quiz' : null
+            break
+          case 'quiz_perfect': {
+            const perfectRuns = state.quiz?.history?.filter(
+              h => h.correct === h.total && h.total >= value
+            ).length || 0
+            current = perfectRuns
+            target = 1
+            hint = perfectRuns > 0 ? '已达成' : `以全对成绩完成一次 ${value} 题的问答`
+            relatedPanel = perfectRuns === 0 ? 'quiz' : null
+            break
+          }
+          case 'quiz_streak':
+            current = state.quiz?.bestStreak || 0
+            target = value
+            hint = current < target ? `连续答对 ${target} 题（当前最佳 ${current} 题）` : '已达成'
+            relatedPanel = current < target ? 'quiz' : null
+            break
+          case 'quiz_correct':
+            current = state.quiz?.totalCorrect || 0
+            target = value
+            hint = current < target ? `累计答对 ${target} 题（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'quiz' : null
+            break
+          case 'quiz_exchange':
+            current = state.quiz?.redeemedRewards?.length || 0
+            target = value
+            hint = current < target ? `在问答商店兑换 ${target} 次奖励` : '已达成'
+            relatedPanel = current < target ? 'shop' : null
+            break
+          case 'route_complete':
+            current = state.starRoute?.totalRoutesCompleted || 0
+            target = value
+            hint = current < target ? `再完成 ${target - current} 条观星路线` : '已达成'
+            relatedPanel = current < target ? 'route' : null
+            break
+          case 'route_type_complete': {
+            const completedOfType = state.starRoute?.routeHistory?.filter(
+              r => r.status === 'completed' && r.type === value
+            ).length || 0
+            const typeNames = { seasonal: '季节漫游', progressive: '进阶之路', mythology: '神话之旅', quick: '快速打卡' }
+            current = completedOfType
+            target = 1
+            hint = completedOfType > 0 ? '已达成' : `完成一条「${typeNames[value] || value}」路线`
+            relatedPanel = completedOfType === 0 ? 'route' : null
+            break
+          }
+          case 'route_perfect':
+            current = state.starRoute?.perfectRoutes || 0
+            target = value
+            hint = current < target ? `以全完美成绩完成 ${target} 条路线（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'route' : null
+            break
+          case 'daily_complete':
+            current = state.dailyCommissions?.totalCompleted || 0
+            target = value
+            hint = current < target ? `累计完成 ${target} 个每日委托（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'tasks' : null
+            break
+          case 'daily_streak':
+            current = state.dailyCommissions?.streakDays || 0
+            target = value
+            hint = current < target ? `连续完成每日委托 ${target} 天（当前 ${current} 天）` : '已达成'
+            relatedPanel = current < target ? 'tasks' : null
+            break
+          case 'daily_hard_complete':
+            current = state.dailyCommissions?.totalHardCompleted || 0
+            target = value
+            hint = current < target ? `累计完成 ${target} 个困难委托（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'tasks' : null
+            break
+          case 'consecutive_perfect':
+            current = state.bestConsecutivePerfect || 0
+            target = value
+            hint = current < target ? `连续完美通关 ${target} 次（最佳 ${current} 次）` : '已达成'
+            break
+          case 'reobserve_single': {
+            const maxObs = Math.max(
+              0,
+              ...Object.values(state.totalObservations || {}).map(v => Math.max(0, (v || 0) - 1))
+            )
+            current = maxObs
+            target = value
+            hint = current < target
+              ? `对同一星座重复观测 ${target} 次（当前最高 ${current} 次）`
+              : '已达成'
+            relatedPanel = current < target ? 'atlas' : null
+            break
+          }
+          case 'reobserve_all_once': {
+            const discovered = state.discoveredConstellations
+            if (discovered.length === 0) {
+              current = 0
+              target = 1
+              hint = '先发现至少一个星座'
+              relatedPanel = 'atlas'
+            } else {
+              current = discovered.filter(id => (state.totalObservations[id] || 0) >= 2).length
+              target = discovered.length
+              hint = current < target
+                ? `对已发现的每个星座至少重复观测1次（${current}/${target}）`
+                : '已达成'
+              relatedPanel = current < target ? 'atlas' : null
+            }
+            break
+          }
+          case 'total_reobserve': {
+            const total = Object.values(state.totalObservations || {}).reduce(
+              (sum, v) => sum + Math.max(0, (v || 0) - 1),
+              0
+            )
+            current = total
+            target = value
+            hint = current < target ? `累计重复观测 ${target} 次（当前 ${current}）` : '已达成'
+            relatedPanel = current < target ? 'atlas' : null
+            break
+          }
+          case 'reobserve_perfect_single': {
+            const maxPerfect = Math.max(
+              0,
+              ...Object.values(state.perfectCountPerConstellation || {}).map(v => v || 0)
+            )
+            current = maxPerfect
+            target = value
+            hint = current < target
+              ? `对同一星座累计完美通关 ${target} 次（当前最高 ${current} 次）`
+              : '已达成'
+            relatedPanel = current < target ? 'atlas' : null
+            break
+          }
+          case 'single_session_mistakes': {
+            const recentObservations = state.observationLogs.filter(
+              l => l.type === 'discovery' || l.type === 'reobservation'
+            )
+            const hasQualified = recentObservations.some(l => (l.mistakes || 0) >= value)
+            current = hasQualified ? 1 : 0
+            target = 1
+            hint = hasQualified ? '已达成' : `单次观测中错误 ${value} 次以上仍完成连线`
+            break
+          }
+          default:
+            current = 0
+            target = 1
+            hint = '完成特定条件解锁'
+        }
+
+        const percentage = Math.min(100, target > 0 ? (current / target) * 100 : 0)
+
+        return {
+          current,
+          target,
+          percentage: Math.round(percentage * 10) / 10,
+          hint,
+          relatedPanel
+        }
+      },
+
       resetProgress: () =>
         set({
           discoveredConstellations: [],
