@@ -52,13 +52,13 @@ const COMMISSION_TEMPLATES = {
   },
   [COMMISSION_TYPES.SEASON_DISCOVERY]: {
     [COMMISSION_DIFFICULTY.EASY]: [
-      { name: '当季初探', desc: '发现1个当季星座', target: 1, reward: 35, icon: '🌸' },
+      { name: '当季初探', desc: '观测1个当季星座', target: 1, reward: 35, icon: '🌸' },
     ],
     [COMMISSION_DIFFICULTY.NORMAL]: [
-      { name: '季节行者', desc: '发现2个当季星座', target: 2, reward: 70, icon: '🍂' },
+      { name: '季节行者', desc: '观测2个当季星座', target: 2, reward: 70, icon: '🍂' },
     ],
     [COMMISSION_DIFFICULTY.HARD]: [
-      { name: '季节大师', desc: '发现全部当季星座', target: null, reward: 150, icon: '👑' },
+      { name: '季节大师', desc: '累计观测当季星座4次', target: 4, reward: 150, icon: '👑' },
     ]
   },
   [COMMISSION_TYPES.MULTI_OBSERVE]: {
@@ -184,12 +184,6 @@ export function generateDailyCommissions(discoveredIds, perfectIds, totalObserva
     let constellationId = null
     let constellationName = null
 
-    if (type === COMMISSION_TYPES.SEASON_DISCOVERY) {
-      if (template.target === null) {
-        target = seasonConstellations.length
-      }
-    }
-
     if (type === COMMISSION_TYPES.PERFECT) {
       const imperfect = CONSTELLATIONS.filter(c => discoveredIds.includes(c.id) && !perfectIds[c.id])
       if (imperfect.length > 0) {
@@ -263,9 +257,15 @@ export function getDailyCommissionProgress(commission, observationLogs, discover
     }
 
     case COMMISSION_TYPES.SEASON_DISCOVERY: {
+      const today = new Date().toDateString()
       const seasonConst = getSeasonConstellations(commission.seasonId)
-      const discoveredInSeason = seasonConst.filter(id => discoveredIds.includes(id))
-      current = discoveredInSeason.length
+      const todaySeasonObs = observationLogs.filter(log => {
+        if (log.type !== 'discovery' && log.type !== 'reobservation') return false
+        if (!seasonConst.includes(log.constellationId)) return false
+        const logDate = new Date(log.timestamp).toDateString()
+        return logDate === today
+      })
+      current = todaySeasonObs.length
       completed = current >= commission.target
       break
     }

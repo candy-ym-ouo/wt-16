@@ -4037,6 +4037,31 @@ export const useGameStore = create(
           return dc.tasks
         }
 
+        if (dc.tasks && dc.tasks.length > 0) {
+          const unclaimedCompleted = dc.tasks.filter(t => t.completed && !t.claimed)
+          if (unclaimedCompleted.length > 0) {
+            let totalAutoReward = 0
+            const updatedPrevTasks = dc.tasks.map(t => {
+              if (t.completed && !t.claimed) {
+                totalAutoReward += t.reward
+                get().addLog({
+                  type: 'daily_commission_claim',
+                  commissionId: t.id,
+                  commissionName: `${t.name}（自动领取）`,
+                  reward: t.reward,
+                  timestamp: Date.now()
+                })
+                return { ...t, claimed: true }
+              }
+              return t
+            })
+            if (totalAutoReward > 0) {
+              get().addStardust(totalAutoReward, '每日委托自动结算')
+            }
+            dc.tasks = updatedPrevTasks
+          }
+        }
+
         const newTasks = generateDailyCommissions(
           state.discoveredConstellations,
           state.perfectObservations,
