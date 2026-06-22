@@ -63,10 +63,20 @@ import {
   TUTORIAL_STEPS,
   ADVANCED_TASKS,
   TUTORIAL_REWARDS,
+  TUTORIAL_PHASES,
+  TUTORIAL_MILESTONES,
+  CONTEXTUAL_HINTS,
   getTutorialStepById,
   getAdvancedTaskById,
   calculateTutorialProgress,
-  getErrorHint
+  getErrorHint,
+  getPhaseById,
+  getPhaseForStep,
+  getMilestoneById,
+  getContextualHintById,
+  calculatePhaseProgress,
+  getCurrentPhase,
+  getAllPhaseProgress
 } from '../data/tutorial'
 import {
   generateRoute,
@@ -1434,6 +1444,7 @@ export const useGameStore = create(
           if (state.replayState.active) {
             get().stopReplay()
           }
+          get().resetSessionMistakes()
         }
         get().checkTutorialProgress()
       },
@@ -1567,6 +1578,14 @@ export const useGameStore = create(
               mistakes: mistakesInSession,
               timestamp: Date.now()
             })
+            if (state.discoveredConstellations.length === 0 ||
+                state.tutorial.triggeredMilestones.indexOf('first_constellation') === -1) {
+              get().triggerMilestone('first_constellation', {
+                constellationId,
+                constellationName: constellation.name,
+                perfect: isPerfect
+              })
+            }
           } else {
             get().addLog({
               type: 'reobservation',
@@ -1574,6 +1593,13 @@ export const useGameStore = create(
               perfect: isPerfect,
               mistakes: mistakesInSession,
               timestamp: Date.now()
+            })
+          }
+
+          if (isPerfect && !state.tutorial.firstPerfectObserved) {
+            get().triggerMilestone('first_perfect', {
+              constellationId,
+              constellationName: constellation.name
             })
           }
 
@@ -2476,12 +2502,21 @@ export const useGameStore = create(
               ...newlyUnlocked
             ]
           }))
-          newlyUnlocked.forEach((id) => {
-            get().addLog({
-              type: 'achievement',
-              achievementId: id,
-              timestamp: Date.now()
-            })
+          newlyUnlocked.forEach((id, idx) => {
+            const ach = getAchievementById(id)
+            if (ach) {
+              get().addLog({
+                type: 'achievement',
+                achievementId: id,
+                timestamp: Date.now()
+              })
+              if (idx === 0 && !get().tutorial.firstAchievementUnlocked) {
+                get().triggerMilestone('first_achievement', {
+                  achievementId: id,
+                  achievementName: ach.name
+                })
+              }
+            }
           })
           return newlyUnlocked
         }
@@ -3591,6 +3626,7 @@ export const useGameStore = create(
         completed: false,
         currentStepId: null,
         completedSteps: [],
+        completedPhases: [],
         advancedTasksCompleted: [],
         rewardsClaimed: [],
         mistakesDuringTutorial: 0,
@@ -3598,17 +3634,31 @@ export const useGameStore = create(
         completedAt: null,
         panelsVisited: [],
         lastErrorHint: null,
-        lastErrorTime: null
+        lastErrorTime: null,
+        triggeredMilestones: [],
+        firedContextualHints: [],
+        pendingMilestoneToast: null,
+        pendingContextualHint: null,
+        sessionMistakes: 0,
+        lastActivityTime: null,
+        firstAchievementUnlocked: false,
+        firstLogGenerated: false,
+        firstStarConnected: false,
+        firstConstellationDiscovered: false,
+        firstMistakeMade: false,
+        firstPerfectObserved: false
       },
 
       startTutorial: () => {
         const firstStep = TUTORIAL_STEPS[0]
+        const firstPhase = getPhaseForStep(firstStep.id)
         set((state) => ({
           tutorial: {
             ...state.tutorial,
             started: true,
             currentStepId: firstStep.id,
             completedSteps: [],
+            completedPhases: [],
             advancedTasksCompleted: [],
             rewardsClaimed: [],
             mistakesDuringTutorial: 0,
@@ -3616,9 +3666,27 @@ export const useGameStore = create(
             completedAt: null,
             panelsVisited: [],
             lastErrorHint: null,
-            lastErrorTime: null
+            lastErrorTime: null,
+            triggeredMilestones: [],
+            firedContextualHints: [],
+            pendingMilestoneToast: null,
+            pendingContextualHint: null,
+            sessionMistakes: 0,
+            lastActivityTime: Date.now(),
+            firstAchievementUnlocked: false,
+            firstLogGenerated: false,
+            firstStarConnected: false,
+            firstConstellationDiscovered: false,
+            firstMistakeMade: false,
+            firstPerfectObserved: false
           }
         }))
+        get().addLog({
+          type: 'tutorial_start',
+          phaseId: firstPhase?.id,
+          phaseName: firstPhase?.name,
+          timestamp: Date.now()
+        })
         return firstStep
       },
 
@@ -3629,6 +3697,7 @@ export const useGameStore = create(
             completed: false,
             currentStepId: null,
             completedSteps: [],
+            completedPhases: [],
             advancedTasksCompleted: [],
             rewardsClaimed: [],
             mistakesDuringTutorial: 0,
@@ -3636,7 +3705,19 @@ export const useGameStore = create(
             completedAt: null,
             panelsVisited: [],
             lastErrorHint: null,
-            lastErrorTime: null
+            lastErrorTime: null,
+            triggeredMilestones: [],
+            firedContextualHints: [],
+            pendingMilestoneToast: null,
+            pendingContextualHint: null,
+            sessionMistakes: 0,
+            lastActivityTime: null,
+            firstAchievementUnlocked: false,
+            firstLogGenerated: false,
+            firstStarConnected: false,
+            firstConstellationDiscovered: false,
+            firstMistakeMade: false,
+            firstPerfectObserved: false
           }
         })
       },
@@ -3655,15 +3736,50 @@ export const useGameStore = create(
 
         const isCompleted = step.isFinal || !nextStep
 
+        const justCompletedPhase = getPhaseForStep(stepId)
+        let phaseCompleted = null
+        const newCompletedPhases = [...state.tutorial.completedPhases]
+
+        if (justCompletedPhase) {
+          const phaseProgress = calculatePhaseProgress(newCompletedSteps, justCompletedPhase.id)
+          if (phaseProgress.isComplete && !newCompletedPhases.includes(justCompletedPhase.id)) {
+            newCompletedPhases.push(justCompletedPhase.id)
+            phaseCompleted = justCompletedPhase
+          }
+        }
+
         set((s) => ({
           tutorial: {
             ...s.tutorial,
             completedSteps: newCompletedSteps,
             currentStepId: isCompleted ? null : nextStep?.id || null,
             completed: isCompleted,
-            completedAt: isCompleted ? Date.now() : s.tutorial.completedAt
+            completedAt: isCompleted ? Date.now() : s.tutorial.completedAt,
+            completedPhases: newCompletedPhases
           }
         }))
+
+        if (phaseCompleted && phaseCompleted.reward) {
+          if (phaseCompleted.reward.type === 'stardust') {
+            get().addStardust(phaseCompleted.reward.amount, `阶段奖励：${phaseCompleted.name}`)
+          }
+          get().addLog({
+            type: 'tutorial_phase_complete',
+            phaseId: phaseCompleted.id,
+            phaseName: phaseCompleted.name,
+            reward: phaseCompleted.reward,
+            timestamp: Date.now()
+          })
+          get().showMilestoneToast({
+            id: `phase_${phaseCompleted.id}`,
+            icon: phaseCompleted.icon,
+            title: `${phaseCompleted.name}阶段完成！`,
+            message: phaseCompleted.reward.type === 'stardust'
+              ? `获得 +${phaseCompleted.reward.amount} 星尘奖励`
+              : phaseCompleted.reward.name ? `获得称号：${phaseCompleted.reward.name}` : '继续加油！',
+            phaseReward: true
+          })
+        }
 
         if (isCompleted) {
           get().addLog({
@@ -3697,10 +3813,18 @@ export const useGameStore = create(
             }
           }
         })
+        if (panelId === 'log') {
+          get().triggerMilestone('first_log_visit', {})
+        }
         get().checkTutorialProgress()
       },
 
       showTutorialError: (errorType) => {
+        const state = get()
+        if (!state.tutorial.firstMistakeMade) {
+          get().triggerMilestone('first_mistake', {})
+          return
+        }
         const hint = getErrorHint(errorType)
         if (!hint) return
         set((state) => ({
@@ -3723,10 +3847,197 @@ export const useGameStore = create(
       },
 
       recordTutorialMistake: () => {
+        const state = get()
+        const newSessionMistakes = state.tutorial.sessionMistakes + 1
         set((state) => ({
           tutorial: {
             ...state.tutorial,
-            mistakesDuringTutorial: state.tutorial.mistakesDuringTutorial + 1
+            mistakesDuringTutorial: state.tutorial.mistakesDuringTutorial + 1,
+            sessionMistakes: newSessionMistakes
+          }
+        }))
+        if (newSessionMistakes === 3) {
+          get().triggerContextualHint('mistake_3_times')
+        } else if (newSessionMistakes === 5) {
+          get().triggerContextualHint('mistake_5_times')
+        }
+      },
+
+      resetSessionMistakes: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            sessionMistakes: 0
+          }
+        }))
+      },
+
+      triggerMilestone: (milestoneId, data = {}) => {
+        const state = get()
+        const milestone = getMilestoneById(milestoneId)
+        if (!milestone) return
+        if (state.tutorial.triggeredMilestones.includes(milestoneId)) return
+
+        const t = state.tutorial
+        let flagsUpdate = {}
+        if (milestoneId === 'first_star_connect') {
+          flagsUpdate.firstStarConnected = true
+        } else if (milestoneId === 'first_constellation') {
+          flagsUpdate.firstConstellationDiscovered = true
+        } else if (milestoneId === 'first_achievement') {
+          flagsUpdate.firstAchievementUnlocked = true
+        } else if (milestoneId === 'first_mistake') {
+          flagsUpdate.firstMistakeMade = true
+        } else if (milestoneId === 'first_perfect') {
+          flagsUpdate.firstPerfectObserved = true
+        }
+
+        set((s) => ({
+          tutorial: {
+            ...s.tutorial,
+            triggeredMilestones: [...s.tutorial.triggeredMilestones, milestoneId],
+            ...flagsUpdate
+          }
+        }))
+
+        if (milestone.autoGenerateLog && milestone.logTemplate) {
+          const logEntry = milestone.logTemplate(data)
+          if (logEntry) {
+            get().addLog(logEntry)
+            set((s) => ({
+              tutorial: { ...s.tutorial, firstLogGenerated: true }
+            }))
+          }
+        }
+
+        if (milestone.autoUnlockAchievements && milestone.autoUnlockAchievements.length > 0) {
+          const newlyUnlocked = []
+          milestone.autoUnlockAchievements.forEach((achId) => {
+            if (!state.unlockedAchievements.includes(achId)) {
+              newlyUnlocked.push(achId)
+            }
+          })
+          if (newlyUnlocked.length > 0) {
+            set((s) => ({
+              unlockedAchievements: [...s.unlockedAchievements, ...newlyUnlocked]
+            }))
+            newlyUnlocked.forEach((id) => {
+              const ach = getAchievementById(id)
+              if (ach) {
+                get().addLog({
+                  type: 'achievement',
+                  achievementId: id,
+                  achievementName: ach.name,
+                  timestamp: Date.now()
+                })
+              }
+            })
+          }
+        }
+
+        if (milestone.toast) {
+          get().showMilestoneToast({
+            id: milestoneId,
+            icon: milestone.toast.icon,
+            title: milestone.toast.title,
+            message: milestone.toast.message,
+            actionText: milestone.toast.actionText,
+            actionPanel: milestone.toast.actionPanel,
+            highlightAchievement: milestone.toast.highlightAchievement,
+            milestoneToast: true
+          })
+        } else if (milestone.guidance) {
+          get().showMilestoneToast({
+            id: milestoneId,
+            icon: milestone.guidance.icon,
+            title: milestone.guidance.title,
+            message: milestone.guidance.message,
+            tips: milestone.guidance.tips,
+            suggestion: milestone.guidance.suggestion,
+            guidance: true,
+            milestoneToast: true
+          })
+        }
+      },
+
+      showMilestoneToast: (toastData) => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            pendingMilestoneToast: { ...toastData, timestamp: Date.now() }
+          }
+        }))
+      },
+
+      clearMilestoneToast: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            pendingMilestoneToast: null
+          }
+        }))
+      },
+
+      triggerContextualHint: (hintId) => {
+        const state = get()
+        const hint = getContextualHintById(hintId)
+        if (!hint) return
+        if (hint.onlyOnce && state.tutorial.firedContextualHints.includes(hintId)) return
+        if (hint.onlyDuringTutorial && !state.tutorial.started) return
+        if (hint.onlyDuringTutorial && state.tutorial.completed) return
+
+        set((s) => ({
+          tutorial: {
+            ...s.tutorial,
+            firedContextualHints: hint.onlyOnce
+              ? [...s.tutorial.firedContextualHints, hintId]
+              : s.tutorial.firedContextualHints,
+            pendingContextualHint: {
+              id: hint.id,
+              icon: hint.icon,
+              title: hint.title,
+              message: hint.message,
+              suggestedAction: hint.suggestedAction,
+              priority: hint.priority,
+              timestamp: Date.now()
+            }
+          }
+        }))
+      },
+
+      clearContextualHint: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            pendingContextualHint: null
+          }
+        }))
+      },
+
+      executeSuggestedAction: (actionType) => {
+        switch (actionType) {
+          case 'open_tasks_panel':
+            get().setActivePanel('tasks')
+            break
+          case 'open_atlas':
+            get().openAtlasList()
+            break
+          case 'open_achievements':
+            get().setActivePanel('achievements')
+            break
+          case 'open_tutorial':
+            get().setActivePanel('tutorial')
+            break
+          default:
+            break
+        }
+      },
+
+      recordActivity: () => {
+        set((state) => ({
+          tutorial: {
+            ...state.tutorial,
+            lastActivityTime: Date.now()
           }
         }))
       },
@@ -3749,6 +4060,10 @@ export const useGameStore = create(
             break
           case 'star_connected':
             shouldAdvance = state.connectionPath.length >= (validation.count || 1)
+            if (shouldAdvance && state.connectionPath.length >= 1) {
+              const lastStar = state.connectionPath[state.connectionPath.length - 1]
+              get().triggerMilestone('first_star_connect', { starId: lastStar })
+            }
             break
           case 'constellation_complete':
             shouldAdvance = state.observationLogs.length > 0 &&
@@ -3887,6 +4202,11 @@ export const useGameStore = create(
         const progress = calculateTutorialProgress(t.completedSteps)
         const allAdvancedCompleted = t.advancedTasksCompleted.length === ADVANCED_TASKS.length
         const isPerfect = t.completed && t.mistakesDuringTutorial === 0
+        const allPhaseProgress = getAllPhaseProgress(t.completedSteps)
+        const currentPhase = getCurrentPhase(t.completedSteps, t.currentStepId)
+        const currentPhaseProgress = currentPhase
+          ? calculatePhaseProgress(t.completedSteps, currentPhase.id)
+          : null
 
         return {
           started: t.started,
@@ -3903,7 +4223,22 @@ export const useGameStore = create(
           rewardsClaimed: t.rewardsClaimed.length,
           totalRewards: Object.keys(TUTORIAL_REWARDS).length,
           startedAt: t.startedAt,
-          completedAt: t.completedAt
+          completedAt: t.completedAt,
+          completedPhases: t.completedPhases.length,
+          totalPhases: TUTORIAL_PHASES.length,
+          currentPhase,
+          currentPhaseProgress,
+          allPhaseProgress,
+          triggeredMilestones: t.triggeredMilestones.length,
+          totalMilestones: Object.keys(TUTORIAL_MILESTONES).length,
+          milestones: {
+            firstStarConnected: t.firstStarConnected,
+            firstConstellationDiscovered: t.firstConstellationDiscovered,
+            firstAchievementUnlocked: t.firstAchievementUnlocked,
+            firstMistakeMade: t.firstMistakeMade,
+            firstPerfectObserved: t.firstPerfectObserved,
+            firstLogGenerated: t.firstLogGenerated
+          }
         }
       },
 

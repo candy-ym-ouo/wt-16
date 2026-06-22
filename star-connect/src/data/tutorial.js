@@ -1,3 +1,240 @@
+export const TUTORIAL_PHASES = [
+  {
+    id: 'phase_intro',
+    order: 1,
+    name: '启程',
+    icon: '🌅',
+    color: 'from-amber-400 to-orange-500',
+    description: '熟悉界面，开始你的第一次星空接触',
+    stepIds: ['welcome', 'choose_constellation'],
+    unlocks: ['night_sky_basic'],
+    reward: { type: 'title', name: '星光启程者', icon: '🌟' }
+  },
+  {
+    id: 'phase_basic',
+    order: 2,
+    name: '入门',
+    icon: '🎯',
+    color: 'from-green-400 to-emerald-500',
+    description: '掌握星星连线的基本操作',
+    stepIds: ['connect_stars_intro', 'first_connection', 'complete_constellation'],
+    unlocks: ['first_achievement', 'first_log'],
+    reward: { type: 'stardust', amount: 30 }
+  },
+  {
+    id: 'phase_explore',
+    order: 3,
+    name: '探索',
+    icon: '🔍',
+    color: 'from-blue-400 to-cyan-500',
+    description: '使用图鉴、日历等辅助工具',
+    stepIds: ['explore_atlas', 'check_calendar'],
+    unlocks: ['explore_tools'],
+    reward: { type: 'stardust', amount: 20 }
+  },
+  {
+    id: 'phase_advanced',
+    order: 4,
+    name: '进阶',
+    icon: '🔥',
+    color: 'from-purple-400 to-pink-500',
+    description: '挑战完美观测和高级玩法',
+    stepIds: ['try_perfect', 'season_plan', 'expedition_intro', 'achievements'],
+    unlocks: ['advanced_gameplay'],
+    reward: { type: 'stardust', amount: 50 }
+  },
+  {
+    id: 'phase_graduation',
+    order: 5,
+    name: '结业',
+    icon: '🎓',
+    color: 'from-star-gold to-nebula-purple',
+    description: '恭喜完成全部训练！',
+    stepIds: ['graduation'],
+    unlocks: ['graduate'],
+    reward: { type: 'badge', name: '星空新人徽章', icon: '🎖️' }
+  }
+]
+
+export const TUTORIAL_MILESTONES = {
+  first_star_connect: {
+    id: 'first_star_connect',
+    phase: 'phase_basic',
+    name: '首次连线',
+    trigger: 'star_connected',
+    toast: {
+      icon: '⭐',
+      title: '太棒了！',
+      message: '你完成了第一次星星连线！这是「初见星光」成就的起点。',
+      actionText: '继续完成星座 →',
+      highlightAchievement: 'first_star'
+    },
+    autoGenerateLog: true,
+    logTemplate: (data) => ({
+      type: 'milestone',
+      milestone: 'first_star_connect',
+      message: '完成了第一次星星连线',
+      starId: data.starId,
+      timestamp: Date.now()
+    })
+  },
+  first_constellation: {
+    id: 'first_constellation',
+    phase: 'phase_basic',
+    name: '首个星座',
+    trigger: 'constellation_complete',
+    toast: {
+      icon: '✨',
+      title: '新发现！',
+      message: '你发现了第一个星座！「初识星座」成就已解锁，让我们去图鉴看看它的故事吧。',
+      actionText: '查看图鉴 →',
+      actionPanel: 'atlas',
+      highlightAchievement: 'constellation_1'
+    },
+    autoGenerateLog: true,
+    logTemplate: (data) => ({
+      type: 'milestone',
+      milestone: 'first_constellation',
+      message: `发现了第一个星座：${data.constellationName}`,
+      constellationId: data.constellationId,
+      constellationName: data.constellationName,
+      perfect: data.perfect,
+      timestamp: Date.now()
+    }),
+    autoUnlockAchievements: ['constellation_1', 'first_star']
+  },
+  first_achievement: {
+    id: 'first_achievement',
+    phase: 'phase_basic',
+    name: '首个成就',
+    trigger: 'achievement_unlocked',
+    toast: {
+      icon: '🏆',
+      title: '里程碑达成！',
+      message: '你解锁了第一个成就！继续探索，收集更多里程碑吧。',
+      actionText: '查看成就墙 →',
+      actionPanel: 'achievements'
+    },
+    autoGenerateLog: true,
+    logTemplate: (data) => ({
+      type: 'milestone',
+      milestone: 'first_achievement',
+      message: `解锁了首个成就：${data.achievementName}`,
+      achievementId: data.achievementId,
+      achievementName: data.achievementName,
+      timestamp: Date.now()
+    })
+  },
+  first_mistake: {
+    id: 'first_mistake',
+    phase: 'phase_basic',
+    name: '首次错误',
+    trigger: 'mistake_made',
+    suppressGlobalError: true,
+    guidance: {
+      icon: '💡',
+      title: '别担心，这很正常',
+      message: '每个人都会犯错！注意观察星座的轮廓，只有相邻的星星之间才能连线。',
+      tips: [
+        '尝试从星座中最亮的星星开始',
+        '如果不确定，可以去图鉴参考完整图案',
+        '点击"重连"可以随时重新开始'
+      ],
+      suggestion: '仔细看看星座形状，试试连接正确的星星'
+    },
+    autoGenerateLog: true,
+    logTemplate: (_data) => ({
+      type: 'milestone',
+      milestone: 'first_mistake',
+      message: '经历了第一次连线错误（别灰心，这是学习的一部分！）',
+      timestamp: Date.now()
+    })
+  },
+  first_log_visit: {
+    id: 'first_log_visit',
+    phase: 'phase_explore',
+    name: '首次查看日志',
+    trigger: 'panel_opened_log',
+    toast: {
+      icon: '📖',
+      title: '星空日志',
+      message: '这里记录着你每一次探索的足迹，每条日志都是你成长的见证！',
+      actionText: null
+    },
+    autoGenerateLog: false
+  },
+  first_perfect: {
+    id: 'first_perfect',
+    phase: 'phase_advanced',
+    name: '首次完美',
+    trigger: 'perfect_observation',
+    toast: {
+      icon: '💎',
+      title: '完美观测！',
+      message: '零失误完成！你的专注力令人惊叹，已记录为完美观测。',
+      actionText: '查看成就 →',
+      actionPanel: 'achievements',
+      highlightAchievement: null
+    },
+    autoGenerateLog: true,
+    logTemplate: (data) => ({
+      type: 'milestone',
+      milestone: 'first_perfect',
+      message: `完成了第一次完美观测：${data.constellationName}`,
+      constellationId: data.constellationId,
+      constellationName: data.constellationName,
+      timestamp: Date.now()
+    })
+  }
+}
+
+export const CONTEXTUAL_HINTS = {
+  idle_no_target: {
+    id: 'idle_no_target',
+    trigger: 'idle_10s_no_target',
+    title: '想开始探索吗？',
+    message: '从底部任务栏选择一个星座，开启你的观星之旅吧！',
+    icon: '🎯',
+    suggestedAction: 'open_tasks_panel',
+    priority: 'medium',
+    onlyDuringTutorial: true,
+    onlyOnce: true
+  },
+  after_discovery_suggest_atlas: {
+    id: 'after_discovery_suggest_atlas',
+    trigger: 'discovery_completed_not_viewed_atlas',
+    title: '想知道更多？',
+    message: '去图鉴看看这个星座的神话故事和观测技巧吧！',
+    icon: '📚',
+    suggestedAction: 'open_atlas',
+    priority: 'low',
+    onlyDuringTutorial: true,
+    onlyOnce: true
+  },
+  mistake_3_times: {
+    id: 'mistake_3_times',
+    trigger: 'session_mistakes_3',
+    title: '需要一些帮助吗？',
+    message: '遇到困难是正常的，试试去图鉴参考完整的星座图案？',
+    icon: '🧭',
+    suggestedAction: 'open_atlas',
+    priority: 'high',
+    onlyDuringTutorial: false,
+    onlyOnce: true
+  },
+  mistake_5_times: {
+    id: 'mistake_5_times',
+    trigger: 'session_mistakes_5',
+    title: '换个思路试试',
+    message: '也许这个星座有点难，可以先尝试更简单的星座（如大熊座），稍后再来挑战。',
+    icon: '🔄',
+    suggestedAction: 'open_tasks_panel',
+    priority: 'high',
+    onlyDuringTutorial: false,
+    onlyOnce: true
+  }
+}
+
 export const TUTORIAL_STEPS = [
   {
     id: 'welcome',
@@ -361,4 +598,50 @@ export const calculateTutorialProgress = (completedSteps) => {
     completed,
     percentage: Math.round((completed / total) * 100)
   }
+}
+
+export const getPhaseById = (phaseId) =>
+  TUTORIAL_PHASES.find(p => p.id === phaseId)
+
+export const getPhaseForStep = (stepId) =>
+  TUTORIAL_PHASES.find(p => p.stepIds.includes(stepId))
+
+export const getMilestoneById = (milestoneId) =>
+  TUTORIAL_MILESTONES[milestoneId] || null
+
+export const getContextualHintById = (hintId) =>
+  CONTEXTUAL_HINTS[hintId] || null
+
+export const calculatePhaseProgress = (completedSteps, phaseId) => {
+  const phase = getPhaseById(phaseId)
+  if (!phase) return { total: 0, completed: 0, percentage: 0 }
+  const total = phase.stepIds.length
+  const completed = phase.stepIds.filter(id => completedSteps.includes(id)).length
+  return {
+    total,
+    completed,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+    isComplete: completed === total
+  }
+}
+
+export const getCurrentPhase = (completedSteps, currentStepId) => {
+  if (currentStepId) {
+    return getPhaseForStep(currentStepId)
+  }
+  for (let i = TUTORIAL_PHASES.length - 1; i >= 0; i--) {
+    const phase = TUTORIAL_PHASES[i]
+    const progress = calculatePhaseProgress(completedSteps, phase.id)
+    if (progress.completed > 0) {
+      return phase
+    }
+  }
+  return TUTORIAL_PHASES[0]
+}
+
+export const getAllPhaseProgress = (completedSteps) => {
+  return TUTORIAL_PHASES.map(phase => ({
+    ...phase,
+    progress: calculatePhaseProgress(completedSteps, phase.id)
+  }))
 }

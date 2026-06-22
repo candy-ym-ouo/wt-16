@@ -16,6 +16,7 @@ import StarQuiz from './components/StarQuiz'
 import ObservationTeam from './components/ObservationTeam'
 import StarGallery from './components/StarGallery'
 import TutorialCamp from './components/TutorialCamp'
+import GuidedHintOverlay from './components/GuidedHintOverlay'
 import StarRoute from './components/StarRoute'
 import StoryChapter from './components/StoryChapter'
 import ObservationReport from './components/ObservationReport'
@@ -39,6 +40,13 @@ export default function App() {
 
   const [activeStory, setActiveStory] = useState(null)
   const [currentUnlockIndex, setCurrentUnlockIndex] = useState(0)
+
+  useEffect(() => {
+    const trackPanelVisit = useGameStore.getState().trackPanelVisit
+    if (activePanel) {
+      trackPanelVisit(activePanel)
+    }
+  }, [activePanel])
 
   useEffect(() => {
     const root = document.documentElement
@@ -131,6 +139,8 @@ export default function App() {
       {activePanel === 'route' && <StarRoute />}
       {activePanel === 'report' && <ObservationReport />}
       {activePanel === 'research' && <ConstellationResearch />}
+
+      <GuidedHintOverlay />
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />

@@ -4,10 +4,16 @@ import {
   TUTORIAL_STEPS,
   ADVANCED_TASKS,
   TUTORIAL_REWARDS,
+  TUTORIAL_PHASES,
+  TUTORIAL_MILESTONES,
   getTutorialStepById,
   getTutorialStepsByCategory,
   getAdvancedTaskById,
-  calculateTutorialProgress
+  calculateTutorialProgress,
+  getPhaseForStep,
+  calculatePhaseProgress,
+  getCurrentPhase,
+  getAllPhaseProgress
 } from '../data/tutorial'
 
 const CATEGORY_INFO = {
@@ -89,8 +95,140 @@ export default function TutorialCamp() {
     return acc
   }, {})
 
+  const renderPhaseProgress = () => {
+    const allPhaseProgress = getAllPhaseProgress(tutorial.completedSteps)
+    const currentPhase = getCurrentPhase(tutorial.completedSteps, tutorial.currentStepId)
+
+    return (
+      <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20 mb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-lg">🗺️</span>
+          <h4 className="font-display text-white/90 text-sm">学习阶段</h4>
+          <span className="fs-10 text-white/40 ml-auto">
+            {tutorial.completedPhases.length} / {TUTORIAL_PHASES.length} 完成
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 mb-3">
+          {allPhaseProgress.map((phase, idx) => {
+            const isComplete = phase.progress.isComplete
+            const isCurrent = currentPhase?.id === phase.id && !isComplete
+            const isLocked = !isComplete && !isCurrent && (
+              idx === 0 ? false : !allPhaseProgress[idx - 1].progress.isComplete
+            )
+
+            return (
+              <div key={phase.id} className="flex items-center flex-1 min-w-0">
+                <div className="flex flex-col items-center flex-1 min-w-0">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all ${
+                      isComplete
+                        ? `bg-gradient-to-br ${phase.color} text-white shadow-lg`
+                        : isCurrent
+                        ? `bg-gradient-to-br ${phase.color}/30 text-white border-2 border-dashed border-white/30 animate-pulse-slow`
+                        : 'bg-space-600/50 text-white/30 grayscale'
+                    }`}
+                  >
+                    {isComplete ? '✓' : phase.icon}
+                  </div>
+                  <div className="mt-1.5 text-center min-w-0 w-full">
+                    <div
+                      className={`text-xs font-medium truncate ${
+                        isComplete
+                          ? 'text-green-300'
+                          : isCurrent
+                          ? 'text-star-gold'
+                          : 'text-white/40'
+                      }`}
+                    >
+                      {phase.name}
+                    </div>
+                    <div className="fs-9 text-white/30 mt-0.5">
+                      {phase.progress.percentage}%
+                    </div>
+                  </div>
+                </div>
+                {idx < allPhaseProgress.length - 1 && (
+                  <div
+                    className={`h-0.5 mx-0.5 mb-6 flex-1 rounded-full transition-all ${
+                      allPhaseProgress[idx].progress.isComplete
+                        ? 'bg-gradient-to-r from-green-400 to-emerald-400'
+                        : 'bg-white/10'
+                    }`}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-star-gold via-nebula-cyan to-nebula-purple rounded-full transition-all duration-700"
+            style={{
+              width: `${tutorial.completedPhases.length / TUTORIAL_PHASES.length * 100}%`
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const renderMilestoneCards = () => {
+    const milestoneList = Object.values(TUTORIAL_MILESTONES)
+    const completedCount = tutorial.triggeredMilestones.length
+
+    return (
+      <div className="p-4 rounded-2xl border border-nebula-cyan/20 bg-nebula-cyan/5 mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">🏁</span>
+          <h4 className="font-display text-white/90 text-sm">成长里程碑</h4>
+          <span className="fs-10 text-white/40 ml-auto">
+            {completedCount} / {milestoneList.length}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {milestoneList.map((m) => {
+            const completed = tutorial.triggeredMilestones.includes(m.id)
+            const iconMap = {
+              first_star_connect: '⭐',
+              first_constellation: '✨',
+              first_achievement: '🏆',
+              first_mistake: '💡',
+              first_log_visit: '📖',
+              first_perfect: '💎'
+            }
+
+            return (
+              <div
+                key={m.id}
+                className={`p-2.5 rounded-xl border transition-all text-center ${
+                  completed
+                    ? 'border-green-500/30 bg-green-500/10'
+                    : 'border-white/5 bg-space-800/40'
+                }`}
+                title={m.name}
+              >
+                <div className={`text-2xl mb-1 ${!completed ? 'grayscale opacity-40' : ''}`}>
+                  {iconMap[m.id] || '🎯'}
+                </div>
+                <div className={`fs-10 font-medium leading-tight ${
+                  completed ? 'text-green-300' : 'text-white/40'
+                }`}>
+                  {m.name}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   const renderOverview = () => (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {stats.started && stats.currentPhase && renderPhaseProgress()}
+      {stats.started && renderMilestoneCards()}
       {!stats.started ? (
         <div className="p-6 rounded-2xl border border-star-gold/30 bg-gradient-to-br from-star-gold/10 to-nebula-purple/10 text-center">
           <div className="text-6xl mb-4 animate-float">🎓</div>
@@ -433,36 +571,92 @@ export default function TutorialCamp() {
 
   const renderStats = () => (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="p-4 rounded-2xl border border-nebula-purple/30 bg-nebula-purple/10">
           <div className="text-2xl mb-1">📚</div>
-          <div className="text-2xl font-display text-white font-mono">
-            {stats.completedStepsCount} / {stats.totalSteps}
+          <div className="text-xl font-display text-white font-mono">
+            {stats.completedStepsCount}/{stats.totalSteps}
           </div>
-          <div className="fs-10 text-white/50">课程完成</div>
+          <div className="fs-10 text-white/50">课程</div>
+        </div>
+        <div className="p-4 rounded-2xl border border-nebula-cyan/30 bg-nebula-cyan/10">
+          <div className="text-2xl mb-1">🗺️</div>
+          <div className="text-xl font-display text-white font-mono">
+            {stats.completedPhases}/{stats.totalPhases}
+          </div>
+          <div className="fs-10 text-white/50">阶段</div>
         </div>
         <div className="p-4 rounded-2xl border border-star-gold/30 bg-star-gold/10">
-          <div className="text-2xl mb-1">🎯</div>
-          <div className="text-2xl font-display text-white font-mono">
-            {stats.advancedTasksCompleted} / {stats.totalAdvancedTasks}
+          <div className="text-2xl mb-1">🏁</div>
+          <div className="text-xl font-display text-white font-mono">
+            {stats.triggeredMilestones}/{stats.totalMilestones}
           </div>
-          <div className="fs-10 text-white/50">任务完成</div>
+          <div className="fs-10 text-white/50">里程碑</div>
         </div>
         <div className="p-4 rounded-2xl border border-green-500/30 bg-green-500/10">
+          <div className="text-2xl mb-1">🎯</div>
+          <div className="text-xl font-display text-white font-mono">
+            {stats.advancedTasksCompleted}/{stats.totalAdvancedTasks}
+          </div>
+          <div className="fs-10 text-white/50">进阶任务</div>
+        </div>
+        <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10">
           <div className="text-2xl mb-1">🎁</div>
-          <div className="text-2xl font-display text-white font-mono">
-            {stats.rewardsClaimed} / {stats.totalRewards}
+          <div className="text-xl font-display text-white font-mono">
+            {stats.rewardsClaimed}/{stats.totalRewards}
           </div>
           <div className="fs-10 text-white/50">奖励领取</div>
         </div>
-        <div className="p-4 rounded-2xl border border-nebula-cyan/30 bg-nebula-cyan/10">
-          <div className="text-2xl mb-1">❌</div>
-          <div className="text-2xl font-display text-white font-mono">
+        <div className="p-4 rounded-2xl border border-red-400/30 bg-red-500/10">
+          <div className="text-2xl mb-1">💡</div>
+          <div className="text-xl font-display text-white font-mono">
             {stats.mistakesDuringTutorial}
           </div>
           <div className="fs-10 text-white/50">学习中的错误</div>
         </div>
       </div>
+
+      {stats.milestones && (
+        <div className="p-4 rounded-2xl border border-white/10 bg-space-700/20">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">✨</span>
+            <h4 className="font-display text-white/90 text-sm">成长足迹</h4>
+          </div>
+          <div className="space-y-2">
+            {[
+              { key: 'firstStarConnected', label: '首次连线', icon: '⭐' },
+              { key: 'firstConstellationDiscovered', label: '首个星座', icon: '✨' },
+              { key: 'firstAchievementUnlocked', label: '首个成就', icon: '🏆' },
+              { key: 'firstMistakeMade', label: '首次错误（学习）', icon: '💡' },
+              { key: 'firstPerfectObserved', label: '首次完美观测', icon: '💎' },
+              { key: 'firstLogGenerated', label: '首条日志生成', icon: '📖' }
+            ].map((item) => (
+              <div
+                key={item.key}
+                className={`flex items-center gap-2 p-2 rounded-lg ${
+                  stats.milestones[item.key]
+                    ? 'bg-green-500/10 border border-green-500/20'
+                    : 'bg-space-800/40 border border-white/5'
+                }`}
+              >
+                <span className={`text-base ${!stats.milestones[item.key] ? 'grayscale opacity-40' : ''}`}>
+                  {item.icon}
+                </span>
+                <span className={`flex-1 text-xs ${
+                  stats.milestones[item.key] ? 'text-green-300' : 'text-white/40'
+                }`}>
+                  {item.label}
+                </span>
+                {stats.milestones[item.key] ? (
+                  <span className="text-green-400 text-xs">✓</span>
+                ) : (
+                  <span className="text-white/20 text-xs">未达成</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {stats.isPerfect && stats.completed && (
         <div className="p-4 rounded-2xl border border-star-gold/40 bg-gradient-to-r from-star-gold/10 to-nebula-purple/10 text-center">
