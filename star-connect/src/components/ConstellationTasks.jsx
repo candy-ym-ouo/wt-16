@@ -1,6 +1,7 @@
 import { useGameStore } from '../stores/gameStore'
 import { CONSTELLATIONS } from '../data/constellations'
 import { DIFFICULTY_CONFIG } from '../data/constants'
+import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function ConstellationTasks() {
   const {
@@ -50,11 +51,9 @@ export default function ConstellationTasks() {
 
   const guideIds = getGuideConstellations ? getGuideConstellations(4) : []
   const seasonStats = getSeasonStats ? getSeasonStats() : null
-  const currentSeason = new Date().getMonth() < 3 ? 'spring' :
-                       new Date().getMonth() < 6 ? 'summer' :
-                       new Date().getMonth() < 9 ? 'autumn' : 'winter'
-  const seasonKeyMap = { spring: '春', summer: '夏', autumn: '秋', winter: '冬' }
-  const currentSeasonLabel = seasonKeyMap[currentSeason] || '春'
+  const currentSeason = getCurrentSeason()
+  const currentSeasonLabel = SEASONS[currentSeason]?.name || '春季'
+  const currentSeasonIcon = SEASONS[currentSeason]?.icon || '🌸'
 
   const featuredConstellations = guideIds.length > 0
     ? guideIds.map(id => CONSTELLATIONS.find(c => c.id === id)).filter(Boolean)
@@ -91,30 +90,41 @@ export default function ConstellationTasks() {
               </button>
             </div>
 
-            {seasonStats && (
+            {seasonStats && seasonStats[currentSeason] && (
               <div className={`mb-3 p-2.5 rounded-xl border ${
-                seasonStats[currentSeason]
-                  ? 'border-white/10 bg-space-700/30'
-                  : 'border-white/5 bg-space-800/30'
-              }`}>
+                SEASONS[currentSeason]?.borderColor || 'border-white/10'
+              } ${SEASONS[currentSeason]?.bgColor || 'bg-space-700/30'}`}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-white/60">{currentSeasonLabel}季进度</span>
+                    <span className="text-sm">{currentSeasonIcon}</span>
+                    <span className={`text-xs ${SEASONS[currentSeason]?.textColor || 'text-white/60'}`}>
+                      {currentSeasonLabel}进度
+                    </span>
                     {guideIds.length > 0 && (
                       <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-cyan/15 text-nebula-cyan border border-nebula-cyan/20">
-                        推荐 {guideIds.length} 个
+                        ✦ 推荐
                       </span>
                     )}
                   </div>
-                  <span className="fs-10 font-mono text-white/60">
-                    {seasonStats[currentSeason]?.overallPercentage || 0}%
+                  <span className={`fs-10 font-mono ${SEASONS[currentSeason]?.textColor || 'text-white/60'}`}>
+                    {seasonStats[currentSeason]?.discovered || 0} / {seasonStats[currentSeason]?.constellations || 0}
                   </span>
                 </div>
                 <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-nebula-cyan to-nebula-purple rounded-full transition-all duration-500"
+                    className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${
+                      SEASONS[currentSeason]?.color || 'from-nebula-cyan to-nebula-purple'
+                    }`}
                     style={{ width: `${seasonStats[currentSeason]?.overallPercentage || 0}%` }}
                   />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="fs-9 text-white/40">
+                    {seasonStats[currentSeason]?.overallPercentage || 0}%
+                  </span>
+                  <span className="fs-9 text-white/40">
+                    完美 {seasonStats[currentSeason]?.perfectCount || 0}
+                  </span>
                 </div>
               </div>
             )}
