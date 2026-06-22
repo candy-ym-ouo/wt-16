@@ -5233,7 +5233,7 @@ export const useGameStore = create(
             else if (!seasonData?.intermediate) hint = `完成${seasonNames[value] || '该季节'}所有星座的完美观测`
             else if (!seasonData?.master) hint = `进行${seasonNames[value] || '该季节'}深度观测，达成大师等级`
             else hint = '已达成'
-            relatedPanel = !seasonData?.master ? 'season' : null
+            relatedPanel = !seasonData?.master ? 'seasons' : null
             break
           }
           case 'four_seasons': {
@@ -5241,7 +5241,7 @@ export const useGameStore = create(
             current = seasons.filter(s => state.seasonProgress?.[s]?.master).length
             target = seasons.length
             hint = current < target ? `完成剩余 ${target - current} 个季节的大师等级` : '已达成'
-            relatedPanel = current < target ? 'season' : null
+            relatedPanel = current < target ? 'seasons' : null
             break
           }
           case 'expedition_complete':
@@ -5299,8 +5299,8 @@ export const useGameStore = create(
           case 'quiz_exchange':
             current = state.quiz?.redeemedRewards?.length || 0
             target = value
-            hint = current < target ? `在问答商店兑换 ${target} 次奖励` : '已达成'
-            relatedPanel = current < target ? 'shop' : null
+            hint = current < target ? `在百科商店兑换 ${target} 次奖励` : '已达成'
+            relatedPanel = current < target ? 'quiz' : null
             break
           case 'route_complete':
             current = state.starRoute?.totalRoutesCompleted || 0
@@ -5410,6 +5410,57 @@ export const useGameStore = create(
             current = hasQualified ? 1 : 0
             target = 1
             hint = hasQualified ? '已达成' : `单次观测中错误 ${value} 次以上仍完成连线`
+            break
+          }
+          case 'event_participation': {
+            const eventHistory = state.nightSkyEvents?.eventHistory || []
+            const count = eventHistory.filter(e => e.eventId === value || e.type === value).length
+            current = count
+            target = 1
+            const eventNames = {
+              total_lunar_eclipse: '月全食',
+              total_solar_eclipse: '日全食',
+              blue_moon: '蓝月亮',
+              planetary_alignment: '行星连珠',
+              comet_visit: '彗星到访'
+            }
+            hint = current > 0 ? '已达成' : `在${eventNames[value] || '该夜空事件'}期间参与观测`
+            relatedPanel = current === 0 ? 'calendar' : null
+            break
+          }
+          case 'meteor_shower_count': {
+            const eventHistory = state.nightSkyEvents?.eventHistory || []
+            current = eventHistory.filter(e => e.type === 'meteor_shower').length
+            target = value
+            hint = current < target ? `参与 ${target} 次流星雨（当前 ${current}/${target}）` : '已达成'
+            relatedPanel = current < target ? 'calendar' : null
+            break
+          }
+          case 'limited_task_complete': {
+            const eventHistory = state.nightSkyEvents?.eventHistory || []
+            current = eventHistory.filter(e => e.type === 'limited_task' && (e.taskId === value || e.completed)).length
+            target = 1
+            hint = current > 0 ? '已达成' : '完成限时特殊任务'
+            relatedPanel = current === 0 ? 'calendar' : null
+            break
+          }
+          case 'total_events': {
+            const eventHistory = state.nightSkyEvents?.eventHistory || []
+            current = eventHistory.length
+            target = value
+            hint = current < target ? `累计参与 ${target} 次夜空事件（当前 ${current}/${target}）` : '已达成'
+            relatedPanel = current < target ? 'calendar' : null
+            break
+          }
+          case 'late_night_events': {
+            const eventHistory = state.nightSkyEvents?.eventHistory || []
+            current = eventHistory.filter(e => {
+              const hour = new Date(e.timestamp || Date.now()).getHours()
+              return hour >= 0 && hour < 5
+            }).length
+            target = value
+            hint = current < target ? `在凌晨（0-5点）参与 ${target} 次夜空事件（当前 ${current}/${target}）` : '已达成'
+            relatedPanel = current < target ? 'calendar' : null
             break
           }
           default:

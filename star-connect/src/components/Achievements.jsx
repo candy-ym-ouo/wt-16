@@ -18,18 +18,19 @@ const CATEGORY_INFO = {
   route: { name: '路线成就', icon: '🗺️', color: 'from-emerald-500 to-teal-400' },
   daily: { name: '每日委托', icon: '📋', color: 'from-amber-500 to-yellow-400' },
   quiz: { name: '知识问答', icon: '❓', color: 'from-sky-500 to-blue-400' },
+  event: { name: '活动成就', icon: '🎆', color: 'from-fuchsia-500 via-purple-500 to-indigo-400' },
   hidden: { name: '隐藏成就', icon: '🔮', color: 'from-indigo-500 via-purple-500 to-fuchsia-400' }
 }
 
 const PANEL_ICONS = {
   atlas: '📚',
   log: '📝',
-  season: '🌸',
+  seasons: '🌸',
   expedition: '🌙',
   quiz: '❓',
   route: '🗺️',
   tasks: '📋',
-  shop: '🛒'
+  calendar: '📅'
 }
 
 export default function Achievements() {
@@ -209,12 +210,12 @@ export default function Achievements() {
                 <span>
                   {achProgress.relatedPanel === 'atlas' && '前往图鉴观测'}
                   {achProgress.relatedPanel === 'log' && '记录观测日志'}
-                  {achProgress.relatedPanel === 'season' && '查看季节计划'}
+                  {achProgress.relatedPanel === 'seasons' && '查看季节计划'}
                   {achProgress.relatedPanel === 'expedition' && '开始夜间远征'}
-                  {achProgress.relatedPanel === 'quiz' && '参加知识问答'}
+                  {achProgress.relatedPanel === 'quiz' && '前往百科问答'}
                   {achProgress.relatedPanel === 'route' && '规划观星路线'}
                   {achProgress.relatedPanel === 'tasks' && '完成每日委托'}
-                  {achProgress.relatedPanel === 'shop' && '前往星尘商店'}
+                  {achProgress.relatedPanel === 'calendar' && '查看观测日历'}
                 </span>
               </button>
             )}
