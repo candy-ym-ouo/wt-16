@@ -1801,12 +1801,20 @@ export const useGameStore = create(
           .map(dateStr => new Date(dateStr))
           .sort((a, b) => a - b)
 
+        const today = new Date().toDateString()
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toDateString()
+        const todayObserved = observationDates.has(today)
+
         if (sortedDates.length === 0) {
           return {
             currentStreak: 0,
+            activeStreak: 0,
             longestStreak: 0,
             totalObservationDays: 0,
-            observationDates: []
+            observationDates: [],
+            todayObserved: false
           }
         }
 
@@ -1827,35 +1835,43 @@ export const useGameStore = create(
           }
         }
 
-        let currentStreak = 0
-        const today = new Date().toDateString()
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayStr = yesterday.toDateString()
-
         const sortedDesc = [...sortedDates].sort((a, b) => b - a)
         const latestDate = sortedDesc[0].toDateString()
 
-        if (latestDate === today || latestDate === yesterdayStr) {
-          currentStreak = 1
+        const calcStreakFrom = (startDateStr) => {
+          let streak = 1
           for (let i = 1; i < sortedDesc.length; i++) {
             const current = sortedDesc[i]
             const prev = sortedDesc[i - 1]
             const diffDays = Math.round((prev - current) / (1000 * 60 * 60 * 24))
 
             if (diffDays === 1) {
-              currentStreak++
+              streak++
             } else {
               break
             }
           }
+          return streak
+        }
+
+        let currentStreak = 0
+        let activeStreak = 0
+
+        if (todayObserved) {
+          currentStreak = calcStreakFrom(today)
+          activeStreak = currentStreak
+        } else if (latestDate === yesterdayStr) {
+          activeStreak = calcStreakFrom(yesterdayStr)
+          currentStreak = 0
         }
 
         return {
           currentStreak,
+          activeStreak,
           longestStreak,
           totalObservationDays: sortedDates.length,
-          observationDates: sortedDesc.map(d => d.toDateString())
+          observationDates: sortedDesc.map(d => d.toDateString()),
+          todayObserved
         }
       },
 
@@ -1990,7 +2006,7 @@ export const useGameStore = create(
           })
         }
 
-        if (streak.currentStreak >= 7) {
+        if (streak.todayObserved && streak.currentStreak >= 7) {
           insights.push({
             type: 'consistency',
             icon: '🔥',
@@ -1998,7 +2014,7 @@ export const useGameStore = create(
             content: `已连续 ${streak.currentStreak} 天观测（历史最长 ${streak.longestStreak} 天）`,
             color: 'text-red-400'
           })
-        } else if (streak.currentStreak >= 3) {
+        } else if (streak.todayObserved && streak.currentStreak >= 3) {
           insights.push({
             type: 'consistency',
             icon: '🌱',
@@ -2006,13 +2022,37 @@ export const useGameStore = create(
             content: `已连续观测 ${streak.currentStreak} 天（累计 ${streak.totalObservationDays} 天）`,
             color: 'text-green-400'
           })
-        } else if (streak.currentStreak >= 1) {
+        } else if (streak.todayObserved && streak.currentStreak >= 1) {
           insights.push({
             type: 'consistency',
             icon: '⭐',
             title: '开始坚持',
             content: `今日已观测，保持连续！（累计 ${streak.totalObservationDays} 天）`,
             color: 'text-yellow-400'
+          })
+        } else if (!streak.todayObserved && streak.activeStreak >= 3) {
+          insights.push({
+            type: 'consistency',
+            icon: '⏰',
+            title: '今日待观测',
+            content: `今日还未观测，完成观测即可延续 ${streak.activeStreak} 天的连续记录！`,
+            color: 'text-orange-400'
+          })
+        } else if (!streak.todayObserved && streak.activeStreak >= 1) {
+          insights.push({
+            type: 'consistency',
+            icon: '🌅',
+            title: '今日待观测',
+            content: `今日还未观测，开始观测以延续你的连续记录！`,
+            color: 'text-cyan-400'
+          })
+        } else if (streak.totalObservationDays > 0) {
+          insights.push({
+            type: 'consistency',
+            icon: '🌙',
+            title: '重新开始',
+            content: `连续已中断，历史最长 ${streak.longestStreak} 天，今天重新开始吧！`,
+            color: 'text-white/60'
           })
         }
 
@@ -5029,7 +5069,8 @@ export const useGameStore = create(
             state.discoveredConstellations,
             state.perfectObservations,
             state.totalObservations,
-            streak.currentStreak
+            streak.currentStreak,
+            streak
           )
           return { ...task, ...progress }
         })
@@ -5052,7 +5093,8 @@ export const useGameStore = create(
             state.discoveredConstellations,
             state.perfectObservations,
             state.totalObservations,
-            streak.currentStreak
+            streak.currentStreak,
+            streak
           )
 
           if (progress.completed && !task.completed) {
@@ -5523,10 +5565,21 @@ export const useGameStore = create(
             current = streak.currentStreak
             target = value
             const best = streak.longestStreak
-            hint = current < target
-              ? `保持连续观测 ${target} 天（当前 ${current} 天，最佳 ${best} 天）`
-              : '已达成'
-            relatedPanel = current < target ? 'log' : null
+            const alreadyAchieved = best >= target
+
+            if (alreadyAchieved) {
+              current = best
+              hint = '已达成'
+            } else if (streak.todayObserved) {
+              hint = `保持连续观测 ${target} 天（当前连续 ${current} 天，历史最长 ${best} 天）`
+            } else if (streak.activeStreak > 0) {
+              const potential = streak.activeStreak + 1
+              hint = `今日观测即可将连续天数从 ${streak.activeStreak} 天延长至 ${potential} 天（目标 ${target} 天，历史最长 ${best} 天）`
+              current = streak.activeStreak
+            } else {
+              hint = `开始你的连续观测吧！（历史最长 ${best} 天，目标 ${target} 天）`
+            }
+            relatedPanel = !alreadyAchieved ? 'log' : null
             break
           }
           case 'event_participation': {

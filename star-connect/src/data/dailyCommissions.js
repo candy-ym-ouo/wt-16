@@ -226,9 +226,11 @@ export function generateDailyCommissions(discoveredIds, perfectIds, totalObserva
   return commissions
 }
 
-export function getDailyCommissionProgress(commission, observationLogs, discoveredIds, perfectIds, totalObservations, observationStreak = 0) {
+export function getDailyCommissionProgress(commission, observationLogs, discoveredIds, perfectIds, totalObservations, observationStreak = 0, streakInfo = null) {
   let current = 0
   let completed = false
+  let hint = null
+  let displayCurrent = null
 
   switch (commission.type) {
     case COMMISSION_TYPES.DISCOVERY: {
@@ -295,8 +297,23 @@ export function getDailyCommissionProgress(commission, observationLogs, discover
     }
 
     case COMMISSION_TYPES.OBSERVATION_STREAK: {
-      current = observationStreak
+      const streak = streakInfo || { currentStreak: observationStreak || 0, activeStreak: observationStreak || 0, todayObserved: true }
+      current = streak.currentStreak
       completed = current >= commission.target
+
+      if (!streak.todayObserved && streak.activeStreak > 0) {
+        displayCurrent = streak.activeStreak
+        const potential = streak.activeStreak + 1
+        if (potential >= commission.target) {
+          hint = `今日观测即可达成连续 ${commission.target} 天`
+        } else {
+          hint = `今日观测后连续将达 ${potential} 天（还需 ${commission.target - potential} 天）`
+        }
+      } else if (streak.todayObserved) {
+        displayCurrent = current
+      } else {
+        displayCurrent = 0
+      }
       break
     }
 
@@ -304,11 +321,14 @@ export function getDailyCommissionProgress(commission, observationLogs, discover
       break
   }
 
+  const finalCurrent = displayCurrent !== null ? displayCurrent : current
   return {
-    current: Math.min(current, commission.target),
+    current: Math.min(finalCurrent, commission.target),
     target: commission.target,
-    percentage: commission.target > 0 ? Math.min((current / commission.target) * 100, 100) : 0,
-    completed
+    percentage: commission.target > 0 ? Math.min((Math.min(current, commission.target) / commission.target) * 100, 100) : 0,
+    completed,
+    hint,
+    strictCurrent: current
   }
 }
 

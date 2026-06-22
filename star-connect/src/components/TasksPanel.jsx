@@ -192,6 +192,14 @@ export default function TasksPanel() {
                         <div className="fs-11 text-white/50 mt-0.5">
                           {task.description}
                         </div>
+                        {task.hint && !task.completed && (
+                          <div className="mt-1.5 p-2 rounded-lg bg-yellow-500/10 border border-yellow-400/20">
+                            <div className="fs-10 text-yellow-400 flex items-center gap-1">
+                              <span>💡</span>
+                              <span>{task.hint}</span>
+                            </div>
+                          </div>
+                        )}
                         <div className="mt-2">
                           <div className="flex justify-between fs-10 mb-1">
                             <span className="text-white/40">进度</span>

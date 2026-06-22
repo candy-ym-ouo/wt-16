@@ -619,11 +619,33 @@ export default function ObservationLog() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-3">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30 text-center">
-            <div className="text-xl font-bold text-orange-400">
-              {streak.currentStreak}🔥
+          <div className={`p-3 rounded-xl text-center border ${
+            streak.todayObserved
+              ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-400/30'
+              : streak.activeStreak > 0
+                ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-400/30'
+                : 'bg-space-800/40 border-white/5'
+          }`}>
+            <div className={`text-xl font-bold ${
+              streak.todayObserved
+                ? 'text-orange-400'
+                : streak.activeStreak > 0
+                  ? 'text-yellow-400'
+                  : 'text-white/40'
+            }`}>
+              {streak.todayObserved
+                ? `${streak.currentStreak}🔥`
+                : streak.activeStreak > 0
+                  ? `${streak.activeStreak}⏰`
+                  : `${streak.currentStreak}🌙`}
             </div>
-            <div className="fs-10 text-white/50 mt-1">连续观测</div>
+            <div className="fs-10 text-white/50 mt-1">
+              {streak.todayObserved
+                ? '连续观测'
+                : streak.activeStreak > 0
+                  ? '今日待续'
+                  : '当前连续'}
+            </div>
           </div>
           <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-center">
             <div className="text-xl font-bold text-purple-400">
@@ -638,6 +660,20 @@ export default function ObservationLog() {
             <div className="fs-10 text-white/50 mt-1">{t('log.perfect')}</div>
           </div>
         </div>
+
+        {!streak.todayObserved && streak.activeStreak > 0 && (
+          <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-400/20">
+            <div className="flex items-center gap-2">
+              <span className="text-base">⏰</span>
+              <div className="flex-1">
+                <div className="text-xs font-medium text-yellow-400">今日尚未观测</div>
+                <div className="fs-11 text-white/60 mt-0.5">
+                  完成今日观测即可延续 {streak.activeStreak} 天的连续记录至 {streak.activeStreak + 1} 天！
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mt-3">
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
