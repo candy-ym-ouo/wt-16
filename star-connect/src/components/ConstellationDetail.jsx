@@ -90,16 +90,51 @@ export default function ConstellationDetail({ constellationId }) {
   const dailyTasks = useMemo(() => {
     try {
       const allTasks = getDailyCommissionProgressAll()
-      return allTasks.filter(task => {
-        if (task.constellationId === constellationId) return true
-        if (task.seasonId && seasonRecommendation?.bestSeason === task.seasonId) return true
-        if (task.type === 'season_discovery' && task.seasonId && seasonRecommendation?.bestSeason === task.seasonId) return true
-        return false
-      }).slice(0, 2)
+      const bestSeason = seasonRecommendation?.bestSeason
+      const constellationSeason = constellation?.season === '春' || constellation?.season === 'Spring' ? 'spring' :
+                                 constellation?.season === '夏' || constellation?.season === 'Summer' ? 'summer' :
+                                 constellation?.season === '秋' || constellation?.season === 'Autumn' ? 'autumn' : 'winter'
+
+      const scoredTasks = allTasks.map(task => {
+        let score = 0
+        let matchReason = ''
+
+        if (task.constellationId === constellationId) {
+          score = 100
+          matchReason = '指定星座'
+        } else if (task.type === 'perfect' && task.constellationId == null && completed && !isPerfect) {
+          score = 80
+          matchReason = '完美观测'
+        } else if (task.type === 'reobservation' && task.constellationId == null && completed) {
+          score = 70
+          matchReason = '再次观测'
+        } else if (task.type === 'discovery' && task.constellationId == null && !completed) {
+          score = 60
+          matchReason = '新发现'
+        } else if (task.type === 'season_discovery' && bestSeason && constellationSeason === bestSeason) {
+          if (!completed) {
+            score = 50
+            matchReason = '当季未发现'
+          } else {
+            score = 30
+            matchReason = '当季已发现'
+          }
+        }
+
+        return { task, score, matchReason }
+      }).filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2)
+        .map(item => ({
+          ...item.task,
+          matchReason: item.matchReason
+        }))
+
+      return scoredTasks
     } catch (e) {
       return []
     }
-  }, [getDailyCommissionProgressAll, constellationId, seasonRecommendation])
+  }, [getDailyCommissionProgressAll, constellationId, constellation, seasonRecommendation, completed, isPerfect])
 
   const isBestSeason = seasonRecommendation?.bestSeason === currentSeason
 
@@ -477,10 +512,32 @@ export default function ConstellationDetail({ constellationId }) {
                           {task.completed ? '✓' : task.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${
-                            task.completed ? 'text-white/90' : 'text-white/80'
-                          }`}>
-                            {task.name}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`text-sm font-medium ${
+                              task.completed ? 'text-white/90' : 'text-white/80'
+                            }`}>
+                              {task.name}
+                            </p>
+                            {task.matchReason && (
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                                task.matchReason === '指定星座'
+                                  ? 'bg-nebula-cyan/20 text-nebula-cyan border border-nebula-cyan/30'
+                                  : task.matchReason === '完美观测'
+                                  ? 'bg-star-gold/20 text-star-gold border border-star-gold/30'
+                                  : task.matchReason === '再次观测'
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                  : task.matchReason === '新发现'
+                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                  : task.matchReason === '当季未发现'
+                                  ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                                  : 'bg-space-600/50 text-white/60 border border-white/10'
+                              }`}>
+                                {task.matchReason}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-white/50 mt-0.5">
+                            {task.description}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] text-white/40">
@@ -513,11 +570,11 @@ export default function ConstellationDetail({ constellationId }) {
                     <span className="text-xl">🎯</span>
                     <div className="flex-1">
                       <p className="text-sm text-white/80 mb-1">
-                        {completed
-                          ? isPerfect
-                            ? '太棒了！你已经完美掌握了这个星座。'
-                            : '继续努力，争取完美完成这个星座！'
-                          : '准备好开始探索这个星座了吗？'
+                        {!completed
+                          ? `这是${locDifficulty}难度的星座，准备好开始你的星空探索了吗？`
+                          : !isPerfect
+                            ? '你已经发现了这个星座，再加把劲就能完美掌握！'
+                            : '太棒了！你已经完美掌握了这个星座，可以去探索更多星座了。'
                         }
                       </p>
                       <p className="text-xs text-white/50">
@@ -530,6 +587,15 @@ export default function ConstellationDetail({ constellationId }) {
                         )}
                         {settings.animationSpeed !== undefined && settings.animationSpeed > 1.2 && (
                           <span className="ml-1">动画速度较快，节奏更紧凑。</span>
+                        )}
+                        {!completed && settings.showLabels && (
+                          <span className="ml-1">建议先完成入门难度的星座熟悉操作。</span>
+                        )}
+                        {completed && !isPerfect && (
+                          <span className="ml-1">尝试放慢速度，仔细观察星星的位置关系。</span>
+                        )}
+                        {isPerfect && (
+                          <span className="ml-1">可以尝试挑战更高难度的星座哦！</span>
                         )}
                       </p>
                     </div>
