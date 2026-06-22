@@ -1,9 +1,24 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { getConstellationById } from '../data/constellations'
 import { DIFFICULTY_CONFIG } from '../data/constants'
-import { SEASONS } from '../data/seasonPlan'
+import { SEASONS, getCurrentSeason } from '../data/seasonPlan'
 import { useI18n } from '../i18n/useI18n'
+
+const VISIBILITY_LEVELS = {
+  excellent: { label: '极佳', color: 'text-green-400', bg: 'bg-green-500/20', icon: '🌟' },
+  good: { label: '良好', color: 'text-blue-400', bg: 'bg-blue-500/20', icon: '⭐' },
+  moderate: { label: '一般', color: 'text-yellow-400', bg: 'bg-yellow-500/20', icon: '✨' },
+  poor: { label: '困难', color: 'text-red-400', bg: 'bg-red-500/20', icon: '🌫️' }
+}
+
+const ADVICE_TYPE_ICONS = {
+  location: '📍',
+  equipment: '🔭',
+  tip: '💡',
+  weather: '🌤️',
+  best_time: '⏰'
+}
 
 export default function ConstellationDetail({ constellationId }) {
   const {
@@ -19,9 +34,13 @@ export default function ConstellationDetail({ constellationId }) {
     resetAtlasState,
     openAtlasList,
     openGalleryWithConstellation,
-    getPhotosByConstellation
+    getPhotosByConstellation,
+    settings,
+    getDailyCommissionProgressAll,
+    getOrRefreshDailyCommissions
   } = useGameStore()
   const { t, tc } = useI18n()
+  const [showSeasonTip, setShowSeasonTip] = useState(true)
 
   const constellation = useMemo(() =>
     getConstellationById(constellationId),
@@ -59,6 +78,59 @@ export default function ConstellationDetail({ constellationId }) {
   const locHemisphere = tc('constellation', constellationId, 'hemisphere') || constellation?.hemisphere
   const locSeason = tc('constellation', constellationId, 'season') || constellation?.season
   const locDifficulty = t(`difficulty.${constellation?.difficulty}`) || DIFFICULTY_CONFIG[constellation?.difficulty]?.label
+
+  const currentSeason = getCurrentSeason()
+  const seasonRecommendation = constellation?.seasonRecommendation
+
+  const currentVisibility = useMemo(() => {
+    if (!seasonRecommendation?.visibility) return null
+    return seasonRecommendation.visibility[currentSeason] || null
+  }, [seasonRecommendation, currentSeason])
+
+  const dailyTasks = useMemo(() => {
+    try {
+      const allTasks = getDailyCommissionProgressAll()
+      return allTasks.filter(task => {
+        if (task.constellationId === constellationId) return true
+        if (task.seasonId && seasonRecommendation?.bestSeason === task.seasonId) return true
+        if (task.type === 'season_discovery' && task.seasonId && seasonRecommendation?.bestSeason === task.seasonId) return true
+        return false
+      }).slice(0, 2)
+    } catch (e) {
+      return []
+    }
+  }, [getDailyCommissionProgressAll, constellationId, seasonRecommendation])
+
+  const isBestSeason = seasonRecommendation?.bestSeason === currentSeason
+
+  const observationAdvice = useMemo(() => {
+    if (!seasonRecommendation?.observationAdvice) return []
+    const advice = [...seasonRecommendation.observationAdvice]
+    if (!completed) {
+      advice.push({
+        type: 'tip',
+        title: '新手建议',
+        content: `这是${locDifficulty}难度的星座，建议先从简单的星座开始练习，熟悉连线操作后再来挑战。`
+      })
+    } else if (!isPerfect) {
+      advice.push({
+        type: 'tip',
+        title: '进阶建议',
+        content: '你已经发现了这个星座，尝试完美完成它吧！注意观察星星的位置和连线顺序。'
+      })
+    } else {
+      advice.push({
+        type: 'tip',
+        title: '大师建议',
+        content: '你已经完美掌握了这个星座！可以尝试多次观测，或者探索相关的其他星座。'
+      })
+    }
+    return advice
+  }, [seasonRecommendation, completed, isPerfect, locDifficulty])
+
+  useEffect(() => {
+    getOrRefreshDailyCommissions()
+  }, [getOrRefreshDailyCommissions])
 
   if (!constellation) {
     return (
@@ -253,6 +325,218 @@ export default function ConstellationDetail({ constellationId }) {
                 </div>
               </div>
             </div>
+
+            {seasonRecommendation && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-display text-white border-l-2 border-star-gold pl-3">
+                    季节观测推荐
+                  </h3>
+                  {isBestSeason && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold flex items-center gap-1">
+                      <span className="animate-pulse">✨</span> 当季最佳
+                    </span>
+                  )}
+                </div>
+
+                {currentVisibility && showSeasonTip && (
+                  <div className={`p-4 rounded-xl border ${
+                    isBestSeason
+                      ? 'bg-star-gold/10 border-star-gold/30'
+                      : 'bg-space-700/30 border-white/10'
+                  }`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">
+                          {VISIBILITY_LEVELS[currentVisibility.level]?.icon || '✨'}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-sm font-medium ${
+                              VISIBILITY_LEVELS[currentVisibility.level]?.color || 'text-white/80'
+                            }`}>
+                              当前{SEASONS[currentSeason]?.name}观测：{VISIBILITY_LEVELS[currentVisibility.level]?.label || '未知'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-white/60 leading-relaxed">
+                            {currentVisibility.desc}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowSeasonTip(false)}
+                        className="text-white/30 hover:text-white/60 text-sm flex-shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {seasonRecommendation.visibility && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {Object.entries(SEASONS).map(([seasonId, season]) => {
+                      const vis = seasonRecommendation.visibility[seasonId]
+                      const level = vis?.level || 'poor'
+                      const visInfo = VISIBILITY_LEVELS[level]
+                      const isCurrent = seasonId === currentSeason
+                      return (
+                        <div
+                          key={seasonId}
+                          className={`p-2 rounded-lg text-center ${
+                            isCurrent
+                              ? `${season.bgColor} ${season.borderColor} border`
+                              : 'bg-space-700/30 border border-transparent'
+                          }`}
+                        >
+                          <div className="text-lg mb-1">{season.icon}</div>
+                          <div className={`text-[10px] ${
+                            isCurrent ? season.textColor : 'text-white/50'
+                          }`}>
+                            {season.name}
+                          </div>
+                          <div className={`text-[9px] mt-0.5 ${visInfo?.color || 'text-white/30'}`}>
+                            {visInfo?.label || '未知'}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {observationAdvice.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs text-white/60 font-medium">观测建议</h4>
+                    {observationAdvice.map((advice, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-space-700/30"
+                      >
+                        <span className="text-xl">
+                          {ADVICE_TYPE_ICONS[advice.type] || '📌'}
+                        </span>
+                        <div>
+                          <p className="text-xs text-white/50">{advice.title}</p>
+                          <p className="text-sm text-white/80">{advice.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {seasonRecommendation.relatedConstellations && seasonRecommendation.relatedConstellations.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs text-white/60 font-medium">相关星座</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {seasonRecommendation.relatedConstellations.map((name, index) => (
+                        <span
+                          key={index}
+                          className="text-[11px] px-2.5 py-1 rounded-full bg-nebula-purple/10 text-nebula-purple/80 border border-nebula-purple/20"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {dailyTasks.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-display text-white border-l-2 border-nebula-purple pl-3">
+                    相关任务
+                  </h3>
+                  <button
+                    onClick={() => {
+                      resetAtlasState()
+                      setActivePanel('tasks')
+                    }}
+                    className="text-[11px] text-nebula-cyan hover:text-nebula-cyan/80 transition-colors"
+                  >
+                    查看全部 →
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {dailyTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`p-3 rounded-xl border transition-all ${
+                        task.completed
+                          ? 'border-nebula-purple/40 bg-nebula-purple/8'
+                          : 'border-white/10 bg-space-700/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          task.completed
+                            ? 'bg-gradient-to-br from-nebula-purple to-nebula-cyan text-white'
+                            : 'bg-space-600/50 text-white/70'
+                        }`}>
+                          {task.completed ? '✓' : task.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${
+                            task.completed ? 'text-white/90' : 'text-white/80'
+                          }`}>
+                            {task.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-white/40">
+                              进度 {task.current}/{task.target}
+                            </span>
+                            <span className="text-[10px] text-star-gold">
+                              💫 {task.reward}
+                            </span>
+                          </div>
+                        </div>
+                        {task.completed && !task.claimed && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold animate-pulse">
+                            可领取
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {settings && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-display text-white border-l-2 border-nebula-cyan pl-3">
+                  个性化提示
+                </h3>
+                <div className="p-4 rounded-xl bg-space-700/30 border border-white/5">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">🎯</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-white/80 mb-1">
+                        {completed
+                          ? isPerfect
+                            ? '太棒了！你已经完美掌握了这个星座。'
+                            : '继续努力，争取完美完成这个星座！'
+                          : '准备好开始探索这个星座了吗？'
+                        }
+                      </p>
+                      <p className="text-xs text-white/50">
+                        {settings.showLabels
+                          ? '已开启星星标签显示，有助于你快速识别星星。'
+                          : '已关闭星星标签，更有挑战性哦！'
+                        }
+                        {settings.animationSpeed !== undefined && settings.animationSpeed < 0.8 && (
+                          <span className="ml-1">动画速度较慢，适合仔细观察。</span>
+                        )}
+                        {settings.animationSpeed !== undefined && settings.animationSpeed > 1.2 && (
+                          <span className="ml-1">动画速度较快，节奏更紧凑。</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               <h3 className="text-sm font-display text-white border-l-2 border-nebula-orange pl-3">

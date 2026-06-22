@@ -28,7 +28,22 @@ export const CONSTELLATIONS = [
     ],
     season: '春',
     center: { x: -0.5, y: 1.3 },
-    tags: ['北斗七星', '北极星', '导航']
+    tags: ['北斗七星', '北极星', '导航'],
+    seasonRecommendation: {
+      bestSeason: 'spring',
+      visibility: {
+        spring: { level: 'excellent', desc: '春季是观测大熊座的最佳季节，北斗七星高悬于北方天空，整夜可见。' },
+        summer: { level: 'good', desc: '夏季大熊座偏向西北方，前半夜观测效果较好。' },
+        autumn: { level: 'moderate', desc: '秋季大熊座位于北方低空，观测条件一般。' },
+        winter: { level: 'poor', desc: '冬季大熊座靠近地平线，难以完整观测。' }
+      },
+      observationAdvice: [
+        { type: 'location', title: '观测地点', content: '选择北方地平线开阔的地点，避免高山或建筑物遮挡。' },
+        { type: 'equipment', title: '推荐装备', content: '入门级双筒望远镜即可观测开阳双星，肉眼也能轻松找到北斗七星。' },
+        { type: 'tip', title: '观测技巧', content: '利用勺口两颗星（天枢、天璇）连线延长5倍找到北极星，这是天文导航的基础。' }
+      ],
+      relatedConstellations: ['小熊座', '天龙座', '牧夫座']
+    }
   },
   {
     id: 'orion',
@@ -62,7 +77,22 @@ export const CONSTELLATIONS = [
     ],
     season: '冬',
     center: { x: 0, y: 0 },
-    tags: ['猎户星云', '红超巨星', '冬季']
+    tags: ['猎户星云', '红超巨星', '冬季'],
+    seasonRecommendation: {
+      bestSeason: 'winter',
+      visibility: {
+        spring: { level: 'poor', desc: '春季猎户座仅在黄昏时分短暂出现在西方低空，不易观测。' },
+        summer: { level: 'poor', desc: '夏季猎户座完全不可见，位于太阳附近。' },
+        autumn: { level: 'moderate', desc: '秋季猎户座在后半夜从东方升起，观测条件逐渐改善。' },
+        winter: { level: 'excellent', desc: '冬季是观测猎户座的最佳季节，它高悬于南方天空，整夜可见，是冬季星空中最耀眼的星座。' }
+      },
+      observationAdvice: [
+        { type: 'location', title: '观测地点', content: '选择南方地平线开阔的地点，冬季面向南方即可轻松找到。' },
+        { type: 'equipment', title: '推荐装备', content: '肉眼可见猎户座全貌，双筒望远镜可观测猎户星云（M42）的细节。' },
+        { type: 'tip', title: '观测技巧', content: '先找到腰带三星（参宿一、二、三），这是猎户座最显著的标志，向上找到参宿四，向下找到参宿七。' }
+      ],
+      relatedConstellations: ['大犬座', '小犬座', '金牛座', '双子座']
+    }
   },
   {
     id: 'cassiopeia',
@@ -90,7 +120,22 @@ export const CONSTELLATIONS = [
     ],
     season: '秋',
     center: { x: 0, y: 1.3 },
-    tags: ['W形', '拱极星座', '王后']
+    tags: ['W形', '拱极星座', '王后'],
+    seasonRecommendation: {
+      bestSeason: 'autumn',
+      visibility: {
+        spring: { level: 'moderate', desc: '春季仙后座位于东北方天空，后半夜观测效果较好。' },
+        summer: { level: 'good', desc: '夏季仙后座高悬于北方天空，整夜可见，观测条件良好。' },
+        autumn: { level: 'excellent', desc: '秋季是观测仙后座的最佳季节，它高悬于北方天空，W形非常明显。' },
+        winter: { level: 'good', desc: '冬季仙后座位于西北方天空，前半夜观测效果较好。' }
+      },
+      observationAdvice: [
+        { type: 'location', title: '观测地点', content: '选择北方天空开阔的地点，仙后座是拱极星座，常年可见。' },
+        { type: 'equipment', title: '推荐装备', content: '肉眼即可观测，双筒望远镜可看到更多暗星。' },
+        { type: 'tip', title: '观测技巧', content: '仙后座与北斗七星分别位于北极星两侧，可以先找到北极星，再向对面寻找W形的仙后座。' }
+      ],
+      relatedConstellations: ['仙王座', '仙女座', '英仙座', '飞马座']
+    }
   },
   {
     id: 'scorpius',
@@ -122,7 +167,22 @@ export const CONSTELLATIONS = [
     ],
     season: '夏',
     center: { x: 0.6, y: 0.2 },
-    tags: ['心宿二', '红超巨星', '夏季大三角']
+    tags: ['心宿二', '红超巨星', '夏季大三角'],
+    seasonRecommendation: {
+      bestSeason: 'summer',
+      visibility: {
+        spring: { level: 'poor', desc: '春季天蝎座仅在黎明前短暂出现在东方低空，难以观测。' },
+        summer: { level: 'excellent', desc: '夏季是观测天蝎座的最佳季节，它高悬于南方天空，心宿二的红色非常醒目。' },
+        autumn: { level: 'moderate', desc: '秋季天蝎座在前半夜向西南方移动，观测时间逐渐缩短。' },
+        winter: { level: 'poor', desc: '冬季天蝎座完全不可见，位于太阳附近。' }
+      },
+      observationAdvice: [
+        { type: 'location', title: '观测地点', content: '选择南方地平线开阔的地点，尽量避开城市光污染。' },
+        { type: 'equipment', title: '推荐装备', content: '肉眼可观测天蝎座主体，双筒望远镜可欣赏心宿二的红色和疏散星团M6、M7。' },
+        { type: 'tip', title: '观测技巧', content: '先找到红色的心宿二（天蝎的心脏），然后沿着弯曲的星链向南寻找蝎子的尾巴，尾尖是尾宿八和尾宿九。' }
+      ],
+      relatedConstellations: ['人马座', '天秤座', '蛇夫座', '豺狼座']
+    }
   },
   {
     id: 'lyra',
@@ -151,7 +211,22 @@ export const CONSTELLATIONS = [
     ],
     season: '夏',
     center: { x: 0, y: 0.8 },
-    tags: ['织女星', '竖琴', '夏季大三角', '神话']
+    tags: ['织女星', '竖琴', '夏季大三角', '神话'],
+    seasonRecommendation: {
+      bestSeason: 'summer',
+      visibility: {
+        spring: { level: 'poor', desc: '春季天琴座仅在黎明前出现在东北方低空，观测条件不佳。' },
+        summer: { level: 'excellent', desc: '夏季是观测天琴座的最佳季节，织女星是全天第五亮星，高悬于天顶附近。' },
+        autumn: { level: 'good', desc: '秋季天琴座向西移动，前半夜仍可观测，是秋季星空的重要标志。' },
+        winter: { level: 'poor', desc: '冬季天琴座位于北方低空，难以完整观测。' }
+      },
+      observationAdvice: [
+        { type: 'location', title: '观测地点', content: '选择天顶附近视野开阔的地点，夏季织女星非常明亮，容易找到。' },
+        { type: 'equipment', title: '推荐装备', content: '肉眼可看到织女星和小平行四边形，小型望远镜可观测织女星附近的环状星云M57。' },
+        { type: 'tip', title: '观测技巧', content: '织女星是夏季大三角的顶点之一，与牛郎星（天鹰座）、天津四（天鹅座）组成著名的夏季大三角。' }
+      ],
+      relatedConstellations: ['天鹰座', '天鹅座', '武仙座', '天龙座']
+    }
   },
   {
     id: 'cygnus',
@@ -183,7 +258,22 @@ export const CONSTELLATIONS = [
     ],
     season: '秋',
     center: { x: 0, y: 0.5 },
-    tags: ['北十字', '银河', '夏季大三角', '天津四']
+    tags: ['北十字', '银河', '夏季大三角', '天津四'],
+    seasonRecommendation: {
+      bestSeason: 'autumn',
+      visibility: {
+        spring: { level: 'poor', desc: '春季天鹅座仅在黎明前出现在东北方低空，观测条件不佳。' },
+        summer: { level: 'good', desc: '夏季天鹅座从东方升起，是夏季大三角的顶点之一，后半夜观测效果好。' },
+        autumn: { level: 'excellent', desc: '秋季是观测天鹅座的最佳季节，它高悬于银河之中，北十字形状非常明显。' },
+        winter: { level: 'moderate', desc: '冬季天鹅座位于西北方天空，前半夜还能看到，观测时间逐渐缩短。' }
+      },
+      observationAdvice: [
+        { type: 'location', title: '观测地点', content: '选择银河附近视野开阔的地点，夏秋季节是观测银河的好时机。' },
+        { type: 'equipment', title: '推荐装备', content: '肉眼可看到北十字的主要亮星，双筒望远镜可欣赏银河的璀璨星光。' },
+        { type: 'tip', title: '观测技巧', content: '天津四是天鹅座最亮的星，也是夏季大三角的顶点之一，找到它就能确定天鹅座的位置。' }
+      ],
+      relatedConstellations: ['天琴座', '天鹰座', '仙女座', '蝎虎座']
+    }
   }
 ]
 
