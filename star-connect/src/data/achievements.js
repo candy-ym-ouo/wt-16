@@ -347,6 +347,51 @@ export const ACHIEVEMENTS = [
     category: 'expedition',
     condition: { type: 'expedition_stardust', value: 500 },
     reward: { type: 'stardust', amount: 200 }
+  },
+  {
+    id: 'observation_streak_3',
+    name: '三日观星',
+    description: '连续3天进行观测活动',
+    icon: '🌠',
+    category: 'streak',
+    condition: { type: 'observation_streak', value: 3 },
+    reward: { type: 'stardust', amount: 50 }
+  },
+  {
+    id: 'observation_streak_7',
+    name: '周常坚持',
+    description: '连续7天进行观测活动',
+    icon: '🔥',
+    category: 'streak',
+    condition: { type: 'observation_streak', value: 7 },
+    reward: { type: 'stardust', amount: 120 }
+  },
+  {
+    id: 'observation_streak_14',
+    name: '双周达人',
+    description: '连续14天进行观测活动',
+    icon: '💪',
+    category: 'streak',
+    condition: { type: 'observation_streak', value: 14 },
+    reward: { type: 'stardust', amount: 250 }
+  },
+  {
+    id: 'observation_streak_30',
+    name: '月度守望者',
+    description: '连续30天进行观测活动',
+    icon: '🌙',
+    category: 'streak',
+    condition: { type: 'observation_streak', value: 30 },
+    reward: { type: 'stardust', amount: 500 }
+  },
+  {
+    id: 'observation_streak_100',
+    name: '百日追星',
+    description: '连续100天进行观测活动',
+    icon: '👑',
+    category: 'streak',
+    condition: { type: 'observation_streak', value: 100 },
+    reward: { type: 'stardust', amount: 1000 }
   }
 ]
 

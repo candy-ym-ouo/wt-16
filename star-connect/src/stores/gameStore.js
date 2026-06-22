@@ -1776,6 +1776,89 @@ export const useGameStore = create(
         return filtered
       },
 
+      getObservationStreak: () => {
+        const state = get()
+        const observationDates = new Set()
+
+        state.observationLogs.forEach(log => {
+          if ((log.type === 'discovery' || log.type === 'reobservation') && log.timestamp) {
+            const date = new Date(log.timestamp).toDateString()
+            observationDates.add(date)
+          }
+        })
+
+        Object.entries(state.observationCalendar.customLogs).forEach(([dateKey, logs]) => {
+          const hasObservation = logs.some(log => 
+            log.type === 'discovery' || log.type === 'observation'
+          )
+          if (hasObservation) {
+            const date = new Date(dateKey).toDateString()
+            observationDates.add(date)
+          }
+        })
+
+        const sortedDates = Array.from(observationDates)
+          .map(dateStr => new Date(dateStr))
+          .sort((a, b) => a - b)
+
+        if (sortedDates.length === 0) {
+          return {
+            currentStreak: 0,
+            longestStreak: 0,
+            totalObservationDays: 0,
+            observationDates: []
+          }
+        }
+
+        let longestStreak = 1
+        let tempStreak = 1
+        for (let i = 1; i < sortedDates.length; i++) {
+          const current = sortedDates[i]
+          const prev = sortedDates[i - 1]
+          const diffDays = Math.round((current - prev) / (1000 * 60 * 60 * 24))
+
+          if (diffDays === 1) {
+            tempStreak++
+            if (tempStreak > longestStreak) {
+              longestStreak = tempStreak
+            }
+          } else {
+            tempStreak = 1
+          }
+        }
+
+        let currentStreak = 0
+        const today = new Date().toDateString()
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toDateString()
+
+        const sortedDesc = [...sortedDates].sort((a, b) => b - a)
+        const latestDate = sortedDesc[0].toDateString()
+
+        if (latestDate === today || latestDate === yesterdayStr) {
+          currentStreak = 1
+          for (let i = 1; i < sortedDesc.length; i++) {
+            const current = sortedDesc[i]
+            const prev = sortedDesc[i - 1]
+            const diffDays = Math.round((prev - current) / (1000 * 60 * 60 * 24))
+
+            if (diffDays === 1) {
+              currentStreak++
+            } else {
+              break
+            }
+          }
+        }
+
+        return {
+          currentStreak,
+          longestStreak,
+          totalObservationDays: sortedDates.length,
+          observationDates: sortedDesc.map(d => d.toDateString())
+        }
+      },
+
       getLogStats: (logs = null) => {
         const state = get()
         const targetLogs = logs || state.observationLogs
@@ -1873,6 +1956,7 @@ export const useGameStore = create(
         const state = get()
         const targetLogs = logs || state.observationLogs
         const stats = state.getLogStats(targetLogs)
+        const streak = state.getObservationStreak()
 
         const insights = []
 
@@ -1906,21 +1990,29 @@ export const useGameStore = create(
           })
         }
 
-        if (stats.activeDays >= 7) {
+        if (streak.currentStreak >= 7) {
           insights.push({
             type: 'consistency',
             icon: '🔥',
             title: '坚持不懈',
-            content: `连续 ${stats.activeDays} 天探索星空`,
+            content: `已连续 ${streak.currentStreak} 天观测（历史最长 ${streak.longestStreak} 天）`,
             color: 'text-red-400'
           })
-        } else if (stats.activeDays >= 3) {
+        } else if (streak.currentStreak >= 3) {
           insights.push({
             type: 'consistency',
             icon: '🌱',
             title: '稳步前进',
-            content: `探索了 ${stats.activeDays} 天`,
+            content: `已连续观测 ${streak.currentStreak} 天（累计 ${streak.totalObservationDays} 天）`,
             color: 'text-green-400'
+          })
+        } else if (streak.currentStreak >= 1) {
+          insights.push({
+            type: 'consistency',
+            icon: '⭐',
+            title: '开始坚持',
+            content: `今日已观测，保持连续！（累计 ${streak.totalObservationDays} 天）`,
+            color: 'text-yellow-400'
           })
         }
 
@@ -2486,6 +2578,11 @@ export const useGameStore = create(
                 l => l.type === 'discovery' || l.type === 'reobservation'
               )
               unlocked = recentObservations.some(l => (l.mistakes || 0) >= value)
+              break
+            }
+            case 'observation_streak': {
+              const streak = state.getObservationStreak()
+              unlocked = streak.currentStreak >= value || streak.longestStreak >= value
               break
             }
           }
@@ -4923,13 +5020,16 @@ export const useGameStore = create(
         const dc = state.dailyCommissions
         if (!dc.tasks || dc.tasks.length === 0) return []
 
+        const streak = state.getObservationStreak()
+
         return dc.tasks.map(task => {
           const progress = getDailyCommissionProgress(
             task,
             state.observationLogs,
             state.discoveredConstellations,
             state.perfectObservations,
-            state.totalObservations
+            state.totalObservations,
+            streak.currentStreak
           )
           return { ...task, ...progress }
         })
@@ -4941,6 +5041,7 @@ export const useGameStore = create(
         if (!dc.tasks || dc.tasks.length === 0) return []
 
         const newlyCompleted = []
+        const streak = state.getObservationStreak()
 
         const updatedTasks = dc.tasks.map(task => {
           if (task.completed) return task
@@ -4950,7 +5051,8 @@ export const useGameStore = create(
             state.observationLogs,
             state.discoveredConstellations,
             state.perfectObservations,
-            state.totalObservations
+            state.totalObservations,
+            streak.currentStreak
           )
 
           if (progress.completed && !task.completed) {
@@ -5151,6 +5253,7 @@ export const useGameStore = create(
         const state = get()
         const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length + DAILY_ACHIEVEMENTS.length
         const dcStats = state.getDailyCommissionStats()
+        const streak = state.getObservationStreak()
         return {
           constellations: state.discoveredConstellations.length,
           totalConstellations: CONSTELLATIONS.length,
@@ -5165,7 +5268,10 @@ export const useGameStore = create(
           routesCompleted: state.starRoute?.totalRoutesCompleted || 0,
           perfectRoutes: state.starRoute?.perfectRoutes || 0,
           dailyCommissionsCompleted: dcStats.totalCompleted,
-          dailyCommissionsStreak: dcStats.streakDays
+          dailyCommissionsStreak: dcStats.streakDays,
+          observationStreak: streak.currentStreak,
+          longestObservationStreak: streak.longestStreak,
+          totalObservationDays: streak.totalObservationDays
         }
       },
 
@@ -5410,6 +5516,17 @@ export const useGameStore = create(
             current = hasQualified ? 1 : 0
             target = 1
             hint = hasQualified ? '已达成' : `单次观测中错误 ${value} 次以上仍完成连线`
+            break
+          }
+          case 'observation_streak': {
+            const streak = state.getObservationStreak()
+            current = streak.currentStreak
+            target = value
+            const best = streak.longestStreak
+            hint = current < target
+              ? `保持连续观测 ${target} 天（当前 ${current} 天，最佳 ${best} 天）`
+              : '已达成'
+            relatedPanel = current < target ? 'log' : null
             break
           }
           case 'event_participation': {

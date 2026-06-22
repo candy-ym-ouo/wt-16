@@ -29,6 +29,7 @@ export default function ObservationLog() {
     getSeasonStats,
     filterLogs,
     getLogSummary,
+    getObservationStreak,
     addTagToLog,
     removeTagFromLog,
     customTags
@@ -49,6 +50,7 @@ export default function ObservationLog() {
 
   const progress = getProgress()
   const seasonStats = getSeasonStats()
+  const streak = getObservationStreak()
 
   const filteredLogs = useMemo(() => {
     return filterLogs(filters)
@@ -604,7 +606,7 @@ export default function ObservationLog() {
           </div>
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
             <div className="text-xl font-bold text-nebula-cyan">
-              {logSummary.stats.activeDays}
+              {streak.totalObservationDays}
             </div>
             <div className="fs-10 text-white/50 mt-1">{t('log.activeDays')}</div>
           </div>
@@ -617,6 +619,27 @@ export default function ObservationLog() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-3">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-400/30 text-center">
+            <div className="text-xl font-bold text-orange-400">
+              {streak.currentStreak}🔥
+            </div>
+            <div className="fs-10 text-white/50 mt-1">连续观测</div>
+          </div>
+          <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-center">
+            <div className="text-xl font-bold text-purple-400">
+              {streak.longestStreak}🏆
+            </div>
+            <div className="fs-10 text-white/50 mt-1">历史最长</div>
+          </div>
+          <div className="p-3 rounded-xl bg-space-800/40 text-center">
+            <div className="text-xl font-bold text-yellow-400">
+              {logSummary.stats.perfectRuns}
+            </div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.perfect')}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-3">
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
             <div className="text-xl font-bold text-purple-400">
               {logSummary.stats.discoveries}
@@ -628,12 +651,6 @@ export default function ObservationLog() {
               {logSummary.stats.reobservations}
             </div>
             <div className="fs-10 text-white/50 mt-1">{t('log.reobservation')}</div>
-          </div>
-          <div className="p-3 rounded-xl bg-space-800/40 text-center">
-            <div className="text-xl font-bold text-yellow-400">
-              {logSummary.stats.perfectRuns}
-            </div>
-            <div className="fs-10 text-white/50 mt-1">{t('log.perfect')}</div>
           </div>
         </div>
       </div>

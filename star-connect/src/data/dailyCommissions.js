@@ -7,7 +7,8 @@ export const COMMISSION_TYPES = {
   REOBSERVATION: 'reobservation',
   SEASON_DISCOVERY: 'season_discovery',
   STREAK: 'streak',
-  MULTI_OBSERVE: 'multi_observe'
+  MULTI_OBSERVE: 'multi_observe',
+  OBSERVATION_STREAK: 'observation_streak'
 }
 
 export const COMMISSION_DIFFICULTY = {
@@ -70,6 +71,17 @@ const COMMISSION_TEMPLATES = {
     ],
     [COMMISSION_DIFFICULTY.HARD]: [
       { name: '观星狂人', desc: '累计观测8次', target: 8, reward: 80, icon: '💫' },
+    ]
+  },
+  [COMMISSION_TYPES.OBSERVATION_STREAK]: {
+    [COMMISSION_DIFFICULTY.EASY]: [
+      { name: '每日一瞥', desc: '保持连续观测2天', target: 2, reward: 30, icon: '🌅' },
+    ],
+    [COMMISSION_DIFFICULTY.NORMAL]: [
+      { name: '持之以恒', desc: '保持连续观测3天', target: 3, reward: 60, icon: '🔥' },
+    ],
+    [COMMISSION_DIFFICULTY.HARD]: [
+      { name: '星空守望', desc: '保持连续观测5天', target: 5, reward: 120, icon: '🌙' },
     ]
   }
 }
@@ -149,7 +161,7 @@ export function generateDailyCommissions(discoveredIds, perfectIds, totalObserva
   const totalDiscovered = discoveredIds.length
   const totalConstellations = CONSTELLATIONS.length
 
-  const availableTypes = [COMMISSION_TYPES.MULTI_OBSERVE]
+  const availableTypes = [COMMISSION_TYPES.MULTI_OBSERVE, COMMISSION_TYPES.OBSERVATION_STREAK]
 
   if (totalDiscovered < totalConstellations) {
     availableTypes.push(COMMISSION_TYPES.DISCOVERY)
@@ -214,7 +226,7 @@ export function generateDailyCommissions(discoveredIds, perfectIds, totalObserva
   return commissions
 }
 
-export function getDailyCommissionProgress(commission, observationLogs, discoveredIds, perfectIds, totalObservations) {
+export function getDailyCommissionProgress(commission, observationLogs, discoveredIds, perfectIds, totalObservations, observationStreak = 0) {
   let current = 0
   let completed = false
 
@@ -278,6 +290,12 @@ export function getDailyCommissionProgress(commission, observationLogs, discover
         return logDate === today
       })
       current = todayObservations.length
+      completed = current >= commission.target
+      break
+    }
+
+    case COMMISSION_TYPES.OBSERVATION_STREAK: {
+      current = observationStreak
       completed = current >= commission.target
       break
     }

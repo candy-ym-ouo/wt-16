@@ -19,7 +19,8 @@ const CATEGORY_INFO = {
   daily: { name: '每日委托', icon: '📋', color: 'from-amber-500 to-yellow-400' },
   quiz: { name: '知识问答', icon: '❓', color: 'from-sky-500 to-blue-400' },
   event: { name: '活动成就', icon: '🎆', color: 'from-fuchsia-500 via-purple-500 to-indigo-400' },
-  hidden: { name: '隐藏成就', icon: '🔮', color: 'from-indigo-500 via-purple-500 to-fuchsia-400' }
+  hidden: { name: '隐藏成就', icon: '🔮', color: 'from-indigo-500 via-purple-500 to-fuchsia-400' },
+  streak: { name: '坚持观测', icon: '🔥', color: 'from-orange-400 to-red-500' }
 }
 
 const PANEL_ICONS = {
