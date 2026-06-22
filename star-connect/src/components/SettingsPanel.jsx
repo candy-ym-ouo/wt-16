@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from '../data/constants'
 import { audioManager } from '../modules/AudioManager'
 import { useI18n } from '../i18n/useI18n'
 import OfflinePackagePanel from './OfflinePackagePanel'
+import SaveSlotManager from './SaveSlotManager'
 
 export default function SettingsPanel() {
   const {
@@ -327,6 +328,15 @@ export default function SettingsPanel() {
                 </div>
                 <div className="fs-10 text-white/50 mt-1">{t('settings.logs')}</div>
               </div>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">
+              {t('settings.saveSlotsSection')}
+            </h3>
+            <div className="p-4 rounded-xl bg-space-700/30 border border-white/5">
+              <SaveSlotManager />
             </div>
           </section>
 

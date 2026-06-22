@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { CONSTELLATIONS, getConstellationById } from '../data/constellations'
 import { ACHIEVEMENTS } from '../data/achievements'
-import { DEFAULT_SETTINGS, STORAGE_KEYS } from '../data/constants'
+import { DEFAULT_SETTINGS, STORAGE_KEYS, SAVE_SLOT_CONFIG, DEFAULT_SAVE_SLOT } from '../data/constants'
 import {
   SEASONS,
   SEASON_PHASES,
@@ -135,15 +135,115 @@ import {
 } from '../data/logTags'
 
 let autoSaveEnabled = true
+let currentSaveId = 'default'
+
+const getSaveDataKey = (saveId) => `${STORAGE_KEYS.SAVE_DATA_PREFIX}${saveId}`
+
+const loadSaveSlots = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SAVE_SLOTS)
+    if (raw) {
+      return JSON.parse(raw)
+    }
+  } catch (e) {}
+  return null
+}
+
+const saveSaveSlots = (slots) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SAVE_SLOTS, JSON.stringify(slots))
+  } catch (e) {
+    console.error('Failed to save save slots:', e)
+  }
+}
+
+const loadCurrentSaveId = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_SAVE_ID)
+    if (raw) {
+      return JSON.parse(raw)
+    }
+  } catch (e) {}
+  return 'default'
+}
+
+const saveCurrentSaveId = (saveId) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_SAVE_ID, JSON.stringify(saveId))
+  } catch (e) {
+    console.error('Failed to save current save id:', e)
+  }
+}
+
+const loadSaveData = (saveId) => {
+  try {
+    const raw = localStorage.getItem(getSaveDataKey(saveId))
+    if (raw) {
+      return JSON.parse(raw)
+    }
+  } catch (e) {}
+  return null
+}
+
+const saveSaveData = (saveId, data) => {
+  try {
+    localStorage.setItem(getSaveDataKey(saveId), JSON.stringify(data))
+  } catch (e) {
+    console.error('Failed to save save data:', e)
+  }
+}
+
+const deleteSaveData = (saveId) => {
+  try {
+    localStorage.removeItem(getSaveDataKey(saveId))
+  } catch (e) {
+    console.error('Failed to delete save data:', e)
+  }
+}
+
+const generateSavePreview = (state) => {
+  const preview = {}
+  SAVE_SLOT_CONFIG.PREVIEW_DATA_KEYS.forEach(key => {
+    if (key === 'observationCalendar') {
+      preview[key] = {
+        stardust: state.observationCalendar?.stardust || 0,
+        totalCheckinDays: state.observationCalendar?.totalCheckinDays || 0
+      }
+    } else if (key === 'discoveredConstellations') {
+      preview[key] = state[key]?.length || 0
+    } else if (key === 'unlockedAchievements') {
+      preview[key] = state[key]?.length || 0
+    } else if (key === 'observationLogs') {
+      preview[key] = state[key]?.length || 0
+    } else if (key === 'totalObservations') {
+      preview[key] = Object.keys(state[key] || {}).length
+    }
+  })
+  preview.lastSavedAt = Date.now()
+  return preview
+}
 
 const conditionalStorage = {
   ...createJSONStorage(() => localStorage),
   setItem: (name, value) => {
     if (autoSaveEnabled) {
-      return localStorage.setItem(name, value)
+      localStorage.setItem(name, value)
+      saveSaveData(currentSaveId, value)
     }
   },
   getItem: (name) => {
+    if (name === STORAGE_KEYS.PROGRESS) {
+      const saveData = loadSaveData(currentSaveId)
+      if (saveData) {
+        try {
+          const parsed = JSON.parse(saveData)
+          if (parsed.state?.settings?.autoSave !== undefined) {
+            autoSaveEnabled = parsed.state.settings.autoSave
+          }
+        } catch (e) {}
+        return saveData
+      }
+    }
     const value = localStorage.getItem(name)
     if (value) {
       try {
@@ -174,41 +274,330 @@ export const useGameStore = create(
       resetSettings: () =>
         set({ settings: { ...DEFAULT_SETTINGS } }),
 
-      manualSave: () => {
+      saveSlots: [],
+      currentSaveId: 'default',
+
+      initSaveSystem: () => {
+        const savedSlots = loadSaveSlots()
+        const savedCurrentId = loadCurrentSaveId()
+        
+        if (savedSlots && savedSlots.length > 0) {
+          currentSaveId = savedCurrentId
+          set({
+            saveSlots: savedSlots,
+            currentSaveId: savedCurrentId
+          })
+        } else {
+          const existingData = localStorage.getItem(STORAGE_KEYS.PROGRESS)
+          let preview = null
+          
+          if (existingData) {
+            try {
+              const parsed = JSON.parse(existingData)
+              if (parsed.state) {
+                preview = generateSavePreview(parsed.state)
+                saveSaveData('default', existingData)
+              }
+            } catch (e) {}
+          }
+          
+          const defaultSlot = {
+            ...DEFAULT_SAVE_SLOT,
+            createdAt: Date.now(),
+            lastPlayedAt: Date.now(),
+            preview
+          }
+          
+          const slots = [defaultSlot]
+          saveSaveSlots(slots)
+          saveCurrentSaveId('default')
+          currentSaveId = 'default'
+          
+          set({
+            saveSlots: slots,
+            currentSaveId: 'default'
+          })
+        }
+      },
+
+      createSave: (name, options = {}) => {
         const state = get()
-        const persistConfig = {
-          state: {
-            settings: state.settings,
-            discoveredConstellations: state.discoveredConstellations,
-            discoveredStars: state.discoveredStars,
-            observationLogs: state.observationLogs,
-            unlockedAchievements: state.unlockedAchievements,
-            totalMistakes: state.totalMistakes,
-            seasonProgress: state.seasonProgress,
-            seasonRewardsUnlocked: state.seasonRewardsUnlocked,
-            seasonRewardsClaimed: state.seasonRewardsClaimed,
-            perfectObservations: state.perfectObservations,
-            totalObservations: state.totalObservations,
-            perfectCountPerConstellation: state.perfectCountPerConstellation,
-            consecutivePerfectCount: state.consecutivePerfectCount,
-            bestConsecutivePerfect: state.bestConsecutivePerfect,
-            seasonHistory: state.seasonHistory,
-            favoriteConstellations: state.favoriteConstellations,
-            familyMode: state.familyMode,
-            nightExpedition: state.nightExpedition,
-            observationCalendar: state.observationCalendar,
-            quiz: state.quiz,
-            starGallery: state.starGallery,
-            tutorial: state.tutorial,
-            storyProgress: state.storyProgress,
-            starRoute: state.starRoute,
-            research: state.research,
-            dailyCommissions: state.dailyCommissions,
-            completedPaths: state.completedPaths
-          },
+        if (state.saveSlots.length >= SAVE_SLOT_CONFIG.MAX_SLOTS) {
+          return { success: false, error: '存档槽位已满' }
+        }
+
+        const saveId = `save_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+        const currentState = state.getSaveState()
+        const preview = generateSavePreview(currentState)
+        
+        const newSlot = {
+          id: saveId,
+          name: name || `存档 ${state.saveSlots.length + 1}`,
+          createdAt: Date.now(),
+          lastPlayedAt: Date.now(),
+          preview,
+          settingsShared: options.settingsShared ?? true
+        }
+
+        const saveData = {
+          state: currentState,
           version: 0
         }
-        localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(persistConfig))
+        saveSaveData(saveId, JSON.stringify(saveData))
+
+        const newSlots = [...state.saveSlots, newSlot]
+        saveSaveSlots(newSlots)
+        
+        set({ saveSlots: newSlots })
+        return { success: true, slot: newSlot }
+      },
+
+      switchSave: (saveId) => {
+        const state = get()
+        const slot = state.saveSlots.find(s => s.id === saveId)
+        if (!slot) {
+          return { success: false, error: '存档不存在' }
+        }
+
+        const saveData = loadSaveData(saveId)
+        if (!saveData) {
+          return { success: false, error: '存档数据损坏' }
+        }
+
+        try {
+          const parsed = typeof saveData === 'string' ? JSON.parse(saveData) : saveData
+          if (parsed.state) {
+            const savedState = parsed.state
+            
+            const newSlots = state.saveSlots.map(s => 
+              s.id === saveId 
+                ? { ...s, lastPlayedAt: Date.now(), preview: generateSavePreview(savedState) }
+                : s
+            )
+            saveSaveSlots(newSlots)
+            saveCurrentSaveId(saveId)
+            currentSaveId = saveId
+
+            if (savedState.settings?.autoSave !== undefined) {
+              autoSaveEnabled = savedState.settings.autoSave
+            }
+
+            set({
+              ...savedState,
+              saveSlots: newSlots,
+              currentSaveId: saveId,
+              activePanel: null
+            })
+
+            return { success: true }
+          }
+        } catch (e) {
+          console.error('Failed to parse save data:', e)
+        }
+        return { success: false, error: '存档解析失败' }
+      },
+
+      deleteSave: (saveId) => {
+        const state = get()
+        if (saveId === 'default') {
+          return { success: false, error: '默认存档无法删除' }
+        }
+        if (saveId === state.currentSaveId) {
+          return { success: false, error: '无法删除当前正在使用的存档' }
+        }
+
+        const newSlots = state.saveSlots.filter(s => s.id !== saveId)
+        saveSaveSlots(newSlots)
+        deleteSaveData(saveId)
+        
+        set({ saveSlots: newSlots })
+        return { success: true }
+      },
+
+      renameSave: (saveId, newName) => {
+        const state = get()
+        const slotIndex = state.saveSlots.findIndex(s => s.id === saveId)
+        if (slotIndex === -1) {
+          return { success: false, error: '存档不存在' }
+        }
+
+        const newSlots = [...state.saveSlots]
+        newSlots[slotIndex] = {
+          ...newSlots[slotIndex],
+          name: newName
+        }
+        saveSaveSlots(newSlots)
+        
+        set({ saveSlots: newSlots })
+        return { success: true }
+      },
+
+      duplicateSave: (saveId, newName) => {
+        const state = get()
+        if (state.saveSlots.length >= SAVE_SLOT_CONFIG.MAX_SLOTS) {
+          return { success: false, error: '存档槽位已满' }
+        }
+
+        const sourceSlot = state.saveSlots.find(s => s.id === saveId)
+        if (!sourceSlot) {
+          return { success: false, error: '源存档不存在' }
+        }
+
+        const sourceData = loadSaveData(saveId)
+        if (!sourceData) {
+          return { success: false, error: '源存档数据损坏' }
+        }
+
+        const newSaveId = `save_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+        saveSaveData(newSaveId, sourceData)
+
+        let parsedState = null
+        try {
+          const parsed = typeof sourceData === 'string' ? JSON.parse(sourceData) : sourceData
+          if (parsed.state) {
+            parsedState = parsed.state
+          }
+        } catch (e) {}
+
+        const newSlot = {
+          id: newSaveId,
+          name: newName || `${sourceSlot.name} (副本)`,
+          createdAt: Date.now(),
+          lastPlayedAt: Date.now(),
+          preview: parsedState ? generateSavePreview(parsedState) : sourceSlot.preview,
+          settingsShared: sourceSlot.settingsShared
+        }
+
+        const newSlots = [...state.saveSlots, newSlot]
+        saveSaveSlots(newSlots)
+        
+        set({ saveSlots: newSlots })
+        return { success: true, slot: newSlot }
+      },
+
+      getSaveState: () => {
+        const state = get()
+        return {
+          settings: state.settings,
+          discoveredConstellations: state.discoveredConstellations,
+          discoveredStars: state.discoveredStars,
+          observationLogs: state.observationLogs,
+          customTags: state.customTags,
+          unlockedAchievements: state.unlockedAchievements,
+          totalMistakes: state.totalMistakes,
+          seasonProgress: state.seasonProgress,
+          seasonRewardsUnlocked: state.seasonRewardsUnlocked,
+          seasonRewardsClaimed: state.seasonRewardsClaimed,
+          perfectObservations: state.perfectObservations,
+          totalObservations: state.totalObservations,
+          perfectCountPerConstellation: state.perfectCountPerConstellation,
+          consecutivePerfectCount: state.consecutivePerfectCount,
+          bestConsecutivePerfect: state.bestConsecutivePerfect,
+          seasonHistory: state.seasonHistory,
+          favoriteConstellations: state.favoriteConstellations,
+          familyMode: state.familyMode,
+          nightExpedition: state.nightExpedition,
+          observationCalendar: state.observationCalendar,
+          quiz: state.quiz,
+          team: state.team,
+          starGallery: state.starGallery,
+          tutorial: state.tutorial,
+          storyProgress: state.storyProgress,
+          starRoute: state.starRoute,
+          research: state.research,
+          dailyCommissions: state.dailyCommissions,
+          completedPaths: state.completedPaths
+        }
+      },
+
+      exportSave: (saveId) => {
+        const state = get()
+        const targetId = saveId || state.currentSaveId
+        const slot = state.saveSlots.find(s => s.id === targetId)
+        if (!slot) {
+          return { success: false, error: '存档不存在' }
+        }
+
+        const saveData = loadSaveData(targetId)
+        if (!saveData) {
+          return { success: false, error: '存档数据损坏' }
+        }
+
+        const exportData = {
+          slot,
+          data: typeof saveData === 'string' ? JSON.parse(saveData) : saveData,
+          exportVersion: 1,
+          exportedAt: Date.now()
+        }
+
+        return { success: true, data: exportData }
+      },
+
+      importSave: (importData) => {
+        const state = get()
+        if (state.saveSlots.length >= SAVE_SLOT_CONFIG.MAX_SLOTS) {
+          return { success: false, error: '存档槽位已满' }
+        }
+
+        try {
+          const parsed = typeof importData === 'string' ? JSON.parse(importData) : importData
+          
+          if (!parsed.slot || !parsed.data) {
+            return { success: false, error: '导入数据格式错误' }
+          }
+
+          const newSaveId = `save_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+          const saveDataStr = JSON.stringify(parsed.data)
+          saveSaveData(newSaveId, saveDataStr)
+
+          let preview = null
+          if (parsed.data.state) {
+            preview = generateSavePreview(parsed.data.state)
+          }
+
+          const newSlot = {
+            id: newSaveId,
+            name: `${parsed.slot.name || '导入存档'} (导入)`,
+            createdAt: Date.now(),
+            lastPlayedAt: Date.now(),
+            preview,
+            settingsShared: parsed.slot.settingsShared ?? true
+          }
+
+          const newSlots = [...state.saveSlots, newSlot]
+          saveSaveSlots(newSlots)
+          
+          set({ saveSlots: newSlots })
+          return { success: true, slot: newSlot }
+        } catch (e) {
+          console.error('Failed to import save:', e)
+          return { success: false, error: '导入数据解析失败' }
+        }
+      },
+
+      updateCurrentSavePreview: () => {
+        const state = get()
+        const preview = generateSavePreview(state)
+        const newSlots = state.saveSlots.map(s => 
+          s.id === state.currentSaveId 
+            ? { ...s, preview, lastPlayedAt: Date.now() }
+            : s
+        )
+        saveSaveSlots(newSlots)
+        set({ saveSlots: newSlots })
+      },
+
+      manualSave: () => {
+        const state = get()
+        const saveState = state.getSaveState()
+        const persistConfig = {
+          state: saveState,
+          version: 0
+        }
+        const persistStr = JSON.stringify(persistConfig)
+        localStorage.setItem(STORAGE_KEYS.PROGRESS, persistStr)
+        saveSaveData(state.currentSaveId, persistStr)
+        state.updateCurrentSavePreview()
       },
 
       favoriteConstellations: [],
@@ -5850,6 +6239,9 @@ export const useGameStore = create(
         seasonRewardsClaimed: state.seasonRewardsClaimed,
         perfectObservations: state.perfectObservations,
         totalObservations: state.totalObservations,
+        perfectCountPerConstellation: state.perfectCountPerConstellation,
+        consecutivePerfectCount: state.consecutivePerfectCount,
+        bestConsecutivePerfect: state.bestConsecutivePerfect,
         seasonHistory: state.seasonHistory,
         favoriteConstellations: state.favoriteConstellations,
         familyMode: state.familyMode,
@@ -5859,10 +6251,18 @@ export const useGameStore = create(
         team: state.team,
         starGallery: state.starGallery,
         tutorial: state.tutorial,
+        storyProgress: state.storyProgress,
         starRoute: state.starRoute,
         research: state.research,
-        dailyCommissions: state.dailyCommissions
-      })
+        dailyCommissions: state.dailyCommissions,
+        completedPaths: state.completedPaths
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          currentSaveId = loadCurrentSaveId()
+          state.initSaveSystem()
+        }
+      }
     }
   )
 )

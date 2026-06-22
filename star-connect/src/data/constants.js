@@ -308,5 +308,30 @@ export const STORAGE_KEYS = {
   SETTINGS: 'starconnect_settings',
   PROGRESS: 'starconnect_progress',
   LOGS: 'starconnect_logs',
-  ACHIEVEMENTS: 'starconnect_achievements'
+  ACHIEVEMENTS: 'starconnect_achievements',
+  SAVE_SLOTS: 'starconnect_save_slots',
+  CURRENT_SAVE_ID: 'starconnect_current_save_id',
+  SAVE_DATA_PREFIX: 'starconnect_save_'
+}
+
+export const SAVE_SLOT_CONFIG = {
+  MAX_SLOTS: 10,
+  DEFAULT_SLOT_NAME: '默认存档',
+  AUTO_SAVE_INTERVAL: 30000,
+  PREVIEW_DATA_KEYS: [
+    'discoveredConstellations',
+    'unlockedAchievements',
+    'observationLogs',
+    'observationCalendar',
+    'totalObservations'
+  ]
+}
+
+export const DEFAULT_SAVE_SLOT = {
+  id: 'default',
+  name: SAVE_SLOT_CONFIG.DEFAULT_SLOT_NAME,
+  createdAt: Date.now(),
+  lastPlayedAt: Date.now(),
+  preview: null,
+  settingsShared: true
 }
