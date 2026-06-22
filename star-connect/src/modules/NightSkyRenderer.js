@@ -63,6 +63,12 @@ export class NightSkyRenderer {
     this.meteorShowerActive = false
     this.specialAstroActive = false
 
+    this.discoveredConstellationMeshes = new Map()
+    this.discoveredConstellationLines = new Map()
+    this.guideConstellationMeshes = new Map()
+    this.guideConstellationIds = []
+    this.perfectObservationMap = {}
+
     this.currentBackgroundStyle = null
     this.currentConnectionEffect = null
     this.connectionParticles = []
@@ -699,6 +705,18 @@ export class NightSkyRenderer {
     const constellation = getConstellationById(constellationId)
     if (!constellation) return
 
+    if (this.discoveredConstellationMeshes.has(constellationId)) {
+      const { group } = this.discoveredConstellationMeshes.get(constellationId)
+      this.scene.remove(group)
+      this.discoveredConstellationMeshes.delete(constellationId)
+    }
+    if (this.guideConstellationMeshes.has(constellationId)) {
+      const { group } = this.guideConstellationMeshes.get(constellationId)
+      this.scene.remove(group)
+      this.guideConstellationMeshes.delete(constellationId)
+      this.guideConstellationIds = this.guideConstellationIds.filter(id => id !== constellationId)
+    }
+
     const group = new THREE.Group()
     group.name = 'constellation_group'
 
@@ -935,6 +953,281 @@ export class NightSkyRenderer {
     this.connectionPath = []
   }
 
+  loadDiscoveredConstellations(discoveredIds, perfectMap = {}) {
+    this.clearDiscoveredConstellations()
+    this.perfectObservationMap = perfectMap || {}
+
+    discoveredIds.forEach((constellationId) => {
+      if (constellationId === this.targetConstellationId) return
+
+      const constellation = getConstellationById(constellationId)
+      if (!constellation) return
+
+      const group = new THREE.Group()
+      group.name = `discovered_${constellationId}`
+
+      const starObj = []
+      constellation.stars.forEach((star) => {
+        const mesh = this.createDiscoveredStarMesh(star, perfectMap[constellationId])
+        mesh.position.set(star.x, star.y, star.z || 0)
+        mesh.userData = {
+          starId: star.id,
+          starName: star.name,
+          isConstellationStar: true,
+          isDiscovered: true,
+          constellationId
+        }
+        group.add(mesh)
+        starObj.push(mesh)
+      })
+
+      constellation.connections.forEach(([aId, bId]) => {
+        const starA = starObj.find((s) => s.userData.starId === aId)
+        const starB = starObj.find((s) => s.userData.starId === bId)
+        if (starA && starB) {
+          const isPerfect = perfectMap[constellationId]
+          const lineColor = isPerfect ? 0xffd700 : 0x8b5cf6
+          const line = this.createDiscoveredConnectionLine(
+            starA.position,
+            starB.position,
+            lineColor,
+            isPerfect
+          )
+          group.add(line)
+          this.discoveredConstellationLines.set(
+            `${constellationId}_${aId}-${bId}`,
+            line
+          )
+        }
+      })
+
+      this.discoveredConstellationMeshes.set(constellationId, {
+        group,
+        stars: starObj,
+        isPerfect: perfectMap[constellationId] || false
+      })
+      this.scene.add(group)
+    })
+  }
+
+  createDiscoveredStarMesh(star, isPerfect = false) {
+    const brightness = Math.max(0.15, 0.6 - (star.mag / 6) * 0.5)
+    const size = 0.06 + (1 - star.mag / 6) * 0.08
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 64
+    canvas.height = 64
+    const ctx = canvas.getContext('2d')
+    const center = 32
+
+    const baseColor = isPerfect ? '#ffd700' : (star.color || '#a78bfa')
+    const gradient = ctx.createRadialGradient(center, center, 0, center, center, 32)
+    gradient.addColorStop(0, baseColor)
+    gradient.addColorStop(0.25, baseColor + 'cc')
+    gradient.addColorStop(0.5, baseColor + '44')
+    gradient.addColorStop(1, 'transparent')
+
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.arc(center, center, 32, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.fillStyle = isPerfect ? '#fff8dc' : '#ffffff'
+    ctx.beginPath()
+    ctx.arc(center, center, 1.5 + brightness * 3, 0, Math.PI * 2)
+    ctx.fill()
+
+    const texture = new THREE.CanvasTexture(canvas)
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: isPerfect ? 0.85 : 0.6
+    })
+
+    const sprite = new THREE.Sprite(material)
+    sprite.scale.set(size * 2, size * 2, 1)
+    sprite.userData.baseScale = size * 2
+    sprite.userData.brightness = brightness
+    sprite.userData.isPerfectStar = isPerfect
+
+    return sprite
+  }
+
+  createDiscoveredConnectionLine(start, end, color = 0x8b5cf6, isPerfect = false) {
+    const points = [start.clone(), end.clone()]
+    const geometry = new THREE.BufferGeometry().setFromPoints(points)
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: isPerfect ? 0.5 : 0.25,
+      linewidth: 1,
+      blending: THREE.AdditiveBlending
+    })
+
+    const line = new THREE.Line(geometry, material)
+    line.userData.isDiscoveredLine = true
+    line.userData.isPerfectLine = isPerfect
+    line.userData.startPos = start.clone()
+    line.userData.endPos = end.clone()
+
+    return line
+  }
+
+  clearDiscoveredConstellations() {
+    this.discoveredConstellationMeshes.forEach(({ group }) => {
+      this.scene.remove(group)
+    })
+    this.discoveredConstellationMeshes.clear()
+    this.discoveredConstellationLines.clear()
+  }
+
+  setGuideConstellations(guideIds) {
+    this.clearGuideConstellations()
+    this.guideConstellationIds = guideIds || []
+
+    this.guideConstellationIds.forEach((constellationId) => {
+      if (constellationId === this.targetConstellationId) return
+      if (this.discoveredConstellationMeshes.has(constellationId)) return
+
+      const constellation = getConstellationById(constellationId)
+      if (!constellation) return
+
+      const group = new THREE.Group()
+      group.name = `guide_${constellationId}`
+
+      const starObj = []
+      constellation.stars.forEach((star) => {
+        const mesh = this.createGuideStarMesh(star)
+        mesh.position.set(star.x, star.y, star.z || 0)
+        mesh.userData = {
+          starId: star.id,
+          starName: star.name,
+          isConstellationStar: true,
+          isGuide: true,
+          constellationId
+        }
+        group.add(mesh)
+        starObj.push(mesh)
+      })
+
+      const outlineRing = this.createGuideOutlineRing(constellation)
+      if (outlineRing) {
+        group.add(outlineRing)
+      }
+
+      this.guideConstellationMeshes.set(constellationId, {
+        group,
+        stars: starObj,
+        center: { ...constellation.center }
+      })
+      this.scene.add(group)
+    })
+  }
+
+  createGuideStarMesh(star) {
+    const brightness = Math.max(0.3, 0.8 - (star.mag / 6) * 0.6)
+    const size = 0.1 + (1 - star.mag / 6) * 0.12
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 64
+    canvas.height = 64
+    const ctx = canvas.getContext('2d')
+    const center = 32
+
+    const gradient = ctx.createRadialGradient(center, center, 0, center, center, 32)
+    gradient.addColorStop(0, '#22d3ee')
+    gradient.addColorStop(0.2, '#22d3ee88')
+    gradient.addColorStop(0.45, '#06b6d444')
+    gradient.addColorStop(1, 'transparent')
+
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.arc(center, center, 32, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.strokeStyle = 'rgba(34, 211, 238, 0.8)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(center, center, 20 + Math.sin(0) * 4, 0, Math.PI * 2)
+    ctx.stroke()
+
+    ctx.fillStyle = '#e0f7fa'
+    ctx.beginPath()
+    ctx.arc(center, center, 2 + brightness * 4, 0, Math.PI * 2)
+    ctx.fill()
+
+    const texture = new THREE.CanvasTexture(canvas)
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.9
+    })
+
+    const sprite = new THREE.Sprite(material)
+    sprite.scale.set(size * 2.5, size * 2.5, 1)
+    sprite.userData.baseScale = size * 2.5
+    sprite.userData.brightness = brightness
+    sprite.userData.guidePhase = Math.random() * Math.PI * 2
+
+    return sprite
+  }
+
+  createGuideOutlineRing(constellation) {
+    const { center } = constellation
+    const stars = constellation.stars
+
+    let maxDist = 0
+    stars.forEach((s) => {
+      const dx = s.x - center.x
+      const dy = s.y - center.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      maxDist = Math.max(maxDist, dist)
+    })
+
+    const radius = maxDist + 0.8
+    const segments = 64
+    const points = []
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2
+      points.push(new THREE.Vector3(
+        center.x + Math.cos(angle) * radius,
+        center.y + Math.sin(angle) * radius,
+        -0.5
+      ))
+    }
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points)
+    const material = new THREE.LineDashedMaterial({
+      color: 0x22d3ee,
+      transparent: true,
+      opacity: 0.6,
+      dashSize: 0.2,
+      gapSize: 0.15,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+
+    const line = new THREE.Line(geometry, material)
+    line.computeLineDistances()
+    line.userData.isGuideRing = true
+    line.userData.baseOpacity = 0.6
+    line.userData.guidePhase = 0
+
+    return line
+  }
+
+  clearGuideConstellations() {
+    this.guideConstellationMeshes.forEach(({ group }) => {
+      this.scene.remove(group)
+    })
+    this.guideConstellationMeshes.clear()
+    this.guideConstellationIds = []
+  }
+
   bindEvents() {
     const canvas = this.renderer.domElement
 
@@ -1009,7 +1302,7 @@ export class NightSkyRenderer {
       const star = this.pickStar()
       if (star) {
         audioManager.playClick()
-        this.onStarClick && this.onStarClick(star.userData.starId)
+        this.onStarClick && this.onStarClick(star.userData.starId, star.userData)
       }
     }
 
@@ -1089,7 +1382,10 @@ export class NightSkyRenderer {
 
   pickStar() {
     this.raycaster.setFromCamera(this.mouse, this.camera)
-    const intersects = this.raycaster.intersectObjects(this.starMeshes)
+    const allStars = [...this.starMeshes]
+    this.discoveredConstellationMeshes.forEach(({ stars }) => allStars.push(...stars))
+    this.guideConstellationMeshes.forEach(({ stars }) => allStars.push(...stars))
+    const intersects = this.raycaster.intersectObjects(allStars)
     if (intersects.length > 0) {
       return intersects[0].object
     }
@@ -1102,12 +1398,28 @@ export class NightSkyRenderer {
       if (this.hoveredStar) {
         const s = this.hoveredStar
         const connected = this.connectionPath.includes(s.userData.starId)
-        const scale = s.userData.baseScale * (connected ? 1.8 : 1)
+        let scale = s.userData.baseScale
+        if (s.userData.isDiscovered) {
+          scale = s.userData.baseScale
+        } else if (s.userData.isGuide) {
+          scale = s.userData.baseScale
+        } else if (connected) {
+          scale *= 1.8
+        }
         s.scale.set(scale, scale, 1)
       }
       if (star) {
         const connected = this.connectionPath.includes(star.userData.starId)
-        const scale = star.userData.baseScale * (connected ? 2.2 : 1.6)
+        let scale
+        if (star.userData.isDiscovered) {
+          scale = star.userData.baseScale * 1.6
+        } else if (star.userData.isGuide) {
+          scale = star.userData.baseScale * 1.8
+        } else if (connected) {
+          scale = star.userData.baseScale * 2.2
+        } else {
+          scale = star.userData.baseScale * 1.6
+        }
         star.scale.set(scale, scale, 1)
         audioManager.playStarHover()
         this.updateStarLabel(true, star.userData, clientX, clientY)
@@ -1163,6 +1475,62 @@ export class NightSkyRenderer {
       if (star.material && star.material.uniforms?.glowOpacity) {
         star.material.uniforms.glowOpacity.value = this.hintConfig?.glowOpacity || 0.35
       }
+    })
+
+    this.discoveredConstellationMeshes.forEach(({ stars, isPerfect }, constellationId) => {
+      stars.forEach((star, i) => {
+        const baseScale = star.userData.baseScale
+        const pulseSpeed = isPerfect ? 1.5 : 3.0
+        const pulseAmount = isPerfect ? 0.08 : 0.03
+        const pulse = 1 + Math.sin(this.time * pulseSpeed + i * 0.5 + constellationId.length) * pulseAmount
+        let scale = baseScale
+        const isHovered = star === this.hoveredStar
+        if (isHovered) scale *= 1.6
+        star.scale.set(scale * pulse, scale * pulse, 1)
+
+        if (star.material) {
+          const baseOpacity = isPerfect ? 0.85 : 0.55
+          const opacityVariation = isPerfect ? 0.15 : 0.1
+          star.material.opacity = baseOpacity + Math.sin(this.time * pulseSpeed * 0.7 + i) * opacityVariation
+        }
+      })
+    })
+
+    this.discoveredConstellationLines.forEach((line) => {
+      if (line.material) {
+        const isPerfect = line.userData.isPerfectLine
+        const baseOpacity = isPerfect ? 0.5 : 0.25
+        const variation = isPerfect ? 0.15 : 0.08
+        line.material.opacity = baseOpacity + Math.sin(this.time * 1.2) * variation
+      }
+    })
+
+    this.guideConstellationMeshes.forEach(({ stars, group }, constellationId) => {
+      stars.forEach((star, i) => {
+        const baseScale = star.userData.baseScale
+        const phase = star.userData.guidePhase || 0
+        const pulseSpeed = 2.5
+        const pulseAmount = 0.2
+        const pulse = 1 + Math.sin(this.time * pulseSpeed + phase) * pulseAmount
+        let scale = baseScale
+        const isHovered = star === this.hoveredStar
+        if (isHovered) scale *= 1.8
+        star.scale.set(scale * pulse, scale * pulse, 1)
+
+        if (star.material) {
+          const baseOpacity = 0.75
+          const opacityVariation = 0.25
+          star.material.opacity = baseOpacity + Math.sin(this.time * pulseSpeed * 0.8 + phase) * opacityVariation
+        }
+      })
+
+      group.children.forEach((child) => {
+        if (child.userData?.isGuideRing) {
+          const baseOpacity = child.userData.baseOpacity || 0.6
+          child.material.opacity = baseOpacity * (0.6 + Math.sin(this.time * 1.8) * 0.4)
+          child.rotation.z += 0.003
+        }
+      })
     })
 
     if (this.meteorShowerActive) {
@@ -1369,6 +1737,8 @@ export class NightSkyRenderer {
     }
 
     this.clearConstellation()
+    this.clearDiscoveredConstellations()
+    this.clearGuideConstellations()
     this.clearAllEventEffects()
     this.clearConnectionParticles()
 

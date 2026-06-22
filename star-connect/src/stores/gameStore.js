@@ -4773,6 +4773,45 @@ export const useGameStore = create(
       isConstellationComplete: (constellationId) =>
         get().discoveredConstellations.includes(constellationId),
 
+      getGuideConstellations: (limit = 3) => {
+        const state = get()
+        const currentSeason = getCurrentSeason()
+        const seasonIds = getSeasonConstellations(currentSeason)
+        const discovered = state.discoveredConstellations
+        const perfect = state.perfectObservations
+
+        const undiscoveredInSeason = seasonIds.filter(id => !discovered.includes(id))
+        const discoveredButNotPerfect = seasonIds.filter(id =>
+          discovered.includes(id) && !perfect[id]
+        )
+
+        let result = [...undiscoveredInSeason]
+
+        if (result.length < limit) {
+          const otherSeasonsUndiscovered = CONSTELLATIONS
+            .filter(c => !seasonIds.includes(c.id) && !discovered.includes(c.id))
+            .sort((a, b) => a.difficulty - b.difficulty)
+            .map(c => c.id)
+          result = [...result, ...otherSeasonsUndiscovered]
+        }
+
+        if (result.length < limit) {
+          result = [...result, ...discoveredButNotPerfect]
+        }
+
+        return result.slice(0, limit)
+      },
+
+      getNightSkyState: () => {
+        const state = get()
+        return {
+          discoveredConstellations: state.discoveredConstellations,
+          perfectObservations: state.perfectObservations,
+          guideConstellations: state.getGuideConstellations(3),
+          currentTarget: state.currentTargetConstellation
+        }
+      },
+
       getProgress: () => {
         const state = get()
         const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length + DAILY_ACHIEVEMENTS.length

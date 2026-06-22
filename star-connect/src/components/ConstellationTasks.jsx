@@ -21,7 +21,10 @@ export default function ConstellationTasks() {
     resetReplay,
     setReplayPlaying,
     completedPaths,
-    connectionSnapshots
+    connectionSnapshots,
+    perfectObservations,
+    getGuideConstellations,
+    getSeasonStats
   } = useGameStore()
 
   const currentConstellation = CONSTELLATIONS.find(
@@ -45,6 +48,18 @@ export default function ConstellationTasks() {
     ? Math.round(((replayState.step + 1) / replayState.path.length) * 100)
     : 0
 
+  const guideIds = getGuideConstellations ? getGuideConstellations(4) : []
+  const seasonStats = getSeasonStats ? getSeasonStats() : null
+  const currentSeason = new Date().getMonth() < 3 ? 'spring' :
+                       new Date().getMonth() < 6 ? 'summer' :
+                       new Date().getMonth() < 9 ? 'autumn' : 'winter'
+  const seasonKeyMap = { spring: '春', summer: '夏', autumn: '秋', winter: '冬' }
+  const currentSeasonLabel = seasonKeyMap[currentSeason] || '春'
+
+  const featuredConstellations = guideIds.length > 0
+    ? guideIds.map(id => CONSTELLATIONS.find(c => c.id === id)).filter(Boolean)
+    : CONSTELLATIONS.slice(0, 4)
+
   return (
     <div className="absolute left-0 right-0 top-0 p-4 z-20 pointer-events-none">
       {!currentTargetConstellation && !replayState.active ? (
@@ -54,7 +69,12 @@ export default function ConstellationTasks() {
               <div>
                 <h2 className="text-xl font-display text-white">星座图鉴</h2>
                 <p className="text-xs text-white/50 mt-0.5">
-                  已发现 {discoveredConstellations.length} / {CONSTELLATIONS.length}
+                  已发现 <span className="text-nebula-cyan font-mono">{discoveredConstellations.length}</span> / {CONSTELLATIONS.length}
+                  {perfectObservations && Object.keys(perfectObservations).length > 0 && (
+                    <span className="text-star-gold ml-2">
+                      ★ {Object.keys(perfectObservations).length} 完美
+                    </span>
+                  )}
                 </p>
               </div>
               <button
@@ -71,32 +91,93 @@ export default function ConstellationTasks() {
               </button>
             </div>
 
+            {seasonStats && (
+              <div className={`mb-3 p-2.5 rounded-xl border ${
+                seasonStats[currentSeason]
+                  ? 'border-white/10 bg-space-700/30'
+                  : 'border-white/5 bg-space-800/30'
+              }`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-white/60">{currentSeasonLabel}季进度</span>
+                    {guideIds.length > 0 && (
+                      <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-cyan/15 text-nebula-cyan border border-nebula-cyan/20">
+                        推荐 {guideIds.length} 个
+                      </span>
+                    )}
+                  </div>
+                  <span className="fs-10 font-mono text-white/60">
+                    {seasonStats[currentSeason]?.overallPercentage || 0}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-nebula-cyan to-nebula-purple rounded-full transition-all duration-500"
+                    style={{ width: `${seasonStats[currentSeason]?.overallPercentage || 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2">
-              {CONSTELLATIONS.slice(0, 4).map((c) => {
+              {featuredConstellations.map((c, index) => {
+                if (!c) return null
                 const completed = isConstellationComplete(c.id)
+                const isPerfect = perfectObservations?.[c.id]
+                const isRecommended = guideIds.includes(c.id)
                 return (
                   <button
                     key={c.id}
                     onClick={() => setTargetConstellation(c.id)}
-                    className={`p-3 rounded-xl border transition-all text-left card-hover ${
+                    className={`p-3 rounded-xl border transition-all text-left card-hover relative overflow-hidden ${
                       completed
-                        ? 'border-nebula-purple/60 bg-nebula-purple/10'
-                        : 'border-white/10 bg-space-700/40'
+                        ? isPerfect
+                          ? 'border-star-gold/40 bg-star-gold/8'
+                          : 'border-nebula-purple/60 bg-nebula-purple/10'
+                        : isRecommended
+                          ? 'border-nebula-cyan/40 bg-nebula-cyan/8 ring-1 ring-nebula-cyan/20'
+                          : 'border-white/10 bg-space-700/40'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
+                    {isRecommended && !completed && (
+                      <div className="absolute top-1.5 right-1.5">
+                        <span className="inline-flex items-center gap-0.5 fs-9 px-1.5 py-0.5 rounded-full
+                                         bg-nebula-cyan/20 text-nebula-cyan border border-nebula-cyan/30
+                                         animate-pulse">
+                          ✦ 推荐
+                        </span>
+                      </div>
+                    )}
+                    {index === 0 && !completed && (
+                      <div className="absolute -top-0.5 -left-0.5 w-2 h-2 rounded-full bg-nebula-cyan animate-ping" />
+                    )}
+                    <div className="flex items-start justify-between pr-6">
                       <div>
                         <div className="flex items-center gap-1">
                           <span className="text-sm font-display text-white">
                             {c.name}
                           </span>
-                          {completed && <span className="text-star-gold">✓</span>}
+                          {completed && (
+                            <span className={isPerfect ? 'text-star-gold' : 'text-nebula-cyan'}>
+                              {isPerfect ? '★' : '✓'}
+                            </span>
+                          )}
                         </div>
                         <div className="fs-10 text-white/40 mt-0.5">
                           {c.nameEn}
                         </div>
+                        {!completed && (
+                          <div className="fs-9 text-white/30 mt-1">
+                            {c.stars.length} 星 · {c.season}季
+                          </div>
+                        )}
+                        {completed && isPerfect && (
+                          <div className="fs-9 text-star-gold/70 mt-1">
+                            完美观测
+                          </div>
+                        )}
                       </div>
-                      <span className={`fs-10 px-1.5 py-0.5 rounded ${
+                      <span className={`fs-10 px-1.5 py-0.5 rounded flex-shrink-0 ${
                         c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                         c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                         'bg-red-500/20 text-red-300'
@@ -115,6 +196,27 @@ export default function ConstellationTasks() {
             >
               查看全部 {CONSTELLATIONS.length} 个星座 →
             </button>
+
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={() => setActivePanel('seasons')}
+                className="flex-1 py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5
+                         bg-space-700/40 border border-white/10 text-white/70
+                         hover:bg-nebula-purple/20 hover:border-nebula-purple/30 hover:text-white"
+              >
+                <span>🗓️</span>
+                <span>四季计划</span>
+              </button>
+              <button
+                onClick={() => setActivePanel('calendar')}
+                className="flex-1 py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5
+                         bg-space-700/40 border border-white/10 text-white/70
+                         hover:bg-star-gold/20 hover:border-star-gold/30 hover:text-white"
+              >
+                <span>📅</span>
+                <span>每日签到</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -134,8 +236,10 @@ export default function ConstellationTasks() {
                     {DIFFICULTY_CONFIG[currentConstellation?.difficulty].label}
                   </span>
                   {isComplete && !replayState.active && (
-                    <span className="text-star-gold text-sm animate-pulse-slow">
-                      ★ 已完成
+                    <span className={`text-sm animate-pulse-slow ${
+                      perfectObservations?.[targetId] ? 'text-star-gold' : 'text-nebula-cyan'
+                    }`}>
+                      {perfectObservations?.[targetId] ? '★ 完美完成' : '✓ 已完成'}
                     </span>
                   )}
                   {replayState.active && (
@@ -175,10 +279,19 @@ export default function ConstellationTasks() {
                 </div>
                 <div className="h-2 bg-space-900/80 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-nebula-purple to-nebula-cyan rounded-full transition-all duration-500"
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      perfectObservations?.[targetId] || (mistakes === 0 && progress > 0)
+                        ? 'bg-gradient-to-r from-star-gold to-nebula-orange'
+                        : 'bg-gradient-to-r from-nebula-purple to-nebula-cyan'
+                    }`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
+                {mistakes === 0 && progress > 0 && !isComplete && (
+                  <p className="fs-9 text-star-gold/60 mt-1.5 text-center">
+                    ✦ 保持零失误，冲击完美观测！
+                  </p>
+                )}
               </div>
             ) : (
               <div className="mt-3">

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { NightSkyRenderer } from '../modules/NightSkyRenderer'
 import { audioManager } from '../modules/AudioManager'
+import { getConstellationById } from '../data/constellations'
 
 export default function NightSky() {
   const containerRef = useRef(null)
@@ -20,14 +21,33 @@ export default function NightSky() {
   const replayState = useGameStore((s) => s.replayState)
   const advanceReplayStep = useGameStore((s) => s.advanceReplayStep)
 
+  const discoveredConstellations = useGameStore((s) => s.discoveredConstellations)
+  const perfectObservations = useGameStore((s) => s.perfectObservations)
+  const getGuideConstellations = useGameStore((s) => s.getGuideConstellations)
+  const setTargetConstellation = useGameStore((s) => s.setTargetConstellation)
+
   useEffect(() => {
     if (!containerRef.current) return
 
     audioManager.init()
 
-    const handleStarClick = (starId) => {
+    const handleStarClick = (starId, starUserData) => {
       const state = useGameStore.getState()
       if (state.replayState.active) return
+
+      if (starUserData?.isDiscovered || starUserData?.isGuide) {
+        const constellationId = starUserData?.constellationId
+        if (constellationId) {
+          const c = getConstellationById(constellationId)
+          if (c) {
+            audioManager.ensureContext()
+            audioManager.playClick()
+            setTargetConstellation(constellationId)
+            return
+          }
+        }
+        return
+      }
 
       audioManager.ensureContext()
       const result = connectStar(starId)
@@ -46,6 +66,14 @@ export default function NightSky() {
       handleStarClick
     )
     rendererRef.current = renderer
+
+    const guideIds = getGuideConstellations ? getGuideConstellations(3) : []
+    if (discoveredConstellations.length > 0) {
+      renderer.loadDiscoveredConstellations(discoveredConstellations, perfectObservations)
+    }
+    if (guideIds.length > 0) {
+      renderer.setGuideConstellations(guideIds)
+    }
 
     const handleTouchStart = (e) => {
       audioManager.ensureContext()
@@ -82,9 +110,21 @@ export default function NightSky() {
     if (rendererRef.current && targetConstellationId) {
       rendererRef.current.loadConstellation(targetConstellationId)
       lastMistakesRef.current = 0
+
+      const remainingDiscovered = discoveredConstellations.filter(id => id !== targetConstellationId)
+      rendererRef.current.loadDiscoveredConstellations(remainingDiscovered, perfectObservations)
+
+      const guideIds = getGuideConstellations ? getGuideConstellations(3).filter(id => id !== targetConstellationId) : []
+      rendererRef.current.setGuideConstellations(guideIds)
     } else if (rendererRef.current && !targetConstellationId) {
       rendererRef.current.clearConstellation()
       lastMistakesRef.current = 0
+
+      if (discoveredConstellations.length > 0) {
+        rendererRef.current.loadDiscoveredConstellations(discoveredConstellations, perfectObservations)
+      }
+      const guideIds = getGuideConstellations ? getGuideConstellations(3) : []
+      rendererRef.current.setGuideConstellations(guideIds)
     }
   }, [targetConstellationId])
 
@@ -159,6 +199,16 @@ export default function NightSky() {
     }
     lastMistakesRef.current = mistakes
   }, [mistakes])
+
+  useEffect(() => {
+    if (!rendererRef.current) return
+    rendererRef.current.loadDiscoveredConstellations(discoveredConstellations, perfectObservations)
+    const guideIds = getGuideConstellations ? getGuideConstellations(3) : []
+    const filteredGuideIds = targetConstellationId
+      ? guideIds.filter(id => id !== targetConstellationId)
+      : guideIds
+    rendererRef.current.setGuideConstellations(filteredGuideIds)
+  }, [discoveredConstellations, perfectObservations])
 
   useEffect(() => {
     const updateEvents = () => {
