@@ -14,8 +14,8 @@ export default function NightSky() {
   const mistakes = useGameStore((s) => s.mistakes)
   const connectStar = useGameStore((s) => s.connectStar)
   const isConstellationComplete = useGameStore((s) => s.isConstellationComplete)
-  const getActiveNightSkyEvents = useGameStore((s) => s.getActiveNightSkyEvents)
-  const refreshNightSkyEvents = useGameStore((s) => s.refreshNightSkyEvents)
+  const getActiveNightSkyEvents = useGameStore((s) => s.getActiveNightSkyEvents) || (() => [])
+  const refreshNightSkyEvents = useGameStore((s) => s.refreshNightSkyEvents) || (() => {})
 
   useEffect(() => {
     if (!containerRef.current) return

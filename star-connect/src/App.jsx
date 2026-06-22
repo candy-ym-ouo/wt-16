@@ -19,6 +19,7 @@ import TutorialCamp from './components/TutorialCamp'
 import StarRoute from './components/StarRoute'
 import StoryChapter from './components/StoryChapter'
 import ObservationReport from './components/ObservationReport'
+import ConstellationResearch from './components/ConstellationResearch'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
@@ -108,6 +109,7 @@ export default function App() {
       {activePanel === 'tutorial' && <TutorialCamp />}
       {activePanel === 'route' && <StarRoute />}
       {activePanel === 'report' && <ObservationReport />}
+      {activePanel === 'research' && <ConstellationResearch />}
 
       <div className="pointer-events-none absolute top-0 left-0 w-full h-32
                       bg-gradient-to-b from-space-900/50 to-transparent z-10" />

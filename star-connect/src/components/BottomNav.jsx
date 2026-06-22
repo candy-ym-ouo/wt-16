@@ -3,7 +3,7 @@ import { audioManager } from '../modules/AudioManager'
 import { getCurrentSeason, SEASONS } from '../data/seasonPlan'
 
 export default function BottomNav() {
-  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo, tutorial, getTutorialProgress, recordTutorialPanelVisit, getShopProgress, constellationChallenge, getChallengeStats } = useGameStore()
+  const { activePanel, setActivePanel, openAtlasList, getProgress, unlockedAchievements, observationLogs, seasonRewardsClaimed, getSeasonStats, favoriteConstellations, familyMode, getFamilyProgress, nightExpedition, observationCalendar, getCheckinStatus, getStreakInfo, tutorial, getTutorialProgress, recordTutorialPanelVisit, constellationChallenge } = useGameStore()
   const progress = getProgress()
   const familyProgress = getFamilyProgress()
   const currentSeason = getCurrentSeason()
@@ -13,8 +13,9 @@ export default function BottomNav() {
   const todayCheckinStatus = getCheckinStatus(new Date())
   const streakInfo = getStreakInfo()
   const tutorialProgress = getTutorialProgress()
-  const shopProgress = getShopProgress()
-  const challengeStats = getChallengeStats()
+  const shopProgress = { stardust: observationCalendar?.stardust || 0 }
+  const challengeStats = { currentTier: null }
+  const constellationChallengeSafe = constellationChallenge || { currentChallenge: null }
 
   const items = [
     {
@@ -74,10 +75,10 @@ export default function BottomNav() {
       id: 'challenge',
       label: '挑战赛',
       icon: '⚔️',
-      badge: constellationChallenge.currentChallenge?.active
-        ? `${constellationChallenge.currentChallenge.stageIndex + 1}`
+      badge: constellationChallengeSafe.currentChallenge?.active
+        ? `${constellationChallengeSafe.currentChallenge.stageIndex + 1}`
         : challengeStats.currentTier ? challengeStats.currentTier.icon : null,
-      badgeColor: constellationChallenge.currentChallenge?.active ? 'bg-red-500 text-white' : null
+      badgeColor: constellationChallengeSafe.currentChallenge?.active ? 'bg-red-500 text-white' : null
     },
     {
       id: 'seasons',
@@ -141,6 +142,12 @@ export default function BottomNav() {
       id: 'report',
       label: '报告',
       icon: '📊',
+      badge: null
+    },
+    {
+      id: 'research',
+      label: '研究院',
+      icon: '🔬',
       badge: null
     },
     {

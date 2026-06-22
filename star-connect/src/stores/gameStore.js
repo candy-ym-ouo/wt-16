@@ -92,6 +92,21 @@ import {
   shareReport,
   REPORT_TYPES
 } from '../data/observationReport'
+import {
+  RESEARCH_TOPICS,
+  RESEARCH_MATERIALS,
+  RESEARCH_EXAMS,
+  RESEARCHER_RANKS,
+  getTopicById,
+  getMaterialById,
+  getExamById,
+  getRankById,
+  calculateRank,
+  getNextRank,
+  getProgressForObjective,
+  isMaterialUnlocked,
+  checkExamAnswer
+} from '../data/constellationResearch'
 
 let autoSaveEnabled = true
 
@@ -157,7 +172,8 @@ export const useGameStore = create(
             starGallery: state.starGallery,
             tutorial: state.tutorial,
             storyProgress: state.storyProgress,
-            starRoute: state.starRoute
+            starRoute: state.starRoute,
+            research: state.research
           },
           version: 0
         }
@@ -3564,6 +3580,426 @@ export const useGameStore = create(
         return newlyUnlocked
       },
 
+      research: {
+        xp: 0,
+        startedTopicIds: [],
+        completedTopicIds: [],
+        topicProgress: {},
+        claimedTopicRewards: [],
+        readMaterials: {},
+        readMythologies: [],
+        passedExams: [],
+        examHistory: [],
+        notes: [],
+        activeExam: null,
+        activeTopicId: null,
+        activeMaterialId: null,
+        unlockedBadges: []
+      },
+
+      getResearchStats: () => {
+        const state = get()
+        const r = state.research
+        const currentRank = calculateRank(r.xp)
+        const nextRank = getNextRank(currentRank.id)
+        const xpToNext = nextRank ? nextRank.xpRequired - r.xp : 0
+        const xpProgressInRank = nextRank
+          ? Math.round(((r.xp - currentRank.xpRequired) / (nextRank.xpRequired - currentRank.xpRequired)) * 100)
+          : 100
+
+        return {
+          xp: r.xp,
+          currentRank,
+          nextRank,
+          xpToNext,
+          xpProgressInRank,
+          startedTopics: r.startedTopicIds.length,
+          completedTopics: r.completedTopicIds.length,
+          totalTopics: RESEARCH_TOPICS.length,
+          readMaterials: Object.keys(r.readMaterials).length,
+          totalMaterials: Object.keys(RESEARCH_MATERIALS).length,
+          passedExams: r.passedExams.length,
+          totalExams: Object.keys(RESEARCH_EXAMS).length,
+          notesCount: r.notes.length,
+          badgesCount: r.unlockedBadges.length
+        }
+      },
+
+      addResearchXP: (amount, reason) => {
+        set((state) => ({
+          research: { ...state.research, xp: state.research.xp + amount }
+        }))
+        get().addLog({
+          type: 'research_xp',
+          amount,
+          reason: reason || '获得研究经验',
+          timestamp: Date.now()
+        })
+      },
+
+      startResearchTopic: (topicId) => {
+        const state = get()
+        const topic = getTopicById(topicId)
+        if (!topic) return { success: false, error: '课题不存在' }
+
+        const currentRank = calculateRank(state.research.xp)
+        const requiredRank = getRankById(topic.rankRequired)
+        if (requiredRank && currentRank.level < requiredRank.level) {
+          return {
+            success: false,
+            error: `需要达到「${requiredRank.name}」等级才能开始此课题`
+          }
+        }
+
+        if (state.research.startedTopicIds.includes(topicId)) {
+          return { success: false, error: '课题已开始' }
+        }
+
+        set((s) => ({
+          research: {
+            ...s.research,
+            startedTopicIds: [...s.research.startedTopicIds, topicId],
+            activeTopicId: topicId,
+            topicProgress: {
+              ...s.research.topicProgress,
+              [topicId]: 0
+            }
+          }
+        }))
+
+        get().addLog({
+          type: 'research_topic_start',
+          topicId,
+          topicName: topic.title,
+          timestamp: Date.now()
+        })
+
+        return { success: true, topic }
+      },
+
+      setActiveResearchTopic: (topicId) => {
+        set((state) => ({
+          research: { ...state.research, activeTopicId: topicId }
+        }))
+      },
+
+      getTopicProgress: (topicId) => {
+        const state = get()
+        const topic = getTopicById(topicId)
+        if (!topic) return null
+
+        const researchState = {
+          discoveredConstellations: state.discoveredConstellations,
+          perfectObservations: state.perfectObservations,
+          totalObservations: state.totalObservations,
+          observationLogs: state.observationLogs,
+          completedTopicIds: state.research.completedTopicIds,
+          readMaterials: state.research.readMaterials,
+          readMythologies: state.research.readMythologies,
+          notes: state.research.notes,
+          passedExams: state.research.passedExams
+        }
+
+        let totalRewards = 0
+        let earnedRewards = 0
+        const objectives = topic.objectives.map((obj) => {
+          const progress = getProgressForObjective(obj, researchState)
+          totalRewards += obj.reward || 0
+          if (progress.completed) earnedRewards += obj.reward || 0
+          return { ...obj, progress }
+        })
+
+        const allCompleted = objectives.every(o => o.progress.completed)
+        const percentage = objectives.length > 0
+          ? Math.round(objectives.reduce((sum, o) => sum + o.progress.percentage, 0) / objectives.length)
+          : 0
+
+        const exam = topic.examId ? getExamById(topic.examId) : null
+        const examPassed = exam ? state.research.passedExams.includes(exam.id) : false
+
+        const isCompleted = state.research.completedTopicIds.includes(topicId)
+
+        return {
+          topic,
+          objectives,
+          allObjectivesCompleted: allCompleted,
+          percentage,
+          exam,
+          examPassed,
+          isCompleted,
+          totalRewards,
+          earnedRewards,
+          canClaim: allCompleted && examPassed && !isCompleted
+        }
+      },
+
+      checkTopicProgress: () => {
+        const state = get()
+        const updates = {}
+        let changed = false
+
+        state.research.startedTopicIds.forEach((topicId) => {
+          const progress = state.getTopicProgress(topicId)
+          if (!progress) return
+          const oldProgress = state.research.topicProgress[topicId] || 0
+          if (progress.percentage !== oldProgress) {
+            updates[topicId] = progress.percentage
+            changed = true
+          }
+        })
+
+        if (changed) {
+          set((s) => ({
+            research: {
+              ...s.research,
+              topicProgress: { ...s.research.topicProgress, ...updates }
+            }
+          }))
+        }
+      },
+
+      completeResearchTopic: (topicId) => {
+        const state = get()
+        const progress = state.getTopicProgress(topicId)
+        if (!progress) return { success: false, error: '课题不存在' }
+        if (!progress.canClaim) return { success: false, error: '课题尚未完成' }
+
+        const topic = progress.topic
+        set((s) => ({
+          research: {
+            ...s.research,
+            completedTopicIds: [...s.research.completedTopicIds, topicId],
+            claimedTopicRewards: [...s.research.claimedTopicRewards, topicId]
+          }
+        }))
+
+        get().addResearchXP(topic.xpReward, `课题完成：${topic.title}`)
+        get().addStardust(Math.floor(topic.xpReward * 2), `研究院课题奖励`)
+
+        get().addLog({
+          type: 'research_topic_complete',
+          topicId,
+          topicName: topic.title,
+          xpReward: topic.xpReward,
+          timestamp: Date.now()
+        })
+
+        return { success: true, topic, xpReward: topic.xpReward }
+      },
+
+      readMaterial: (materialId) => {
+        const state = get()
+        const material = getMaterialById(materialId)
+        if (!material) return false
+
+        const unlocked = isMaterialUnlocked(material, state.research)
+        if (!unlocked) return false
+
+        if (state.research.readMaterials[materialId]) {
+          set((s) => ({
+            research: { ...s.research, activeMaterialId: materialId }
+          }))
+          return true
+        }
+
+        set((s) => ({
+          research: {
+            ...s.research,
+            readMaterials: { ...s.research.readMaterials, [materialId]: Date.now() },
+            activeMaterialId: materialId
+          }
+        }))
+
+        get().addResearchXP(5, `阅读资料：${material.title}`)
+        get().checkTopicProgress()
+        return true
+      },
+
+      setActiveMaterial: (materialId) => {
+        set((state) => ({
+          research: { ...state.research, activeMaterialId: materialId }
+        }))
+      },
+
+      isMaterialAccessible: (materialId) => {
+        const state = get()
+        const material = getMaterialById(materialId)
+        if (!material) return false
+        return isMaterialUnlocked(material, state.research)
+      },
+
+      getAccessibleMaterials: () => {
+        const state = get()
+        return Object.values(RESEARCH_MATERIALS).filter(m =>
+          isMaterialUnlocked(m, state.research)
+        )
+      },
+
+      recordMythologyRead: (constellationId) => {
+        const state = get()
+        if (state.research.readMythologies.includes(constellationId)) return
+        set((s) => ({
+          research: {
+            ...s.research,
+            readMythologies: [...s.research.readMythologies, constellationId]
+          }
+        }))
+        get().checkTopicProgress()
+      },
+
+      addResearchNote: (noteData) => {
+        const note = {
+          id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          createdAt: Date.now(),
+          ...noteData
+        }
+        set((state) => ({
+          research: {
+            ...state.research,
+            notes: [note, ...state.research.notes].slice(0, 100)
+          }
+        }))
+        get().checkTopicProgress()
+        return note
+      },
+
+      startExam: (examId) => {
+        const state = get()
+        const exam = getExamById(examId)
+        if (!exam) return { success: false, error: '考核不存在' }
+
+        if (state.research.activeExam) {
+          return { success: false, error: '已有进行中的考核' }
+        }
+
+        const activeExam = {
+          examId,
+          answers: {},
+          startTime: Date.now(),
+          currentQuestionIndex: 0
+        }
+
+        set((s) => ({
+          research: { ...s.research, activeExam }
+        }))
+
+        return { success: true, exam, activeExam }
+      },
+
+      answerExamQuestion: (questionId, answer) => {
+        const state = get()
+        const activeExam = state.research.activeExam
+        if (!activeExam) return null
+
+        const exam = getExamById(activeExam.examId)
+        if (!exam) return null
+
+        const question = exam.questions.find(q => q.id === questionId)
+        if (!question) return null
+
+        const isCorrect = checkExamAnswer(question, answer)
+
+        set((s) => ({
+          research: {
+            ...s.research,
+            activeExam: {
+              ...s.research.activeExam,
+              answers: {
+                ...s.research.activeExam.answers,
+                [questionId]: { answer, isCorrect }
+              },
+              currentQuestionIndex: s.research.activeExam.currentQuestionIndex + 1
+            }
+          }
+        }))
+
+        return { isCorrect, correctAnswer: question.answer, isLast: activeExam.currentQuestionIndex + 1 >= exam.questions.length }
+      },
+
+      finishExam: () => {
+        const state = get()
+        const activeExam = state.research.activeExam
+        if (!activeExam) return null
+
+        const exam = getExamById(activeExam.examId)
+        if (!exam) return null
+
+        let totalScore = 0
+        let maxScore = 0
+
+        exam.questions.forEach((q) => {
+          maxScore += q.score
+          const userAnswer = activeExam.answers[q.id]
+          if (userAnswer?.isCorrect) {
+            totalScore += q.score
+          }
+        })
+
+        const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0
+        const passed = percentage >= exam.passScore
+
+        const record = {
+          examId: exam.id,
+          examTitle: exam.title,
+          score: totalScore,
+          maxScore,
+          percentage,
+          passed,
+          duration: Date.now() - activeExam.startTime,
+          answers: activeExam.answers,
+          timestamp: Date.now()
+        }
+
+        const newPassed = passed && !state.research.passedExams.includes(exam.id)
+
+        set((s) => ({
+          research: {
+            ...s.research,
+            activeExam: null,
+            examHistory: [record, ...s.research.examHistory].slice(0, 50),
+            passedExams: newPassed
+              ? [...s.research.passedExams, exam.id]
+              : s.research.passedExams
+          }
+        }))
+
+        if (newPassed) {
+          get().addResearchXP(exam.xpReward, `通过考核：${exam.title}`)
+          get().addStardust(Math.floor(exam.xpReward * 1.5), `研究院考核通过奖励`)
+        }
+
+        get().addLog({
+          type: 'research_exam',
+          examId: exam.id,
+          examTitle: exam.title,
+          score: percentage,
+          passed,
+          timestamp: Date.now()
+        })
+
+        get().checkTopicProgress()
+
+        return record
+      },
+
+      abandonExam: () => {
+        set((state) => ({
+          research: { ...state.research, activeExam: null }
+        }))
+      },
+
+      getExamRecord: (examId) => {
+        const state = get()
+        return state.research.examHistory.find(r => r.examId === examId) || null
+      },
+
+      getExamBestScore: (examId) => {
+        const state = get()
+        const records = state.research.examHistory.filter(r => r.examId === examId)
+        if (records.length === 0) return null
+        return records.reduce((best, r) => r.percentage > best.percentage ? r : best)
+      },
+
       generateWeeklyReport: (date = new Date()) => {
         const state = get()
         return generateReport(REPORT_TYPES.WEEKLY, date, state)
@@ -3778,6 +4214,22 @@ export const useGameStore = create(
             difficultyPreference: 'balanced',
             totalRoutesCompleted: 0,
             perfectRoutes: 0
+          },
+          research: {
+            xp: 0,
+            startedTopicIds: [],
+            completedTopicIds: [],
+            topicProgress: {},
+            claimedTopicRewards: [],
+            readMaterials: {},
+            readMythologies: [],
+            passedExams: [],
+            examHistory: [],
+            notes: [],
+            activeExam: null,
+            activeTopicId: null,
+            activeMaterialId: null,
+            unlockedBadges: []
           }
         })
     }),
@@ -3805,7 +4257,8 @@ export const useGameStore = create(
         team: state.team,
         starGallery: state.starGallery,
         tutorial: state.tutorial,
-        starRoute: state.starRoute
+        starRoute: state.starRoute,
+        research: state.research
       })
     }
   )
