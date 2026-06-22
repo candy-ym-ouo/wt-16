@@ -114,6 +114,15 @@ import {
   getDailyAchievementById,
   COMMISSION_DIFFICULTY
 } from '../data/dailyCommissions'
+import {
+  LOG_TAG_CATEGORIES,
+  LOG_TYPES,
+  TIME_RANGES,
+  getLogTags,
+  getAllTags,
+  getTagById,
+  getCategoryByTagId
+} from '../data/logTags'
 
 let autoSaveEnabled = true
 
@@ -1502,6 +1511,294 @@ export const useGameStore = create(
           return updates
         }),
       clearLogs: () => set({ observationLogs: [] }),
+
+      customTags: [],
+      addCustomTag: (tag) =>
+        set((state) => ({
+          customTags: [...state.customTags, { ...tag, id: `custom_${Date.now()}`, custom: true }].slice(0, 50)
+        })),
+      removeCustomTag: (tagId) =>
+        set((state) => ({
+          customTags: state.customTags.filter((t) => t.id !== tagId)
+        })),
+      updateLogTags: (logIndex, tags) =>
+        set((state) => {
+          const newLogs = [...state.observationLogs]
+          if (newLogs[logIndex]) {
+            newLogs[logIndex] = { ...newLogs[logIndex], tags }
+          }
+          return { observationLogs: newLogs }
+        }),
+      addTagToLog: (logIndex, tagId) =>
+        set((state) => {
+          const newLogs = [...state.observationLogs]
+          if (newLogs[logIndex]) {
+            const currentTags = newLogs[logIndex].tags || []
+            if (!currentTags.includes(tagId)) {
+              newLogs[logIndex] = { ...newLogs[logIndex], tags: [...currentTags, tagId] }
+            }
+          }
+          return { observationLogs: newLogs }
+        }),
+      removeTagFromLog: (logIndex, tagId) =>
+        set((state) => {
+          const newLogs = [...state.observationLogs]
+          if (newLogs[logIndex]) {
+            const currentTags = newLogs[logIndex].tags || []
+            newLogs[logIndex] = {
+              ...newLogs[logIndex],
+              tags: currentTags.filter((t) => t !== tagId)
+            }
+          }
+          return { observationLogs: newLogs }
+        }),
+
+      filterLogs: ({ type, tags, timeRange, searchText, perfectOnly } = {}) => {
+        const state = get()
+        let filtered = [...state.observationLogs]
+
+        if (type && type !== 'all') {
+          filtered = filtered.filter((log) => log.type === type)
+        }
+
+        if (tags && tags.length > 0) {
+          filtered = filtered.filter((log) => {
+            const logTags = getLogTags(log)
+            return tags.some((tag) => logTags.includes(tag))
+          })
+        }
+
+        if (perfectOnly) {
+          filtered = filtered.filter((log) => log.perfect)
+        }
+
+        if (timeRange && timeRange !== 'all') {
+          const rangeConfig = TIME_RANGES[timeRange]
+          if (rangeConfig && rangeConfig.days) {
+            const cutoffTime = Date.now() - rangeConfig.days * 24 * 60 * 60 * 1000
+            filtered = filtered.filter((log) => log.timestamp >= cutoffTime)
+          }
+        }
+
+        if (searchText && searchText.trim()) {
+          const search = searchText.toLowerCase().trim()
+          filtered = filtered.filter((log) => {
+            if (log.constellationId) {
+              const c = getConstellationById(log.constellationId)
+              if (c) {
+                if (c.name.toLowerCase().includes(search)) return true
+                if (c.nameEn.toLowerCase().includes(search)) return true
+              }
+            }
+            if (log.achievementId) {
+              const a = getAchievementById(log.achievementId)
+              if (a) {
+                if (a.name.toLowerCase().includes(search)) return true
+                if (a.description.toLowerCase().includes(search)) return true
+              }
+            }
+            if (log.eventName && log.eventName.toLowerCase().includes(search)) return true
+            if (log.routeName && log.routeName.toLowerCase().includes(search)) return true
+            if (log.rewardName && log.rewardName.toLowerCase().includes(search)) return true
+            if (log.note && log.note.toLowerCase().includes(search)) return true
+            if (log.type && log.type.toLowerCase().includes(search)) return true
+            return false
+          })
+        }
+
+        return filtered
+      },
+
+      getLogStats: (logs = null) => {
+        const state = get()
+        const targetLogs = logs || state.observationLogs
+
+        const stats = {
+          total: targetLogs.length,
+          byType: {},
+          byTag: {},
+          byDate: {},
+          discoveries: 0,
+          reobservations: 0,
+          perfectRuns: 0,
+          achievements: 0,
+          seasonRewards: 0,
+          events: 0,
+          quizzes: 0,
+          routes: 0,
+          expeditions: 0,
+          commissions: 0,
+          checkins: 0,
+          uniqueConstellations: new Set(),
+          mostActiveDay: null,
+          activeDays: new Set(),
+        }
+
+        const typeMap = {
+          discovery: 'discoveries',
+          reobservation: 'reobservations',
+          achievement: 'achievements',
+          season_reward: 'seasonRewards',
+          event_start: 'events',
+          event_end: 'events',
+          event_reward: 'events',
+          event_participate: 'events',
+          quiz_complete: 'quizzes',
+          quiz_perfect: 'quizzes',
+          quiz_exchange: 'quizzes',
+          route_start: 'routes',
+          route_complete: 'routes',
+          route_abandon: 'routes',
+          expedition_start: 'expeditions',
+          expedition_complete: 'expeditions',
+          daily_commission_complete: 'commissions',
+          daily_commission_claim: 'commissions',
+          checkin: 'checkins',
+        }
+
+        targetLogs.forEach((log) => {
+          if (!stats.byType[log.type]) stats.byType[log.type] = 0
+          stats.byType[log.type]++
+
+          const category = typeMap[log.type]
+          if (category) {
+            stats[category]++
+          }
+
+          if (log.perfect) {
+            stats.perfectRuns++
+          }
+
+          if (log.constellationId) {
+            stats.uniqueConstellations.add(log.constellationId)
+          }
+
+          const logTags = getLogTags(log)
+          logTags.forEach((tag) => {
+            if (!stats.byTag[tag]) stats.byTag[tag] = 0
+            stats.byTag[tag]++
+          })
+
+          if (log.timestamp) {
+            const date = new Date(log.timestamp).toDateString()
+            if (!stats.byDate[date]) stats.byDate[date] = 0
+            stats.byDate[date]++
+            stats.activeDays.add(date)
+          }
+        })
+
+        const dateEntries = Object.entries(stats.byDate)
+        if (dateEntries.length > 0) {
+          const mostActive = dateEntries.sort((a, b) => b[1] - a[1])[0]
+          stats.mostActiveDay = {
+            date: new Date(mostActive[0]),
+            count: mostActive[1]
+          }
+        }
+
+        stats.uniqueConstellations = Array.from(stats.uniqueConstellations)
+        stats.activeDays = stats.activeDays.size
+
+        return stats
+      },
+
+      getLogSummary: (logs = null) => {
+        const state = get()
+        const targetLogs = logs || state.observationLogs
+        const stats = state.getLogStats(targetLogs)
+
+        const insights = []
+
+        if (stats.discoveries > 0) {
+          insights.push({
+            type: 'discovery',
+            icon: '✨',
+            title: '新发现',
+            content: `发现了 ${stats.discoveries} 个新星座`,
+            color: 'text-nebula-purple'
+          })
+        }
+
+        if (stats.perfectRuns > 0) {
+          insights.push({
+            type: 'perfect',
+            icon: '💎',
+            title: '完美表现',
+            content: `完成了 ${stats.perfectRuns} 次完美观测`,
+            color: 'text-star-gold'
+          })
+        }
+
+        if (stats.achievements > 0) {
+          insights.push({
+            type: 'achievement',
+            icon: '🏆',
+            title: '里程碑',
+            content: `解锁了 ${stats.achievements} 个成就`,
+            color: 'text-nebula-orange'
+          })
+        }
+
+        if (stats.activeDays >= 7) {
+          insights.push({
+            type: 'consistency',
+            icon: '🔥',
+            title: '坚持不懈',
+            content: `连续 ${stats.activeDays} 天探索星空`,
+            color: 'text-red-400'
+          })
+        } else if (stats.activeDays >= 3) {
+          insights.push({
+            type: 'consistency',
+            icon: '🌱',
+            title: '稳步前进',
+            content: `探索了 ${stats.activeDays} 天`,
+            color: 'text-green-400'
+          })
+        }
+
+        if (stats.uniqueConstellations.length >= 3) {
+          const constellationNames = stats.uniqueConstellations
+            .slice(0, 3)
+            .map((id) => getConstellationById(id)?.name)
+            .filter(Boolean)
+          insights.push({
+            type: 'exploration',
+            icon: '🗺️',
+            title: '探索范围',
+            content: `已观测 ${stats.uniqueConstellations.length} 个不同星座${
+              constellationNames.length > 0 ? `，包括${constellationNames.join('、')}` : ''
+            }`,
+            color: 'text-nebula-cyan'
+          })
+        }
+
+        if (targetLogs.length === 0) {
+          insights.push({
+            type: 'empty',
+            icon: '🌙',
+            title: '等待探索',
+            content: '还没有观测记录，开始你的星空之旅吧！',
+            color: 'text-white/50'
+          })
+        }
+
+        return {
+          stats,
+          insights,
+          topTags: Object.entries(stats.byTag)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([tagId, count]) => ({
+              tag: getTagById(tagId),
+              count
+            }))
+            .filter((item) => item.tag),
+          topTypes: Object.entries(stats.byType)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5),
+        }
+      },
 
       unlockedAchievements: [],
 
@@ -4535,7 +4832,8 @@ export const useGameStore = create(
             totalHardCompleted: 0,
             streakDays: 0,
             lastCompleteAllDate: null
-          }
+          },
+          customTags: []
         })
     }),
     {
@@ -4546,6 +4844,7 @@ export const useGameStore = create(
         discoveredConstellations: state.discoveredConstellations,
         discoveredStars: state.discoveredStars,
         observationLogs: state.observationLogs,
+        customTags: state.customTags,
         unlockedAchievements: state.unlockedAchievements,
         totalMistakes: state.totalMistakes,
         seasonProgress: state.seasonProgress,
