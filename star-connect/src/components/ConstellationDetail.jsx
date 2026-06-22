@@ -79,6 +79,48 @@ export default function ConstellationDetail({ constellationId }) {
   const locSeason = tc('constellation', constellationId, 'season') || constellation?.season
   const locDifficulty = t(`difficulty.${constellation?.difficulty}`) || DIFFICULTY_CONFIG[constellation?.difficulty]?.label
 
+  const locObsWindow = {
+    months: tc('constellation', constellationId, 'observationWindow_months'),
+    bestMonths: tc('constellation', constellationId, 'observationWindow_bestMonths'),
+    riseTime: tc('constellation', constellationId, 'observationWindow_riseTime'),
+    setTime: tc('constellation', constellationId, 'observationWindow_setTime'),
+    bestHours: tc('constellation', constellationId, 'observationWindow_bestHours'),
+    transitInfo: tc('constellation', constellationId, 'observationWindow_transitInfo'),
+    moonConflict: tc('constellation', constellationId, 'observationWindow_moonConflict'),
+  }
+
+  const locBrightness = {
+    brightestStar: {
+      name: tc('constellation', constellationId, 'brightnessHints_brightestStar_name'),
+      mag: tc('constellation', constellationId, 'brightnessHints_brightestStar_mag'),
+      desc: tc('constellation', constellationId, 'brightnessHints_brightestStar_desc'),
+    },
+    visibleLevel: tc('constellation', constellationId, 'brightnessHints_visibleLevel'),
+    nakedEyeLimit: tc('constellation', constellationId, 'brightnessHints_nakedEyeLimit'),
+    lightPollutionTolerance: tc('constellation', constellationId, 'brightnessHints_lightPollutionTolerance'),
+    binocularTip: tc('constellation', constellationId, 'brightnessHints_binocularTip'),
+    telescopeTip: tc('constellation', constellationId, 'brightnessHints_telescopeTip'),
+    faintStarsNote: tc('constellation', constellationId, 'brightnessHints_faintStarsNote'),
+  }
+
+  const storyCount = 4
+  const locStorySegments = useMemo(() => {
+    const segments = []
+    for (let i = 0; i < storyCount; i++) {
+      const title = tc('constellation', constellationId, `storySegments_${i}_title`)
+      const content = tc('constellation', constellationId, `storySegments_${i}_content`)
+      const icon = tc('constellation', constellationId, `storySegments_${i}_icon`)
+      if (title && content && title.startsWith('constellation.') === false) {
+        segments.push({ id: `${constellationId}_story_${i}`, title, content, icon })
+      }
+    }
+    return segments
+  }, [constellationId, tc])
+
+  const hasObsWindow = locObsWindow.months && !locObsWindow.months.startsWith('constellation.')
+  const hasBrightness = locBrightness.brightestStar.name && !locBrightness.brightestStar.name.startsWith('constellation.')
+  const hasStories = locStorySegments.length > 0
+
   const currentSeason = getCurrentSeason()
   const seasonRecommendation = constellation?.seasonRecommendation
 
@@ -323,14 +365,14 @@ export default function ConstellationDetail({ constellationId }) {
 
             <div className="space-y-4">
               <h3 className="text-sm font-display text-white border-l-2 border-star-gold pl-3 flex items-center justify-between">
-                <span>{t('detail.mythologyTitle')}</span>
-                {constellation.storySegments && constellation.storySegments.length > 0 && (
-                  <span className="fs-10 text-white/40 font-normal">共 {constellation.storySegments.length} 章节</span>
+                <span>{t('detail.storySegmentsTitle')}</span>
+                {hasStories && (
+                  <span className="fs-10 text-white/40 font-normal">{t('detail.totalChapters', { count: locStorySegments.length })}</span>
                 )}
               </h3>
-              {constellation.storySegments && constellation.storySegments.length > 0 ? (
+              {hasStories ? (
                 <div className="space-y-3">
-                  {constellation.storySegments.map((segment, index) => (
+                  {locStorySegments.map((segment, index) => (
                     <div
                       key={segment.id}
                       className="p-4 rounded-xl bg-space-700/30 border border-star-gold/10"
@@ -338,7 +380,7 @@ export default function ConstellationDetail({ constellationId }) {
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xl">{segment.icon}</span>
                         <div>
-                          <span className="text-xs text-star-gold/70">第 {index + 1} 章</span>
+                          <span className="text-xs text-star-gold/70">{t('detail.chapterN', { n: index + 1 })}</span>
                           <h4 className="text-sm font-display text-white">{segment.title}</h4>
                         </div>
                       </div>
@@ -357,52 +399,52 @@ export default function ConstellationDetail({ constellationId }) {
               )}
             </div>
 
-            {constellation.observationWindow && (
+            {hasObsWindow && (
               <div className="space-y-4">
                 <h3 className="text-sm font-display text-white border-l-2 border-nebula-cyan pl-3">
-                  🌙 观测窗口
+                  {t('detail.observationWindowTitle')}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {constellation.observationWindow.months && (
+                  {locObsWindow.months && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">可见月份</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.months}</p>
+                      <p className="text-xs text-white/40">{t('detail.visibleMonths')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locObsWindow.months}</p>
                     </div>
                   )}
-                  {constellation.observationWindow.bestMonths && (
+                  {locObsWindow.bestMonths && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">最佳月份</p>
-                      <p className="text-sm text-nebula-cyan mt-0.5">{constellation.observationWindow.bestMonths}</p>
+                      <p className="text-xs text-white/40">{t('detail.bestMonths')}</p>
+                      <p className="text-sm text-nebula-cyan mt-0.5">{locObsWindow.bestMonths}</p>
                     </div>
                   )}
-                  {constellation.observationWindow.riseTime && (
+                  {locObsWindow.riseTime && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">升起时间</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.riseTime}</p>
+                      <p className="text-xs text-white/40">{t('detail.riseTime')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locObsWindow.riseTime}</p>
                     </div>
                   )}
-                  {constellation.observationWindow.setTime && (
+                  {locObsWindow.setTime && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">落下时间</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.setTime}</p>
+                      <p className="text-xs text-white/40">{t('detail.setTime')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locObsWindow.setTime}</p>
                     </div>
                   )}
-                  {constellation.observationWindow.bestHours && (
+                  {locObsWindow.bestHours && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">最佳时段</p>
-                      <p className="text-sm text-nebula-cyan mt-0.5">{constellation.observationWindow.bestHours}</p>
+                      <p className="text-xs text-white/40">{t('detail.bestHours')}</p>
+                      <p className="text-sm text-nebula-cyan mt-0.5">{locObsWindow.bestHours}</p>
                     </div>
                   )}
-                  {constellation.observationWindow.transitInfo && (
+                  {locObsWindow.transitInfo && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">中天信息</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.observationWindow.transitInfo}</p>
+                      <p className="text-xs text-white/40">{t('detail.transitInfo')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locObsWindow.transitInfo}</p>
                     </div>
                   )}
-                  {constellation.observationWindow.moonConflict && (
+                  {locObsWindow.moonConflict && (
                     <div className="col-span-2 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
                       <p className="text-xs text-yellow-300/80">
-                        🌕 注意：{constellation.observationWindow.moonConflict}
+                        {t('detail.moonConflict')}: {locObsWindow.moonConflict}
                       </p>
                     </div>
                   )}
@@ -410,13 +452,13 @@ export default function ConstellationDetail({ constellationId }) {
               </div>
             )}
 
-            {constellation.brightnessHints && (
+            {hasBrightness && (
               <div className="space-y-4">
                 <h3 className="text-sm font-display text-white border-l-2 border-nebula-orange pl-3">
-                  ✨ 亮度与观测提示
+                  {t('detail.brightnessHintsTitle')}
                 </h3>
                 <div className="space-y-3">
-                  {constellation.brightnessHints.brightestStar && (
+                  {locBrightness.brightestStar.name && (
                     <div className="p-4 rounded-xl bg-space-700/30 border border-nebula-orange/10">
                       <div className="flex items-start gap-3">
                         <div
@@ -429,15 +471,15 @@ export default function ConstellationDetail({ constellationId }) {
                           <div className="w-4 h-4 rounded-full bg-yellow-300" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-white/40">最亮星</p>
+                          <p className="text-xs text-white/40">{t('detail.brightestStar')}</p>
                           <p className="text-sm text-white font-medium">
-                            {constellation.brightnessHints.brightestStar.name}
+                            {locBrightness.brightestStar.name}
                             <span className="ml-2 text-nebula-orange font-mono">
-                              {constellation.brightnessHints.brightestStar.mag} 等
+                              {locBrightness.brightestStar.mag} mag
                             </span>
                           </p>
                           <p className="text-xs text-white/50 mt-0.5 leading-relaxed">
-                            {constellation.brightnessHints.brightestStar.desc}
+                            {locBrightness.brightestStar.desc}
                           </p>
                         </div>
                       </div>
@@ -445,45 +487,45 @@ export default function ConstellationDetail({ constellationId }) {
                   )}
 
                   <div className="grid grid-cols-2 gap-2">
-                    {constellation.brightnessHints.visibleLevel && (
+                    {locBrightness.visibleLevel && (
                       <div className="p-3 rounded-xl bg-space-700/30">
-                        <p className="text-xs text-white/40">观测难度</p>
-                        <p className="text-sm text-green-400 mt-0.5">{constellation.brightnessHints.visibleLevel}</p>
+                        <p className="text-xs text-white/40">{t('detail.observationDifficulty')}</p>
+                        <p className="text-sm text-green-400 mt-0.5">{locBrightness.visibleLevel}</p>
                       </div>
                     )}
-                    {constellation.brightnessHints.lightPollutionTolerance && (
+                    {locBrightness.lightPollutionTolerance && (
                       <div className="p-3 rounded-xl bg-space-700/30">
-                        <p className="text-xs text-white/40">光污染耐受</p>
-                        <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.lightPollutionTolerance}</p>
+                        <p className="text-xs text-white/40">{t('detail.lightPollutionTolerance')}</p>
+                        <p className="text-sm text-white/80 mt-0.5">{locBrightness.lightPollutionTolerance}</p>
                       </div>
                     )}
                   </div>
 
-                  {constellation.brightnessHints.nakedEyeLimit && (
+                  {locBrightness.nakedEyeLimit && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">👁️ 肉眼可见</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.nakedEyeLimit}</p>
+                      <p className="text-xs text-white/40">{t('detail.nakedEye')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locBrightness.nakedEyeLimit}</p>
                     </div>
                   )}
 
-                  {constellation.brightnessHints.binocularTip && (
+                  {locBrightness.binocularTip && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">🔭 双筒望远镜</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.binocularTip}</p>
+                      <p className="text-xs text-white/40">{t('detail.binocular')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locBrightness.binocularTip}</p>
                     </div>
                   )}
 
-                  {constellation.brightnessHints.telescopeTip && (
+                  {locBrightness.telescopeTip && (
                     <div className="p-3 rounded-xl bg-space-700/30">
-                      <p className="text-xs text-white/40">🔬 望远镜</p>
-                      <p className="text-sm text-white/80 mt-0.5">{constellation.brightnessHints.telescopeTip}</p>
+                      <p className="text-xs text-white/40">{t('detail.telescope')}</p>
+                      <p className="text-sm text-white/80 mt-0.5">{locBrightness.telescopeTip}</p>
                     </div>
                   )}
 
-                  {constellation.brightnessHints.faintStarsNote && (
+                  {locBrightness.faintStarsNote && (
                     <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/20">
                       <p className="text-xs text-purple-300/80">
-                        💫 暗星提示：{constellation.brightnessHints.faintStarsNote}
+                        {t('detail.faintStarsNote')}: {locBrightness.faintStarsNote}
                       </p>
                     </div>
                   )}

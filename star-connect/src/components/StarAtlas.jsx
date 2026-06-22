@@ -4,8 +4,10 @@ import { CONSTELLATIONS } from '../data/constellations'
 import { DIFFICULTY_CONFIG } from '../data/constants'
 import { SEASONS } from '../data/seasonPlan'
 import ConstellationDetail from './ConstellationDetail'
+import { useI18n } from '../i18n/useI18n'
 
 export default function StarAtlas() {
+  const { tc, t } = useI18n()
   const {
     discoveredConstellations,
     favoriteConstellations,
@@ -320,6 +322,19 @@ export default function StarAtlas() {
                 const isFavorite = favoriteConstellations.includes(c.id)
                 const seasonKey = c.season === '春' ? 'spring' : c.season === '夏' ? 'summer' : c.season === '秋' ? 'autumn' : 'winter'
                 const seasonInfo = SEASONS[seasonKey]
+                const locName = tc('constellation', c.id, 'name') || c.name
+                const locSeason = tc('constellation', c.id, 'season') || c.season
+                const locDifficulty = t(`difficulty.${c.difficulty}`) || DIFFICULTY_CONFIG[c.difficulty]?.label
+                const locBrightestMag = tc('constellation', c.id, 'brightnessHints_brightestStar_mag')
+                const locVisibleLevel = tc('constellation', c.id, 'brightnessHints_visibleLevel')
+                const hasBrightestMag = locBrightestMag && !locBrightestMag.startsWith('constellation.')
+                const hasVisibleLevel = locVisibleLevel && !locVisibleLevel.startsWith('constellation.')
+                let storyCount = 0
+                for (let i = 0; i < 10; i++) {
+                  const segTitle = tc('constellation', c.id, `storySegments_${i}_title`)
+                  if (segTitle && !segTitle.startsWith('constellation.')) storyCount++
+                  else break
+                }
 
                 return (
                   <div
@@ -355,17 +370,17 @@ export default function StarAtlas() {
                           {isFavorite ? '★' : '☆'}
                         </button>
                       </div>
-                      {c.brightnessHints?.brightestStar && (
+                      {hasBrightestMag && (
                         <div className="absolute bottom-2 left-2 flex items-center gap-1">
                           <span className="fs-8 px-1.5 py-0.5 rounded bg-black/40 backdrop-blur-sm text-nebula-orange/90">
-                            ✨ {c.brightnessHints.brightestStar.mag}等
+                            ✨ {locBrightestMag}
                           </span>
                         </div>
                       )}
-                      {c.storySegments && c.storySegments.length > 0 && (
+                      {storyCount > 0 && (
                         <div className="absolute bottom-2 right-2 flex items-center gap-1">
                           <span className="fs-8 px-1.5 py-0.5 rounded bg-black/40 backdrop-blur-sm text-star-gold/90">
-                            📖 {c.storySegments.length}章
+                            📖 {storyCount}
                           </span>
                         </div>
                       )}
@@ -374,7 +389,7 @@ export default function StarAtlas() {
                     <div className="p-3">
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-sm font-display text-white truncate flex-1">
-                          {c.name}
+                          {locName}
                         </h3>
                         {completed && (
                           <span className="text-star-gold text-xs">✓</span>
@@ -389,14 +404,14 @@ export default function StarAtlas() {
                           c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-red-500/20 text-red-300'
                         }`}>
-                          {DIFFICULTY_CONFIG[c.difficulty].label}
+                          {locDifficulty}
                         </span>
                         <span className="fs-9 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
-                          {seasonInfo?.icon} {c.season}
+                          {seasonInfo?.icon} {locSeason}
                         </span>
-                        {c.brightnessHints?.visibleLevel && (
+                        {hasVisibleLevel && (
                           <span className="fs-9 px-1.5 py-0.5 rounded bg-green-500/10 text-green-300/80">
-                            {c.brightnessHints.visibleLevel}
+                            {locVisibleLevel}
                           </span>
                         )}
                       </div>
@@ -412,6 +427,25 @@ export default function StarAtlas() {
                 const isFavorite = favoriteConstellations.includes(c.id)
                 const seasonKey = c.season === '春' ? 'spring' : c.season === '夏' ? 'summer' : c.season === '秋' ? 'autumn' : 'winter'
                 const seasonInfo = SEASONS[seasonKey]
+                const locName = tc('constellation', c.id, 'name') || c.name
+                const locSeason = tc('constellation', c.id, 'season') || c.season
+                const locDesc = tc('constellation', c.id, 'description') || c.description
+                const locDifficulty = t(`difficulty.${c.difficulty}`) || DIFFICULTY_CONFIG[c.difficulty]?.label
+                const locBrightestName = tc('constellation', c.id, 'brightnessHints_brightestStar_name')
+                const locBestHours = tc('constellation', c.id, 'observationWindow_bestHours')
+                const locVisibleLevel = tc('constellation', c.id, 'brightnessHints_visibleLevel')
+                const hasBrightest = locBrightestName && !locBrightestName.startsWith('constellation.')
+                const hasBestHours = locBestHours && !locBestHours.startsWith('constellation.')
+                const hasVisibleLevel = locVisibleLevel && !locVisibleLevel.startsWith('constellation.')
+                const startObsTitle = t('detail.startObservation') || '开始观测'
+                const chapterUnit = t('detail.chapterUnit') || '章'
+                const starUnit = t('detail.starUnit') || '星'
+                let storyCount = 0
+                for (let i = 0; i < 10; i++) {
+                  const segTitle = tc('constellation', c.id, `storySegments_${i}_title`)
+                  if (segTitle && !segTitle.startsWith('constellation.')) storyCount++
+                  else break
+                }
 
                 return (
                   <div
@@ -432,14 +466,14 @@ export default function StarAtlas() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-base font-display text-white truncate">
-                            {c.name}
+                            {locName}
                           </h3>
                           {completed && (
                             <span className="text-star-gold text-sm">✓</span>
                           )}
-                          {c.brightnessHints?.brightestStar && (
+                          {hasBrightest && (
                             <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-orange/10 text-nebula-orange/80 border border-nebula-orange/20">
-                              ✨ {c.brightnessHints.brightestStar.name}
+                              ✨ {locBrightestName}
                             </span>
                           )}
                         </div>
@@ -447,7 +481,7 @@ export default function StarAtlas() {
                           {c.nameEn}
                         </p>
                         <p className="text-xs text-white/60 mt-1 line-clamp-2">
-                          {c.description}
+                          {locDesc}
                         </p>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           <span className={`fs-10 px-1.5 py-0.5 rounded ${
@@ -455,27 +489,27 @@ export default function StarAtlas() {
                             c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                             'bg-red-500/20 text-red-300'
                           }`}>
-                            {DIFFICULTY_CONFIG[c.difficulty].label}
+                            {locDifficulty}
                           </span>
                           <span className="fs-10 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
-                            {seasonInfo?.icon} {c.season}季
+                            {seasonInfo?.icon} {locSeason}
                           </span>
                           <span className="fs-10 text-white/40">
-                            ✦ {c.stars.length} 星
+                            ✦ {c.stars.length} {starUnit}
                           </span>
-                          {c.observationWindow?.bestHours && (
+                          {hasBestHours && (
                             <span className="fs-10 px-1.5 py-0.5 rounded bg-nebula-cyan/10 text-nebula-cyan/80 border border-nebula-cyan/20">
-                              🌙 {c.observationWindow.bestHours}
+                              🌙 {locBestHours}
                             </span>
                           )}
-                          {c.storySegments && c.storySegments.length > 0 && (
+                          {storyCount > 0 && (
                             <span className="fs-10 px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80 border border-star-gold/20">
-                              📖 {c.storySegments.length} 章
+                              📖 {storyCount} {chapterUnit}
                             </span>
                           )}
-                          {c.brightnessHints?.visibleLevel && (
+                          {hasVisibleLevel && (
                             <span className="fs-10 px-1.5 py-0.5 rounded bg-green-500/10 text-green-300/80">
-                              {c.brightnessHints.visibleLevel}
+                              {locVisibleLevel}
                             </span>
                           )}
                         </div>
@@ -503,7 +537,7 @@ export default function StarAtlas() {
                           className="w-8 h-8 flex items-center justify-center rounded-full
                                    bg-nebula-purple/20 text-nebula-cyan hover:bg-nebula-purple/30
                                    transition-all"
-                          title="开始观测"
+                          title={startObsTitle}
                         >
                           ▶
                         </button>

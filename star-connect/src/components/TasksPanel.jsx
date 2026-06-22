@@ -3,8 +3,10 @@ import { useGameStore } from '../stores/gameStore'
 import { CONSTELLATIONS } from '../data/constellations'
 import { DIFFICULTY_CONFIG } from '../data/constants'
 import { COMMISSION_DIFFICULTY } from '../data/dailyCommissions'
+import { useI18n } from '../i18n/useI18n'
 
 export default function TasksPanel() {
+  const { tc, t } = useI18n()
   const {
     discoveredConstellations,
     currentTargetConstellation,
@@ -253,6 +255,15 @@ export default function TasksPanel() {
           {CONSTELLATIONS.map((c) => {
             const completed = isConstellationComplete(c.id)
             const isActive = currentTargetConstellation === c.id
+            const locName = tc('constellation', c.id, 'name') || c.name
+            const locDesc = tc('constellation', c.id, 'description') || c.description
+            const locSeason = tc('constellation', c.id, 'season') || c.season
+            const locDifficulty = t(`difficulty.${c.difficulty}`) || DIFFICULTY_CONFIG[c.difficulty]?.label
+            const locBrightestName = tc('constellation', c.id, 'brightnessHints_brightestStar_name')
+            const locBrightestMag = tc('constellation', c.id, 'brightnessHints_brightestStar_mag')
+            const locBestHours = tc('constellation', c.id, 'observationWindow_bestHours')
+            const hasBrightest = locBrightestName && !locBrightestName.startsWith('constellation.')
+            const hasBestHours = locBestHours && !locBestHours.startsWith('constellation.')
             return (
               <button
                 key={c.id}
@@ -272,7 +283,7 @@ export default function TasksPanel() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="text-base font-display text-white">
-                          {c.name}
+                          {locName}
                         </h3>
                         {completed && (
                           <span className="text-star-gold animate-pulse-slow">★</span>
@@ -282,37 +293,35 @@ export default function TasksPanel() {
                           c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-red-500/20 text-red-300'
                         }`}>
-                          {DIFFICULTY_CONFIG[c.difficulty].label}
+                          {locDifficulty}
                         </span>
                         <span className="fs-10 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
-                          {c.season}季
+                          {locSeason}
                         </span>
                       </div>
                       <div className="fs-11 text-white/40 mt-0.5">
                         {c.nameEn}
                       </div>
                       <p className="text-xs text-white/60 mt-2 leading-relaxed">
-                        {c.description}
+                        {locDesc}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <span className="fs-10 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
-                          ✦ {c.stars.length} 颗星
+                          ✦ {c.stars.length}
                         </span>
-                        {c.brightnessHints?.brightestStar && (
+                        {hasBrightest && (
                           <span className="fs-10 px-1.5 py-0.5 rounded bg-nebula-orange/10 text-nebula-orange/80 border border-nebula-orange/20">
-                            ✨ {c.brightnessHints.brightestStar.name} ({c.brightnessHints.brightestStar.mag}等)
+                            ✨ {locBrightestName} ({locBrightestMag})
                           </span>
                         )}
-                        {c.observationWindow?.bestHours && (
+                        {hasBestHours && (
                           <span className="fs-10 px-1.5 py-0.5 rounded bg-nebula-cyan/10 text-nebula-cyan/80 border border-nebula-cyan/20">
-                            🌙 {c.observationWindow.bestHours}
+                            🌙 {locBestHours}
                           </span>
                         )}
-                        {c.storySegments && c.storySegments.length > 0 && (
-                          <span className="fs-10 px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80 border border-star-gold/20">
-                            📖 {c.storySegments.length} 章故事
-                          </span>
-                        )}
+                        <span className="fs-10 px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80 border border-star-gold/20">
+                          📖 4
+                        </span>
                       </div>
                     </div>
                     <button
@@ -320,9 +329,8 @@ export default function TasksPanel() {
                       className="ml-2 px-2 py-1 rounded-lg bg-space-600/50 text-white/50 fs-10
                                hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
                                flex-shrink-0"
-                      title="在图鉴中查看详情"
                     >
-                      📚 详情
+                      📚
                     </button>
                   </div>
               </button>

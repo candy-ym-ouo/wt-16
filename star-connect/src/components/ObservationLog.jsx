@@ -160,6 +160,13 @@ export default function ObservationLog() {
       const c = getConstellationById(log.constellationId)
       if (!c) return null
       const isDiscovery = log.type === 'discovery'
+      const constId = log.constellationId
+      const locBrightestName = tc('constellation', constId, 'brightnessHints_brightestStar_name')
+      const locBestHours = tc('constellation', constId, 'observationWindow_bestHours')
+      const locVisibleLevel = tc('constellation', constId, 'brightnessHints_visibleLevel')
+      const hasBrightest = locBrightestName && !locBrightestName.startsWith('constellation.')
+      const hasBestHours = locBestHours && !locBestHours.startsWith('constellation.')
+      const hasVisibleLevel = locVisibleLevel && !locVisibleLevel.startsWith('constellation.')
       return (
         <div
           key={displayIndex}
@@ -190,28 +197,28 @@ export default function ObservationLog() {
                       {t('log.perfect')}
                     </span>
                   )}
-                  {c.brightnessHints?.brightestStar && (
+                  {hasBrightest && (
                     <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-orange/10 text-nebula-orange/70 border border-nebula-orange/20">
-                      ✨ {c.brightnessHints.brightestStar.name}
+                      ✨ {locBrightestName}
                     </span>
                   )}
-                  {c.observationWindow?.bestHours && (
+                  {hasBestHours && (
                     <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-cyan/10 text-nebula-cyan/70 border border-nebula-cyan/20">
-                      🌙 {c.observationWindow.bestHours}
+                      🌙 {locBestHours}
                     </span>
                   )}
                 </div>
                 <div className="fs-11 text-white/40 mt-0.5">
                   {getLocalizedConstellationNameEn(log.constellationId)} · {isDiscovery ? t('log.firstDiscovery') : t('log.reobservation')}
                 </div>
-                {isDiscovery && c.storySegments && c.storySegments.length > 0 && (
+                {isDiscovery && (
                   <div className="fs-10 text-star-gold/70 mt-1">
-                    📖 解锁 {c.storySegments.length} 章神话故事
+                    {t('detail.unlockedStories', { count: 4 })}
                   </div>
                 )}
-                {c.brightnessHints?.visibleLevel && (
+                {hasVisibleLevel && (
                   <div className="fs-10 text-green-400/70 mt-0.5">
-                    观测难度：{c.brightnessHints.visibleLevel}
+                    {t('detail.observationDifficulty')}: {locVisibleLevel}
                   </div>
                 )}
                 <div className="fs-10 text-white/30 mt-1 font-mono">
