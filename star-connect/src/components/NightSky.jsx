@@ -7,6 +7,7 @@ export default function NightSky() {
   const containerRef = useRef(null)
   const rendererRef = useRef(null)
   const lastMistakesRef = useRef(0)
+  const replayTimerRef = useRef(null)
 
   const settings = useGameStore((s) => s.settings)
   const targetConstellationId = useGameStore((s) => s.currentTargetConstellation)
@@ -16,6 +17,8 @@ export default function NightSky() {
   const isConstellationComplete = useGameStore((s) => s.isConstellationComplete)
   const getActiveNightSkyEvents = useGameStore((s) => s.getActiveNightSkyEvents) || (() => [])
   const refreshNightSkyEvents = useGameStore((s) => s.refreshNightSkyEvents) || (() => {})
+  const replayState = useGameStore((s) => s.replayState)
+  const advanceReplayStep = useGameStore((s) => s.advanceReplayStep)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -23,6 +26,9 @@ export default function NightSky() {
     audioManager.init()
 
     const handleStarClick = (starId) => {
+      const state = useGameStore.getState()
+      if (state.replayState.active) return
+
       audioManager.ensureContext()
       const result = connectStar(starId)
 
@@ -83,10 +89,63 @@ export default function NightSky() {
   }, [targetConstellationId])
 
   useEffect(() => {
+    if (replayState.active) return
     if (rendererRef.current) {
       rendererRef.current.updateConnectionPath(connectionPath)
     }
-  }, [connectionPath])
+  }, [connectionPath, replayState.active])
+
+  useEffect(() => {
+    if (!replayState.active) {
+      if (replayTimerRef.current) {
+        clearInterval(replayTimerRef.current)
+        replayTimerRef.current = null
+      }
+      return
+    }
+
+    if (rendererRef.current && replayState.constellationId) {
+      if (!rendererRef.current.constellationMeshes.has(replayState.constellationId)) {
+        rendererRef.current.loadConstellation(replayState.constellationId)
+      }
+    }
+
+    const displayPath = replayState.path.slice(0, replayState.step + 1)
+    if (rendererRef.current) {
+      rendererRef.current.updateConnectionPath(displayPath)
+    }
+
+    if (replayState.playing) {
+      if (replayTimerRef.current) {
+        clearInterval(replayTimerRef.current)
+      }
+      replayTimerRef.current = setInterval(() => {
+        const rs = useGameStore.getState().replayState
+        if (!rs.active || !rs.playing) {
+          clearInterval(replayTimerRef.current)
+          replayTimerRef.current = null
+          return
+        }
+        const advanced = advanceReplayStep()
+        if (!advanced) {
+          clearInterval(replayTimerRef.current)
+          replayTimerRef.current = null
+        }
+      }, 600)
+    } else {
+      if (replayTimerRef.current) {
+        clearInterval(replayTimerRef.current)
+        replayTimerRef.current = null
+      }
+    }
+
+    return () => {
+      if (replayTimerRef.current) {
+        clearInterval(replayTimerRef.current)
+        replayTimerRef.current = null
+      }
+    }
+  }, [replayState.active, replayState.step, replayState.playing, replayState.constellationId])
 
   useEffect(() => {
     if (rendererRef.current) {

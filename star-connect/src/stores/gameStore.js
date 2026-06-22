@@ -193,7 +193,8 @@ export const useGameStore = create(
             storyProgress: state.storyProgress,
             starRoute: state.starRoute,
             research: state.research,
-            dailyCommissions: state.dailyCommissions
+            dailyCommissions: state.dailyCommissions,
+            completedPaths: state.completedPaths
           },
           version: 0
         }
@@ -675,7 +676,8 @@ export const useGameStore = create(
           currentTargetConstellation: firstStage.constellationId,
           connectionPath: [],
           mistakes: 0,
-          perfectRun: true
+          perfectRun: true,
+          connectionSnapshots: []
         }))
 
         get().addLog({
@@ -736,7 +738,8 @@ export const useGameStore = create(
           currentTargetConstellation: nextStage.constellationId,
           connectionPath: [],
           mistakes: 0,
-          perfectRun: true
+          perfectRun: true,
+          connectionSnapshots: []
         }))
 
         return { nextStage, stageIndex: nextIndex }
@@ -788,7 +791,8 @@ export const useGameStore = create(
             },
             currentTargetConstellation: null,
             connectionPath: [],
-            mistakes: 0
+            mistakes: 0,
+            connectionSnapshots: []
           }
 
           if (state.team.enabled && clearedStages.length > 0) {
@@ -849,7 +853,8 @@ export const useGameStore = create(
             },
             currentTargetConstellation: null,
             connectionPath: [],
-            mistakes: 0
+            mistakes: 0,
+            connectionSnapshots: []
           }))
         }
       },
@@ -1299,14 +1304,135 @@ export const useGameStore = create(
       mistakes: 0,
       totalMistakes: 0,
       perfectRun: true,
+      completedPaths: {},
+      connectionSnapshots: [],
+      replayState: { active: false, constellationId: null, path: [], step: 0, playing: false },
+
+      undoLastStep: () => {
+        const state = get()
+        if (state.connectionPath.length === 0) return false
+        if (state.replayState.active) return false
+        if (state.nightExpedition.currentRun?.active) return false
+
+        const undoneStarId = state.connectionPath[state.connectionPath.length - 1]
+        const newPath = state.connectionPath.slice(0, -1)
+
+        let restoredMistakes = state.mistakes
+        const restoredPerfectRun = false
+
+        if (state.connectionSnapshots.length > 0) {
+          const prevSnapshot = state.connectionSnapshots[state.connectionSnapshots.length - 1]
+          restoredMistakes = prevSnapshot.mistakes
+        }
+
+        set({
+          connectionPath: newPath,
+          mistakes: restoredMistakes,
+          perfectRun: restoredPerfectRun,
+          connectionSnapshots: state.connectionSnapshots.slice(0, -1)
+        })
+
+        get().addLog({
+          type: 'undo',
+          constellationId: state.currentTargetConstellation,
+          starId: undoneStarId,
+          pathLength: newPath.length,
+          timestamp: Date.now()
+        })
+
+        return true
+      },
+
+      startReplay: (constellationId) => {
+        const state = get()
+        const savedPath = state.completedPaths[constellationId]
+        if (!savedPath || savedPath.length === 0) return false
+        if (state.nightExpedition.currentRun?.active) return false
+
+        set({
+          replayState: {
+            active: true,
+            constellationId,
+            path: savedPath,
+            step: 0,
+            playing: false
+          }
+        })
+
+        get().addLog({
+          type: 'replay_start',
+          constellationId,
+          pathLength: savedPath.length,
+          timestamp: Date.now()
+        })
+
+        return true
+      },
+
+      advanceReplayStep: () => {
+        const state = get()
+        const rs = state.replayState
+        if (!rs.active) return false
+        if (rs.step >= rs.path.length - 1) {
+          set({
+            replayState: { ...rs, playing: false }
+          })
+          return false
+        }
+
+        set({
+          replayState: { ...rs, step: rs.step + 1 }
+        })
+        return true
+      },
+
+      setReplayPlaying: (playing) => {
+        const state = get()
+        const rs = state.replayState
+        if (!rs.active) return
+        set({
+          replayState: { ...rs, playing }
+        })
+      },
+
+      resetReplay: () => {
+        const state = get()
+        const rs = state.replayState
+        if (!rs.active) return
+        set({
+          replayState: { ...rs, step: 0, playing: false }
+        })
+      },
+
+      stopReplay: () => {
+        const state = get()
+        if (!state.replayState.active) return
+
+        get().addLog({
+          type: 'replay_end',
+          constellationId: state.replayState.constellationId,
+          timestamp: Date.now()
+        })
+
+        set({
+          replayState: { active: false, constellationId: null, path: [], step: 0, playing: false }
+        })
+      },
 
       setTargetConstellation: (constellationId) => {
         set({
           currentTargetConstellation: constellationId,
           connectionPath: [],
           mistakes: 0,
-          perfectRun: true
+          perfectRun: true,
+          connectionSnapshots: []
         })
+        if (constellationId) {
+          const state = get()
+          if (state.replayState.active) {
+            get().stopReplay()
+          }
+        }
         get().checkTutorialProgress()
       },
 
@@ -1356,11 +1482,18 @@ export const useGameStore = create(
           }
         }
 
+        const snapshot = {
+          pathLength: state.connectionPath.length,
+          mistakes: state.mistakes,
+          perfectRun: state.perfectRun
+        }
+
         set({
           connectionPath: path,
           discoveredStars: state.discoveredStars.includes(starId)
             ? state.discoveredStars
-            : [...state.discoveredStars, starId]
+            : [...state.discoveredStars, starId],
+          connectionSnapshots: [...state.connectionSnapshots, snapshot]
         })
 
         get().checkConstellationComplete()
@@ -1370,7 +1503,7 @@ export const useGameStore = create(
         return true
       },
 
-      clearConnectionPath: () => set({ connectionPath: [] }),
+      clearConnectionPath: () => set({ connectionPath: [], connectionSnapshots: [] }),
 
       checkConstellationComplete: () => {
         const state = get()
@@ -1408,7 +1541,11 @@ export const useGameStore = create(
                 : s.perfectObservations,
               perfectCountPerConstellation: newPerfectCount,
               consecutivePerfectCount: newConsecutive,
-              bestConsecutivePerfect: newBest
+              bestConsecutivePerfect: newBest,
+              completedPaths: {
+                ...s.completedPaths,
+                [constellationId]: [...s.connectionPath]
+              }
             }
           })
 
@@ -4663,6 +4800,8 @@ export const useGameStore = create(
           mistakes: 0,
           totalMistakes: 0,
           perfectRun: true,
+          completedPaths: {},
+          connectionSnapshots: [],
           observationLogs: [],
           unlockedAchievements: [],
           seasonProgress: {

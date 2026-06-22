@@ -12,7 +12,15 @@ export default function ConstellationTasks() {
     mistakes,
     clearConnectionPath,
     isConstellationComplete,
-    currentTargetConstellation: targetId
+    currentTargetConstellation: targetId,
+    undoLastStep,
+    replayState,
+    startReplay,
+    stopReplay,
+    advanceReplayStep,
+    resetReplay,
+    setReplayPlaying,
+    completedPaths
   } = useGameStore()
 
   const currentConstellation = CONSTELLATIONS.find(
@@ -28,9 +36,17 @@ export default function ConstellationTasks() {
       )
     : 0
 
+  const hasCompletedPath = targetId && completedPaths[targetId]
+  const isComplete = targetId ? isConstellationComplete(targetId) : false
+  const canUndo = connectionPath.length > 0 && !replayState.active
+  const canReplay = isComplete && hasCompletedPath && !replayState.active
+  const replayProgress = replayState.active
+    ? Math.round(((replayState.step + 1) / replayState.path.length) * 100)
+    : 0
+
   return (
     <div className="absolute left-0 right-0 top-0 p-4 z-20 pointer-events-none">
-      {!currentTargetConstellation ? (
+      {!currentTargetConstellation && !replayState.active ? (
         <div className="max-w-md mx-auto pointer-events-auto">
           <div className="glass-panel p-4 animate-float">
             <div className="flex items-center justify-between mb-3">
@@ -116,9 +132,14 @@ export default function ConstellationTasks() {
                   }`}>
                     {DIFFICULTY_CONFIG[currentConstellation?.difficulty].label}
                   </span>
-                  {isConstellationComplete(currentConstellation?.id) && (
+                  {isComplete && !replayState.active && (
                     <span className="text-star-gold text-sm animate-pulse-slow">
                       ★ 已完成
+                    </span>
+                  )}
+                  {replayState.active && (
+                    <span className="text-nebula-cyan text-xs px-2 py-0.5 rounded-full bg-nebula-cyan/20 animate-pulse">
+                      ▶ 重播中
                     </span>
                   )}
                 </div>
@@ -128,6 +149,7 @@ export default function ConstellationTasks() {
               </div>
               <button
                 onClick={() => {
+                  if (replayState.active) stopReplay()
                   clearConnectionPath()
                   setTargetConstellation(null)
                 }}
@@ -140,38 +162,126 @@ export default function ConstellationTasks() {
               </button>
             </div>
 
-            <div className="mt-3">
-              <div className="flex justify-between fs-11 mb-1.5">
-                <span className="text-white/50">
-                  连接进度: {new Set(connectionPath).size} / {currentConstellation?.stars.length}
-                </span>
-                <span className="text-red-300/70">
-                  失误: {mistakes}
-                </span>
+            {!replayState.active ? (
+              <div className="mt-3">
+                <div className="flex justify-between fs-11 mb-1.5">
+                  <span className="text-white/50">
+                    连接进度: {new Set(connectionPath).size} / {currentConstellation?.stars.length}
+                  </span>
+                  <span className="text-red-300/70">
+                    失误: {mistakes}
+                  </span>
+                </div>
+                <div className="h-2 bg-space-900/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-nebula-purple to-nebula-cyan rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-space-900/80 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-nebula-purple to-nebula-cyan rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
+            ) : (
+              <div className="mt-3">
+                <div className="flex justify-between fs-11 mb-1.5">
+                  <span className="text-nebula-cyan">
+                    重播步骤: {replayState.step + 1} / {replayState.path.length}
+                  </span>
+                  <span className="text-white/50">
+                    {replayProgress}%
+                  </span>
+                </div>
+                <div className="h-2 bg-space-900/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-nebula-cyan to-star-gold rounded-full transition-all duration-300"
+                    style={{ width: `${replayProgress}%` }}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={clearConnectionPath}
-                className="flex-1 btn-secondary text-xs py-2"
-                disabled={connectionPath.length === 0}
-              >
-                🔄 重连
-              </button>
-              <button
-                onClick={() => setActivePanel('tasks')}
-                className="flex-1 btn-secondary text-xs py-2"
-              >
-                📋 切换星座
-              </button>
-            </div>
+            {!replayState.active ? (
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={undoLastStep}
+                  className={`flex-1 text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1 ${
+                    canUndo
+                      ? 'bg-space-700/60 border border-white/10 text-white/70 hover:bg-amber-500/20 hover:text-amber-200 hover:border-amber-500/30'
+                      : 'bg-space-800/30 border border-white/5 text-white/20 cursor-not-allowed'
+                  }`}
+                  disabled={!canUndo}
+                >
+                  <span>↩</span>
+                  <span>回退</span>
+                </button>
+                <button
+                  onClick={clearConnectionPath}
+                  className="flex-1 btn-secondary text-xs py-2"
+                  disabled={connectionPath.length === 0}
+                >
+                  🔄 重连
+                </button>
+                {canReplay && (
+                  <button
+                    onClick={() => startReplay(targetId)}
+                    className="flex-1 text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1
+                             bg-nebula-cyan/10 border border-nebula-cyan/30 text-nebula-cyan
+                             hover:bg-nebula-cyan/20"
+                  >
+                    <span>▶</span>
+                    <span>重播</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setActivePanel('tasks')}
+                  className="flex-1 btn-secondary text-xs py-2"
+                >
+                  📋 切换
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetReplay}
+                    className="flex-1 text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1
+                             bg-space-700/60 border border-white/10 text-white/70
+                             hover:bg-space-600/60"
+                  >
+                    <span>⏮</span>
+                    <span>重新开始</span>
+                  </button>
+                  <button
+                    onClick={() => setReplayPlaying(!replayState.playing)}
+                    className={`flex-1 text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1 ${
+                      replayState.playing
+                        ? 'bg-amber-500/20 border border-amber-500/30 text-amber-200'
+                        : 'bg-nebula-cyan/20 border border-nebula-cyan/30 text-nebula-cyan'
+                    }`}
+                  >
+                    <span>{replayState.playing ? '⏸' : '▶'}</span>
+                    <span>{replayState.playing ? '暂停' : '播放'}</span>
+                  </button>
+                  <button
+                    onClick={advanceReplayStep}
+                    className="flex-1 text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1
+                             bg-space-700/60 border border-white/10 text-white/70
+                             hover:bg-space-600/60"
+                    disabled={replayState.step >= replayState.path.length - 1}
+                  >
+                    <span>⏭</span>
+                    <span>下一步</span>
+                  </button>
+                </div>
+                <button
+                  onClick={stopReplay}
+                  className="w-full text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1
+                           bg-red-500/10 border border-red-500/20 text-red-300/80
+                           hover:bg-red-500/20 hover:text-red-200"
+                >
+                  <span>⏹</span>
+                  <span>退出重播</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
