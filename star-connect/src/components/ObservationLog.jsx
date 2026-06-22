@@ -447,6 +447,71 @@ export default function ObservationLog() {
       )
     }
 
+    if (log.type === 'daily_commission_complete') {
+      const getDifficultyColor = (difficulty) => {
+        switch (difficulty) {
+          case 'easy':
+            return { border: 'border-green-500/30', bg: 'bg-green-500/10', text: 'text-green-300', gradient: 'from-green-500 to-emerald-500' }
+          case 'normal':
+            return { border: 'border-yellow-500/30', bg: 'bg-yellow-500/10', text: 'text-yellow-300', gradient: 'from-yellow-500 to-amber-500' }
+          case 'hard':
+            return { border: 'border-red-500/30', bg: 'bg-red-500/10', text: 'text-red-300', gradient: 'from-red-500 to-rose-500' }
+          default:
+            return { border: 'border-white/10', bg: 'bg-space-700/20', text: 'text-white/60', gradient: 'from-gray-500 to-slate-500' }
+        }
+      }
+      const colors = getDifficultyColor(log.difficulty)
+      return (
+        <div
+          key={index}
+          className={`p-4 rounded-xl border ${colors.border} ${colors.bg}`}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br ${colors.gradient}`}>
+              📋
+            </div>
+            <div>
+              <div className={`font-display ${colors.text} text-sm`}>
+                委托完成 · {log.commissionName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                完成每日观测委托，可领取 💫 {log.reward} 星尘
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (log.type === 'daily_commission_claim') {
+      return (
+        <div
+          key={index}
+          className="p-4 rounded-xl border border-star-gold/30 bg-star-gold/5"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br from-star-gold to-nebula-orange">
+              🎁
+            </div>
+            <div>
+              <div className="font-display text-star-gold text-sm">
+                委托奖励领取 · {log.commissionName}
+              </div>
+              <div className="text-[11px] text-white/50 mt-0.5">
+                获得 💫 {log.reward} 星尘
+              </div>
+              <div className="text-[10px] text-white/30 mt-1 font-mono">
+                {formatDate(log.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return null
   }
 

@@ -107,6 +107,13 @@ import {
   isMaterialUnlocked,
   checkExamAnswer
 } from '../data/constellationResearch'
+import {
+  DAILY_ACHIEVEMENTS,
+  generateDailyCommissions,
+  getDailyCommissionProgress,
+  getDailyAchievementById,
+  COMMISSION_DIFFICULTY
+} from '../data/dailyCommissions'
 
 let autoSaveEnabled = true
 
@@ -173,7 +180,8 @@ export const useGameStore = create(
             tutorial: state.tutorial,
             storyProgress: state.storyProgress,
             starRoute: state.starRoute,
-            research: state.research
+            research: state.research,
+            dailyCommissions: state.dailyCommissions
           },
           version: 0
         }
@@ -1433,6 +1441,8 @@ export const useGameStore = create(
 
           get().checkSeasonProgress()
 
+          get().checkDailyCommissions()
+
           if (state.nightExpedition.currentRun?.active) {
             get().advanceExpeditionStage()
           }
@@ -1852,7 +1862,7 @@ export const useGameStore = create(
         const state = get()
         const newlyUnlocked = []
 
-        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS, ...ROUTE_ACHIEVEMENTS]
+        const allAchievements = [...ACHIEVEMENTS, ...SEASON_ACHIEVEMENTS, ...QUIZ_ACHIEVEMENTS, ...ROUTE_ACHIEVEMENTS, ...DAILY_ACHIEVEMENTS]
 
         allAchievements.forEach((achievement) => {
           if (state.unlockedAchievements.includes(achievement.id)) return
@@ -1938,6 +1948,15 @@ export const useGameStore = create(
             }
             case 'route_perfect':
               unlocked = state.starRoute?.perfectRoutes >= value
+              break
+            case 'daily_complete':
+              unlocked = state.dailyCommissions?.totalCompleted >= value
+              break
+            case 'daily_streak':
+              unlocked = state.dailyCommissions?.streakDays >= value
+              break
+            case 'daily_hard_complete':
+              unlocked = state.dailyCommissions?.totalHardCompleted >= value
               break
           }
 
@@ -4000,6 +4019,187 @@ export const useGameStore = create(
         return records.reduce((best, r) => r.percentage > best.percentage ? r : best)
       },
 
+      dailyCommissions: {
+        date: null,
+        tasks: [],
+        totalCompleted: 0,
+        totalHardCompleted: 0,
+        streakDays: 0,
+        lastCompleteAllDate: null
+      },
+
+      getOrRefreshDailyCommissions: () => {
+        const state = get()
+        const today = new Date().toDateString()
+        const dc = state.dailyCommissions
+
+        if (dc.date === today && dc.tasks.length > 0) {
+          return dc.tasks
+        }
+
+        const newTasks = generateDailyCommissions(
+          state.discoveredConstellations,
+          state.perfectObservations,
+          state.totalObservations
+        )
+
+        set((s) => ({
+          dailyCommissions: {
+            ...s.dailyCommissions,
+            date: today,
+            tasks: newTasks
+          }
+        }))
+
+        return newTasks
+      },
+
+      getDailyCommissionProgressAll: () => {
+        const state = get()
+        const dc = state.dailyCommissions
+        if (!dc.tasks || dc.tasks.length === 0) return []
+
+        return dc.tasks.map(task => {
+          const progress = getDailyCommissionProgress(
+            task,
+            state.observationLogs,
+            state.discoveredConstellations,
+            state.perfectObservations,
+            state.totalObservations
+          )
+          return { ...task, ...progress }
+        })
+      },
+
+      checkDailyCommissions: () => {
+        const state = get()
+        const dc = state.dailyCommissions
+        if (!dc.tasks || dc.tasks.length === 0) return []
+
+        const newlyCompleted = []
+
+        const updatedTasks = dc.tasks.map(task => {
+          if (task.completed) return task
+
+          const progress = getDailyCommissionProgress(
+            task,
+            state.observationLogs,
+            state.discoveredConstellations,
+            state.perfectObservations,
+            state.totalObservations
+          )
+
+          if (progress.completed && !task.completed) {
+            newlyCompleted.push({ ...task, ...progress })
+            return { ...task, completed: true, current: progress.current }
+          }
+
+          return { ...task, current: progress.current }
+        })
+
+        if (newlyCompleted.length > 0) {
+          const newTotalCompleted = state.dailyCommissions.totalCompleted + newlyCompleted.length
+          const newHardCompleted = state.dailyCommissions.totalHardCompleted +
+            newlyCompleted.filter(t => t.difficulty === COMMISSION_DIFFICULTY.HARD).length
+
+          let newStreakDays = state.dailyCommissions.streakDays
+          let newLastCompleteAllDate = state.dailyCommissions.lastCompleteAllDate
+
+          const allCompleted = updatedTasks.every(t => t.completed)
+          const today = new Date().toDateString()
+          if (allCompleted) {
+            const yesterday = new Date()
+            yesterday.setDate(yesterday.getDate() - 1)
+            const yesterdayStr = yesterday.toDateString()
+
+            if (state.dailyCommissions.lastCompleteAllDate === yesterdayStr) {
+              newStreakDays = state.dailyCommissions.streakDays + 1
+            } else if (state.dailyCommissions.lastCompleteAllDate !== today) {
+              newStreakDays = 1
+            }
+            newLastCompleteAllDate = today
+          }
+
+          set((s) => ({
+            dailyCommissions: {
+              ...s.dailyCommissions,
+              tasks: updatedTasks,
+              totalCompleted: newTotalCompleted,
+              totalHardCompleted: newHardCompleted,
+              streakDays: newStreakDays,
+              lastCompleteAllDate: newLastCompleteAllDate
+            }
+          }))
+
+          newlyCompleted.forEach(task => {
+            get().addLog({
+              type: 'daily_commission_complete',
+              commissionId: task.id,
+              commissionName: task.name,
+              reward: task.reward,
+              difficulty: task.difficulty,
+              timestamp: Date.now()
+            })
+          })
+        }
+
+        get().checkAchievements()
+        return newlyCompleted
+      },
+
+      claimDailyCommission: (commissionId) => {
+        const state = get()
+        const dc = state.dailyCommissions
+        const task = dc.tasks.find(t => t.id === commissionId)
+
+        if (!task || !task.completed || task.claimed) {
+          return { success: false, reason: 'cannot_claim' }
+        }
+
+        set((s) => ({
+          dailyCommissions: {
+            ...s.dailyCommissions,
+            tasks: s.dailyCommissions.tasks.map(t =>
+              t.id === commissionId ? { ...t, claimed: true } : t
+            )
+          }
+        }))
+
+        get().addStardust(task.reward, `每日委托：${task.name}`)
+
+        get().addLog({
+          type: 'daily_commission_claim',
+          commissionId: task.id,
+          commissionName: task.name,
+          reward: task.reward,
+          timestamp: Date.now()
+        })
+
+        return { success: true, reward: task.reward, task }
+      },
+
+      getDailyCommissionStats: () => {
+        const state = get()
+        const dc = state.dailyCommissions
+        const tasks = state.getDailyCommissionProgressAll()
+        const completedToday = tasks.filter(t => t.completed).length
+        const claimedToday = tasks.filter(t => t.claimed).length
+        const totalReward = tasks.reduce((sum, t) => sum + t.reward, 0)
+        const claimedReward = tasks.filter(t => t.claimed).reduce((sum, t) => sum + t.reward, 0)
+
+        return {
+          totalCompleted: dc.totalCompleted,
+          totalHardCompleted: dc.totalHardCompleted,
+          streakDays: dc.streakDays,
+          tasksToday: tasks.length,
+          completedToday,
+          claimedToday,
+          totalReward,
+          claimedReward,
+          allCompleted: completedToday === tasks.length && tasks.length > 0
+        }
+      },
+
       generateWeeklyReport: (date = new Date()) => {
         const state = get()
         return generateReport(REPORT_TYPES.WEEKLY, date, state)
@@ -4046,7 +4246,8 @@ export const useGameStore = create(
 
       getProgress: () => {
         const state = get()
-        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length
+        const totalAchievements = ACHIEVEMENTS.length + SEASON_ACHIEVEMENTS.length + QUIZ_ACHIEVEMENTS.length + ROUTE_ACHIEVEMENTS.length + DAILY_ACHIEVEMENTS.length
+        const dcStats = state.getDailyCommissionStats()
         return {
           constellations: state.discoveredConstellations.length,
           totalConstellations: CONSTELLATIONS.length,
@@ -4059,7 +4260,9 @@ export const useGameStore = create(
           quizCompleted: state.quiz?.totalCompleted || 0,
           quizCorrect: state.quiz?.totalCorrect || 0,
           routesCompleted: state.starRoute?.totalRoutesCompleted || 0,
-          perfectRoutes: state.starRoute?.perfectRoutes || 0
+          perfectRoutes: state.starRoute?.perfectRoutes || 0,
+          dailyCommissionsCompleted: dcStats.totalCompleted,
+          dailyCommissionsStreak: dcStats.streakDays
         }
       },
 
@@ -4230,6 +4433,14 @@ export const useGameStore = create(
             activeTopicId: null,
             activeMaterialId: null,
             unlockedBadges: []
+          },
+          dailyCommissions: {
+            date: null,
+            tasks: [],
+            totalCompleted: 0,
+            totalHardCompleted: 0,
+            streakDays: 0,
+            lastCompleteAllDate: null
           }
         })
     }),
@@ -4258,7 +4469,8 @@ export const useGameStore = create(
         starGallery: state.starGallery,
         tutorial: state.tutorial,
         starRoute: state.starRoute,
-        research: state.research
+        research: state.research,
+        dailyCommissions: state.dailyCommissions
       })
     }
   )

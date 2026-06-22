@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { CONSTELLATIONS } from '../data/constellations'
 import { DIFFICULTY_CONFIG } from '../data/constants'
+import { COMMISSION_DIFFICULTY } from '../data/dailyCommissions'
 
 export default function TasksPanel() {
   const {
@@ -10,8 +12,63 @@ export default function TasksPanel() {
     setActivePanel,
     isConstellationComplete,
     openAtlasList,
-    openAtlasDetail
+    openAtlasDetail,
+    getOrRefreshDailyCommissions,
+    getDailyCommissionProgressAll,
+    claimDailyCommission,
+    getDailyCommissionStats
   } = useGameStore()
+
+  const [dailyTasks, setDailyTasks] = useState([])
+  const [dailyStats, setDailyStats] = useState(null)
+
+  useEffect(() => {
+    getOrRefreshDailyCommissions()
+    setDailyTasks(getDailyCommissionProgressAll())
+    setDailyStats(getDailyCommissionStats())
+  }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDailyTasks(getDailyCommissionProgressAll())
+      setDailyStats(getDailyCommissionStats())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [getDailyCommissionProgressAll, getDailyCommissionStats])
+
+  const handleClaim = (taskId) => {
+    const result = claimDailyCommission(taskId)
+    if (result.success) {
+      setDailyTasks(getDailyCommissionProgressAll())
+      setDailyStats(getDailyCommissionStats())
+    }
+  }
+
+  const getDifficultyStyle = (difficulty) => {
+    switch (difficulty) {
+      case COMMISSION_DIFFICULTY.EASY:
+        return 'bg-green-500/20 text-green-300 border-green-500/30'
+      case COMMISSION_DIFFICULTY.NORMAL:
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+      case COMMISSION_DIFFICULTY.HARD:
+        return 'bg-red-500/20 text-red-300 border-red-500/30'
+      default:
+        return 'bg-space-600/50 text-white/50 border-white/10'
+    }
+  }
+
+  const getDifficultyLabel = (difficulty) => {
+    switch (difficulty) {
+      case COMMISSION_DIFFICULTY.EASY:
+        return '简单'
+      case COMMISSION_DIFFICULTY.NORMAL:
+        return '普通'
+      case COMMISSION_DIFFICULTY.HARD:
+        return '困难'
+      default:
+        return ''
+    }
+  }
 
   const handleViewInAtlas = (constellationId, e) => {
     e.stopPropagation()
@@ -81,7 +138,118 @@ export default function TasksPanel() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-3">
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                <h3 className="font-display text-white/90 text-sm">每日观测委托</h3>
+              </div>
+              {dailyStats && (
+                <div className="flex items-center gap-3 text-[10px]">
+                  <span className="text-white/40">
+                    完成 <span className="text-nebula-cyan font-mono">{dailyStats.completedToday}/{dailyStats.tasksToday}</span>
+                  </span>
+                  {dailyStats.streakDays > 0 && (
+                    <span className="text-star-gold">
+                      🔥 {dailyStats.streakDays}天
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {dailyTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className={`p-3 rounded-xl border transition-all ${
+                    task.completed
+                      ? 'border-nebula-purple/40 bg-nebula-purple/8'
+                      : 'border-white/10 bg-space-700/30'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
+                        task.completed
+                          ? 'bg-gradient-to-br from-nebula-purple to-nebula-cyan text-white'
+                          : 'bg-space-600/50 text-white/70'
+                      }`}>
+                        {task.completed ? '✓' : task.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-display text-white text-sm">
+                            {task.name}
+                          </span>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded border ${getDifficultyStyle(task.difficulty)}`}>
+                            {getDifficultyLabel(task.difficulty)}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-white/50 mt-0.5">
+                          {task.description}
+                        </div>
+                        <div className="mt-2">
+                          <div className="flex justify-between text-[10px] mb-1">
+                            <span className="text-white/40">进度</span>
+                            <span className="text-white/60 font-mono">
+                              {task.current} / {task.target}
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                task.completed
+                                  ? 'bg-gradient-to-r from-nebula-purple to-nebula-cyan'
+                                  : 'bg-white/30'
+                              }`}
+                              style={{ width: `${task.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-star-gold text-sm">💫</span>
+                        <span className="text-star-gold text-xs font-medium">{task.reward}</span>
+                      </div>
+                      {task.completed && !task.claimed && (
+                        <button
+                          onClick={() => handleClaim(task.id)}
+                          className="px-3 py-1 rounded-lg text-[11px] font-medium
+                                   bg-gradient-to-r from-star-gold/80 to-nebula-orange/80 text-white
+                                   hover:shadow-lg hover:shadow-star-gold/20 active:scale-95
+                                   transition-all animate-pulse"
+                        >
+                          领取
+                        </button>
+                      )}
+                      {task.claimed && (
+                        <span className="text-[10px] text-green-400/80">✓ 已领取</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {dailyStats && dailyStats.allCompleted && (
+              <div className="p-3 rounded-xl border border-star-gold/30 bg-star-gold/5 text-center">
+                <div className="text-2xl mb-1">🎉</div>
+                <p className="text-xs text-star-gold font-medium">今日委托全部完成！</p>
+                <p className="text-[10px] text-white/40 mt-0.5">
+                  已获得 {dailyStats.claimedReward} / {dailyStats.totalReward} 星尘
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-white/10 pt-2">
+            <h3 className="font-display text-white/90 text-sm mb-3">全部星座</h3>
+          </div>
+
           {CONSTELLATIONS.map((c) => {
             const completed = isConstellationComplete(c.id)
             const isActive = currentTargetConstellation === c.id
