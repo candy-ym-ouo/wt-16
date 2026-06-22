@@ -1310,25 +1310,23 @@ export const useGameStore = create(
 
       undoLastStep: () => {
         const state = get()
-        if (state.connectionPath.length === 0) return false
+        if (state.connectionSnapshots.length === 0) return false
         if (state.replayState.active) return false
         if (state.nightExpedition.currentRun?.active) return false
 
-        const undoneStarId = state.connectionPath[state.connectionPath.length - 1]
-        const newPath = state.connectionPath.slice(0, -1)
+        const lastSnapshot = state.connectionSnapshots[state.connectionSnapshots.length - 1]
+        const undoneAction = lastSnapshot.action
+        const undoneStarId = lastSnapshot.starId
 
-        let restoredMistakes = state.mistakes
-        const restoredPerfectRun = false
-
-        if (state.connectionSnapshots.length > 0) {
-          const prevSnapshot = state.connectionSnapshots[state.connectionSnapshots.length - 1]
-          restoredMistakes = prevSnapshot.mistakes
+        let newPath = state.connectionPath
+        if (undoneAction === 'connect') {
+          newPath = lastSnapshot.path
         }
 
         set({
           connectionPath: newPath,
-          mistakes: restoredMistakes,
-          perfectRun: restoredPerfectRun,
+          mistakes: lastSnapshot.mistakes,
+          perfectRun: lastSnapshot.perfectRun,
           connectionSnapshots: state.connectionSnapshots.slice(0, -1)
         })
 
@@ -1336,10 +1334,14 @@ export const useGameStore = create(
           type: 'undo',
           constellationId: state.currentTargetConstellation,
           starId: undoneStarId,
+          undoAction: undoneAction,
           pathLength: newPath.length,
+          mistakesAfter: lastSnapshot.mistakes,
+          perfectAfter: lastSnapshot.perfectRun,
           timestamp: Date.now()
         })
 
+        get().checkAchievements()
         return true
       },
 
@@ -1446,6 +1448,13 @@ export const useGameStore = create(
 
         if (state.connectionPath.includes(starId)) return false
 
+        const preSnapshot = {
+          path: [...state.connectionPath],
+          mistakes: state.mistakes,
+          perfectRun: state.perfectRun,
+          starId
+        }
+
         const path = [...state.connectionPath, starId]
         const expectedConnections = constellation.connections
 
@@ -1464,7 +1473,8 @@ export const useGameStore = create(
             set({
               mistakes: state.mistakes + 1,
               totalMistakes: state.totalMistakes + 1,
-              perfectRun: false
+              perfectRun: false,
+              connectionSnapshots: [...state.connectionSnapshots, { ...preSnapshot, action: 'mistake' }]
             })
 
             if (state.tutorial.started && !state.tutorial.completed) {
@@ -1482,18 +1492,12 @@ export const useGameStore = create(
           }
         }
 
-        const snapshot = {
-          pathLength: state.connectionPath.length,
-          mistakes: state.mistakes,
-          perfectRun: state.perfectRun
-        }
-
         set({
           connectionPath: path,
           discoveredStars: state.discoveredStars.includes(starId)
             ? state.discoveredStars
             : [...state.discoveredStars, starId],
-          connectionSnapshots: [...state.connectionSnapshots, snapshot]
+          connectionSnapshots: [...state.connectionSnapshots, { ...preSnapshot, action: 'connect' }]
         })
 
         get().checkConstellationComplete()

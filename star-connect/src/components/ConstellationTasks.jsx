@@ -20,7 +20,8 @@ export default function ConstellationTasks() {
     advanceReplayStep,
     resetReplay,
     setReplayPlaying,
-    completedPaths
+    completedPaths,
+    connectionSnapshots
   } = useGameStore()
 
   const currentConstellation = CONSTELLATIONS.find(
@@ -38,7 +39,7 @@ export default function ConstellationTasks() {
 
   const hasCompletedPath = targetId && completedPaths[targetId]
   const isComplete = targetId ? isConstellationComplete(targetId) : false
-  const canUndo = connectionPath.length > 0 && !replayState.active
+  const canUndo = connectionSnapshots.length > 0 && !replayState.active
   const canReplay = isComplete && hasCompletedPath && !replayState.active
   const replayProgress = replayState.active
     ? Math.round(((replayState.step + 1) / replayState.path.length) * 100)
