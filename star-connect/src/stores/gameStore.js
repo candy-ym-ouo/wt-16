@@ -135,7 +135,13 @@ import {
 } from '../data/logTags'
 
 let autoSaveEnabled = true
-let currentSaveId = 'default'
+let currentSaveId = (() => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_SAVE_ID)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {}
+  return 'default'
+})()
 
 const getSaveDataKey = (saveId) => `${STORAGE_KEYS.SAVE_DATA_PREFIX}${saveId}`
 
@@ -283,10 +289,34 @@ export const useGameStore = create(
         
         if (savedSlots && savedSlots.length > 0) {
           currentSaveId = savedCurrentId
-          set({
-            saveSlots: savedSlots,
-            currentSaveId: savedCurrentId
-          })
+          
+          const saveData = loadSaveData(savedCurrentId)
+          let restoredState = null
+          
+          if (saveData) {
+            try {
+              const parsed = typeof saveData === 'string' ? JSON.parse(saveData) : saveData
+              if (parsed.state) {
+                restoredState = parsed.state
+                if (restoredState.settings?.autoSave !== undefined) {
+                  autoSaveEnabled = restoredState.settings.autoSave
+                }
+              }
+            } catch (e) {}
+          }
+          
+          if (restoredState) {
+            set({
+              ...restoredState,
+              saveSlots: savedSlots,
+              currentSaveId: savedCurrentId
+            })
+          } else {
+            set({
+              saveSlots: savedSlots,
+              currentSaveId: savedCurrentId
+            })
+          }
         } else {
           const existingData = localStorage.getItem(STORAGE_KEYS.PROGRESS)
           let preview = null
