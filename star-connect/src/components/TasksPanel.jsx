@@ -101,25 +101,25 @@ export default function TasksPanel() {
               <div className="text-lg font-bold text-nebula-cyan">
                 {discoveredConstellations.length}
               </div>
-              <div className="text-[10px] text-white/50">已发现</div>
+              <div className="fs-10 text-white/50">已发现</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-white/80">
                 {CONSTELLATIONS.length}
               </div>
-              <div className="text-[10px] text-white/50">总星座</div>
+              <div className="fs-10 text-white/50">总星座</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-star-gold">
                 {CONSTELLATIONS.filter(c => c.season === '春').length}
               </div>
-              <div className="text-[10px] text-white/50">春·冬</div>
+              <div className="fs-10 text-white/50">春·冬</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-nebula-orange">
                 {CONSTELLATIONS.filter(c => c.season === '夏' || c.season === '秋').length}
               </div>
-              <div className="text-[10px] text-white/50">夏·秋</div>
+              <div className="fs-10 text-white/50">夏·秋</div>
             </div>
           </div>
 
@@ -146,7 +146,7 @@ export default function TasksPanel() {
                 <h3 className="font-display text-white/90 text-sm">每日观测委托</h3>
               </div>
               {dailyStats && (
-                <div className="flex items-center gap-3 text-[10px]">
+                <div className="flex items-center gap-3 fs-10">
                   <span className="text-white/40">
                     完成 <span className="text-nebula-cyan font-mono">{dailyStats.completedToday}/{dailyStats.tasksToday}</span>
                   </span>
@@ -183,15 +183,15 @@ export default function TasksPanel() {
                           <span className="font-display text-white text-sm">
                             {task.name}
                           </span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded border ${getDifficultyStyle(task.difficulty)}`}>
+                          <span className={`fs-9 px-1.5 py-0.5 rounded border ${getDifficultyStyle(task.difficulty)}`}>
                             {getDifficultyLabel(task.difficulty)}
                           </span>
                         </div>
-                        <div className="text-[11px] text-white/50 mt-0.5">
+                        <div className="fs-11 text-white/50 mt-0.5">
                           {task.description}
                         </div>
                         <div className="mt-2">
-                          <div className="flex justify-between text-[10px] mb-1">
+                          <div className="flex justify-between fs-10 mb-1">
                             <span className="text-white/40">进度</span>
                             <span className="text-white/60 font-mono">
                               {task.current} / {task.target}
@@ -218,7 +218,7 @@ export default function TasksPanel() {
                       {task.completed && !task.claimed && (
                         <button
                           onClick={() => handleClaim(task.id)}
-                          className="px-3 py-1 rounded-lg text-[11px] font-medium
+                          className="px-3 py-1 rounded-lg fs-11 font-medium
                                    bg-gradient-to-r from-star-gold/80 to-nebula-orange/80 text-white
                                    hover:shadow-lg hover:shadow-star-gold/20 active:scale-95
                                    transition-all animate-pulse"
@@ -227,7 +227,7 @@ export default function TasksPanel() {
                         </button>
                       )}
                       {task.claimed && (
-                        <span className="text-[10px] text-green-400/80">✓ 已领取</span>
+                        <span className="fs-10 text-green-400/80">✓ 已领取</span>
                       )}
                     </div>
                   </div>
@@ -239,7 +239,7 @@ export default function TasksPanel() {
               <div className="p-3 rounded-xl border border-star-gold/30 bg-star-gold/5 text-center">
                 <div className="text-2xl mb-1">🎉</div>
                 <p className="text-xs text-star-gold font-medium">今日委托全部完成！</p>
-                <p className="text-[10px] text-white/40 mt-0.5">
+                <p className="fs-10 text-white/40 mt-0.5">
                   已获得 {dailyStats.claimedReward} / {dailyStats.totalReward} 星尘
                 </p>
               </div>
@@ -277,31 +277,31 @@ export default function TasksPanel() {
                         {completed && (
                           <span className="text-star-gold animate-pulse-slow">★</span>
                         )}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        <span className={`fs-10 px-1.5 py-0.5 rounded ${
                           c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                           c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-red-500/20 text-red-300'
                         }`}>
                           {DIFFICULTY_CONFIG[c.difficulty].label}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
+                        <span className="fs-10 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
                           {c.season}季
                         </span>
                       </div>
-                      <div className="text-[11px] text-white/40 mt-0.5">
+                      <div className="fs-11 text-white/40 mt-0.5">
                         {c.nameEn}
                       </div>
                       <p className="text-xs text-white/60 mt-2 leading-relaxed">
                         {c.description}
                       </p>
-                      <div className="mt-2 flex items-center gap-3 text-[10px] text-white/40">
+                      <div className="mt-2 flex items-center gap-3 fs-10 text-white/40">
                         <span>✦ {c.stars.length} 颗主要星</span>
                         <span>⊶ {c.connections.length} 条连线</span>
                       </div>
                     </div>
                     <button
                       onClick={(e) => handleViewInAtlas(c.id, e)}
-                      className="ml-2 px-2 py-1 rounded-lg bg-space-600/50 text-white/50 text-[10px]
+                      className="ml-2 px-2 py-1 rounded-lg bg-space-600/50 text-white/50 fs-10
                                hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
                                flex-shrink-0"
                       title="在图鉴中查看详情"

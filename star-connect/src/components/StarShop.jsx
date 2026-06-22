@@ -121,17 +121,17 @@ export default function StarShop() {
       >
         <div className="flex items-start justify-between mb-2">
           <div className="text-3xl">{item.icon}</div>
-          <span className={`text-[9px] px-2 py-0.5 rounded-full ${rarity.bg} ${rarity.text} border ${rarity.border}`}>
+          <span className={`fs-9 px-2 py-0.5 rounded-full ${rarity.bg} ${rarity.text} border ${rarity.border}`}>
             {rarity.label}
           </span>
         </div>
 
         <h4 className="text-sm font-display text-white mb-1">{item.name}</h4>
-        <p className="text-[10px] text-white/40 line-clamp-2 mb-3">{item.description}</p>
+        <p className="fs-10 text-white/40 line-clamp-2 mb-3">{item.description}</p>
 
         <div className="flex items-center justify-between">
           {item.priceType === 'free' ? (
-            <span className="text-[10px] text-green-400">免费</span>
+            <span className="fs-10 text-green-400">免费</span>
           ) : (
             <div className="flex items-center gap-1">
               <span className="text-star-gold">✦</span>
@@ -142,17 +142,17 @@ export default function StarShop() {
           )}
 
           {item.type === 'consumable' && count > 0 && (
-            <span className="text-[10px] text-white/60">×{count}</span>
+            <span className="fs-10 text-white/60">×{count}</span>
           )}
 
           {item.type === 'skin' && equipped && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
+            <span className="fs-10 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
               使用中
             </span>
           )}
 
           {item.type === 'decoration' && decoActive && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-nebula-cyan/20 text-nebula-cyan">
+            <span className="fs-10 px-2 py-0.5 rounded-full bg-nebula-cyan/20 text-nebula-cyan">
               启用中
             </span>
           )}
@@ -193,7 +193,7 @@ export default function StarShop() {
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-display text-white">{item.name}</h3>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full ${rarity.bg} ${rarity.text} border ${rarity.border}`}>
+              <span className={`fs-10 px-2 py-0.5 rounded-full ${rarity.bg} ${rarity.text} border ${rarity.border}`}>
                 {rarity.label}
               </span>
             </div>
@@ -202,7 +202,7 @@ export default function StarShop() {
 
           {item.type === 'skin' && item.colors && (
             <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-[10px] text-white/40 mb-2">主题配色预览</p>
+              <p className="fs-10 text-white/40 mb-2">主题配色预览</p>
               <div className="flex gap-2">
                 <div
                   className="w-8 h-8 rounded-lg border border-white/20"
@@ -359,7 +359,7 @@ export default function StarShop() {
             <div className="flex items-center gap-2">
               <span className="text-2xl">💫</span>
               <div>
-                <p className="text-[10px] text-white/50">当前星尘</p>
+                <p className="fs-10 text-white/50">当前星尘</p>
                 <p className="text-lg font-display text-star-gold font-bold">
                   {stardust.toLocaleString()}
                 </p>
@@ -371,7 +371,7 @@ export default function StarShop() {
                 setPurchaseMessage({ type: 'success', text: '获得 50 星尘！' })
                 setTimeout(() => setPurchaseMessage(null), 2000)
               }}
-              className="px-3 py-1.5 rounded-lg text-[10px] font-medium
+              className="px-3 py-1.5 rounded-lg fs-10 font-medium
                          bg-star-gold/20 text-star-gold border border-star-gold/30
                          hover:bg-star-gold/30 transition-all"
             >
@@ -417,17 +417,17 @@ export default function StarShop() {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-white">{shop.unlockedSkins.length}</p>
-              <p className="text-[10px] text-white/40">已解锁皮肤</p>
+              <p className="fs-10 text-white/40">已解锁皮肤</p>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-white">{shop.unlockedDecorations.length}</p>
-              <p className="text-[10px] text-white/40">已解锁装饰</p>
+              <p className="fs-10 text-white/40">已解锁装饰</p>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-white">
                 {Object.values(shop.inventory).reduce((a, b) => a + b, 0)}
               </p>
-              <p className="text-[10px] text-white/40">道具库存</p>
+              <p className="fs-10 text-white/40">道具库存</p>
             </div>
           </div>
         </div>

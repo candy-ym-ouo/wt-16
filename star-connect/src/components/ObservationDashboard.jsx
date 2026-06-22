@@ -66,7 +66,7 @@ export default function ObservationDashboard() {
           <span className="text-xs text-white/60">{card.label}</span>
         </div>
         <div className="text-2xl font-display text-white mb-1">{value}</div>
-        <div className="text-[11px] text-white/40 mb-3">{subValue}</div>
+        <div className="fs-11 text-white/40 mb-3">{subValue}</div>
         <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
           <div
             className={`h-full bg-gradient-to-r ${card.color} rounded-full transition-all duration-700`}
@@ -87,7 +87,7 @@ export default function ObservationDashboard() {
             <span className="text-lg">📈</span>
             <h3 className="font-display text-white/90 text-sm">观测趋势</h3>
           </div>
-          <div className="flex items-center gap-3 text-[10px]">
+          <div className="flex items-center gap-3 fs-10">
             <div className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-nebula-purple"></span>
               <span className="text-white/50">新发现</span>
@@ -125,7 +125,7 @@ export default function ObservationDashboard() {
                     style={{ height: `${reobservationHeight}%` }}
                   />
                 </div>
-                <span className="text-[9px] text-white/40">{dateLabel}</span>
+                <span className="fs-9 text-white/40">{dateLabel}</span>
               </div>
             )
           })}
@@ -134,15 +134,15 @@ export default function ObservationDashboard() {
         <div className="mt-4 grid grid-cols-3 gap-2 pt-3 border-t border-white/5">
           <div className="text-center">
             <div className="text-lg font-display text-nebula-purple">{timeRangeData.discoveries}</div>
-            <div className="text-[10px] text-white/40">新发现</div>
+            <div className="fs-10 text-white/40">新发现</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-display text-nebula-cyan">{timeRangeData.reobservations}</div>
-            <div className="text-[10px] text-white/40">复观测</div>
+            <div className="fs-10 text-white/40">复观测</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-display text-star-gold">{timeRangeData.perfect}</div>
-            <div className="text-[10px] text-white/40">完美观测</div>
+            <div className="fs-10 text-white/40">完美观测</div>
           </div>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function ObservationDashboard() {
                     style={{ width: `${perfectPercentage}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[9px] text-white/30 mt-0.5">
+                <div className="flex justify-between fs-9 text-white/30 mt-0.5">
                   <span>已发现</span>
                   <span>完美: {item.perfect}</span>
                 </div>
@@ -219,7 +219,7 @@ export default function ObservationDashboard() {
                   <span className="text-lg">{season.icon}</span>
                   <span className={`text-xs ${season.textColor}`}>{season.name}</span>
                 </div>
-                <div className="flex justify-between text-[11px] mb-1.5">
+                <div className="flex justify-between fs-11 mb-1.5">
                   <span className="text-white/60">已发现</span>
                   <span className="text-white/80 font-mono">{season.discovered}/{season.total}</span>
                 </div>
@@ -248,11 +248,11 @@ export default function ObservationDashboard() {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="p-3 rounded-xl bg-space-900/40 text-center">
             <div className="text-2xl font-display text-orange-400">{overview.totalMistakes}</div>
-            <div className="text-[10px] text-white/40 mt-1">总错误次数</div>
+            <div className="fs-10 text-white/40 mt-1">总错误次数</div>
           </div>
           <div className="p-3 rounded-xl bg-space-900/40 text-center">
             <div className="text-2xl font-display text-amber-400">{overview.avgMistakesPerObservation}</div>
-            <div className="text-[10px] text-white/40 mt-1">平均每次观测</div>
+            <div className="fs-10 text-white/40 mt-1">平均每次观测</div>
           </div>
         </div>
 
@@ -267,7 +267,7 @@ export default function ObservationDashboard() {
               style={{ width: `${overview.perfectRate}%` }}
             />
           </div>
-          <p className="text-[10px] text-white/30 leading-relaxed mt-2">
+          <p className="fs-10 text-white/30 leading-relaxed mt-2">
             减少错误连线可以提高完美观测率，解锁更多成就和奖励。
           </p>
         </div>
@@ -286,15 +286,15 @@ export default function ObservationDashboard() {
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="p-2 rounded-xl bg-space-900/40 text-center">
             <div className="text-xl font-display text-amber-400">{overview.activeDays}</div>
-            <div className="text-[9px] text-white/40 mt-0.5">活跃天数</div>
+            <div className="fs-9 text-white/40 mt-0.5">活跃天数</div>
           </div>
           <div className="p-2 rounded-xl bg-space-900/40 text-center">
             <div className="text-xl font-display text-yellow-400">{overview.checkinDays}</div>
-            <div className="text-[9px] text-white/40 mt-0.5">签到天数</div>
+            <div className="fs-9 text-white/40 mt-0.5">签到天数</div>
           </div>
           <div className="p-2 rounded-xl bg-space-900/40 text-center">
             <div className="text-xl font-display text-orange-400">{overview.checkinStreak}</div>
-            <div className="text-[9px] text-white/40 mt-0.5">连续签到</div>
+            <div className="fs-9 text-white/40 mt-0.5">连续签到</div>
           </div>
         </div>
 
@@ -320,7 +320,7 @@ export default function ObservationDashboard() {
             <span className="text-lg">⭐</span>
             <h3 className="font-display text-white/90 text-sm">星座详情</h3>
           </div>
-          <span className="text-[10px] text-white/40">
+          <span className="fs-10 text-white/40">
             共 {stats.constellationStats.length} 个
           </span>
         </div>
@@ -345,16 +345,16 @@ export default function ObservationDashboard() {
                       {c.name}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[9px] text-white/30">
+                      <span className="fs-9 text-white/30">
                         难度 {c.difficulty}
                       </span>
                       {c.perfect && (
-                        <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                        <span className="fs-9 px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
                           完美
                         </span>
                       )}
                       {c.totalObservations > 1 && (
-                        <span className="text-[9px] text-white/30">
+                        <span className="fs-9 text-white/30">
                           ×{c.totalObservations}
                         </span>
                       )}
@@ -423,7 +423,7 @@ export default function ObservationDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] transition-all flex items-center justify-center gap-1 ${
+                className={`flex-1 py-1.5 px-2 rounded-lg fs-11 transition-all flex items-center justify-center gap-1 ${
                   activeTab === tab.id
                     ? 'bg-nebula-purple/20 text-nebula-cyan border border-nebula-purple/30'
                     : 'text-white/40 hover:text-white/60'

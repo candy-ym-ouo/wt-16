@@ -86,15 +86,15 @@ export default function StarWorkshop() {
                       {preset.name}
                     </h5>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] text-white/40">
+                      <span className="fs-10 text-white/40">
                         {BACKGROUND_STYLES[preset.backgroundStyle]?.name}
                       </span>
                       <span className="text-white/20">·</span>
-                      <span className="text-[10px] text-white/40">
+                      <span className="fs-10 text-white/40">
                         {Object.values(STAR_DENSITY_OPTIONS).find(d => d.value === preset.starDensity)?.name}
                       </span>
                       <span className="text-white/20">·</span>
-                      <span className="text-[10px] text-white/40">
+                      <span className="fs-10 text-white/40">
                         {CONNECTION_EFFECTS[preset.connectionEffect]?.name}
                       </span>
                     </div>
@@ -117,7 +117,7 @@ export default function StarWorkshop() {
           </div>
           <button
             onClick={handleReset}
-            className="px-3 py-1.5 rounded-lg text-[11px] text-white/60 bg-white/5 hover:bg-white/10 transition-all"
+            className="px-3 py-1.5 rounded-lg fs-11 text-white/60 bg-white/5 hover:bg-white/10 transition-all"
           >
             恢复默认
           </button>
@@ -131,7 +131,7 @@ export default function StarWorkshop() {
             >
               <div className="text-xl mb-1">{tab.icon}</div>
               <div className="text-xs text-white/80">{tab.label}</div>
-              <div className="text-[10px] text-white/40 mt-0.5">
+              <div className="fs-10 text-white/40 mt-0.5">
                 {tab.id === 'background' && BACKGROUND_STYLES[workshop.backgroundStyle]?.name}
                 {tab.id === 'stars' && Object.values(STAR_DENSITY_OPTIONS).find(d => d.value === workshop.starDensity)?.name}
                 {tab.id === 'connections' && CONNECTION_EFFECTS[workshop.connectionEffect]?.name}
@@ -169,7 +169,7 @@ export default function StarWorkshop() {
                 <h5 className={`font-display text-sm ${isActive ? 'text-nebula-cyan' : 'text-white/90'}`}>
                   {style.name}
                 </h5>
-                <p className="text-[10px] text-white/50 mt-0.5">{style.description}</p>
+                <p className="fs-10 text-white/50 mt-0.5">{style.description}</p>
               </div>
               {isActive && (
                 <span className="text-nebula-cyan text-lg">✓</span>
@@ -213,7 +213,7 @@ export default function StarWorkshop() {
                     <h5 className={`font-display text-sm ${isActive ? 'text-nebula-cyan' : 'text-white/90'}`}>
                       {option.name}
                     </h5>
-                    <p className="text-[10px] text-white/50 mt-0.5">{option.description}</p>
+                    <p className="fs-10 text-white/50 mt-0.5">{option.description}</p>
                   </div>
                   <div className="text-right">
                     <div className={`text-xs font-mono ${isActive ? 'text-nebula-cyan' : 'text-white/60'}`}>
@@ -245,7 +245,7 @@ export default function StarWorkshop() {
             onChange={(e) => handleStarDensityChange(parseFloat(e.target.value))}
             className="w-full h-2 bg-space-800 rounded-lg appearance-none cursor-pointer accent-nebula-purple"
           />
-          <div className="flex justify-between text-[10px] text-white/40 mt-2">
+          <div className="flex justify-between fs-10 text-white/40 mt-2">
             <span>0.2×</span>
             <span className="text-white/60 font-mono">{workshop.starDensity.toFixed(1)}×</span>
             <span>3.0×</span>
@@ -294,20 +294,20 @@ export default function StarWorkshop() {
                 <h5 className={`font-display text-sm ${isActive ? 'text-nebula-cyan' : 'text-white/90'}`}>
                   {effect.name}
                 </h5>
-                <p className="text-[10px] text-white/50 mt-0.5">{effect.description}</p>
+                <p className="fs-10 text-white/50 mt-0.5">{effect.description}</p>
                 <div className="flex items-center gap-2 mt-1">
                   {effect.animate && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-nebula-cyan/20 text-nebula-cyan">
+                    <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-cyan/20 text-nebula-cyan">
                       动画
                     </span>
                   )}
                   {effect.particles && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                    <span className="fs-9 px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold">
                       粒子
                     </span>
                   )}
                   {effect.dotted && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
+                    <span className="fs-9 px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
                       闪烁
                     </span>
                   )}
@@ -329,7 +329,7 @@ export default function StarWorkshop() {
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🖼️</span>
           <h4 className="font-display text-white/90 text-sm">面板外观</h4>
-          <span className="text-[10px] text-white/40 ml-auto">
+          <span className="fs-10 text-white/40 ml-auto">
             切换后所有面板同步生效
           </span>
         </div>
@@ -366,7 +366,7 @@ export default function StarWorkshop() {
                 <h5 className={`font-display text-sm ${isActive ? 'text-nebula-cyan' : 'text-white/90'}`}>
                   {style.name}
                 </h5>
-                <p className="text-[10px] text-white/50 mt-0.5">{style.description}</p>
+                <p className="fs-10 text-white/50 mt-0.5">{style.description}</p>
               </div>
               {isActive && (
                 <span className="text-nebula-cyan text-lg">✓</span>
@@ -429,7 +429,7 @@ export default function StarWorkshop() {
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <div className="text-[10px] text-white/40 text-center">
+          <div className="fs-10 text-white/40 text-center">
             💡 所有设置将自动保存，立即生效
           </div>
         </div>

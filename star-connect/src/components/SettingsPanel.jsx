@@ -84,7 +84,7 @@ export default function SettingsPanel() {
             </div>
             <div className="flex items-center gap-2">
               {settings.autoSave && (
-                <div className="flex items-center gap-1.5 text-[10px] text-nebula-cyan/70">
+                <div className="flex items-center gap-1.5 fs-10 text-nebula-cyan/70">
                   <span className="w-1.5 h-1.5 rounded-full bg-nebula-cyan animate-pulse" />
                   {t('settings.autoSaving')}
                 </div>
@@ -119,7 +119,7 @@ export default function SettingsPanel() {
                 <span className="text-lg">🌐</span>
                 <div>
                   <div className="text-sm text-white">{t('settings.languageLabel')}</div>
-                  <div className="text-[10px] text-white/40 mt-0.5">{t('settings.languageDesc')}</div>
+                  <div className="fs-10 text-white/40 mt-0.5">{t('settings.languageDesc')}</div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -282,7 +282,7 @@ export default function SettingsPanel() {
                   <span className="text-lg">💡</span>
                   <div>
                     <div className="text-sm text-white">{t('settings.hintIntensity')}</div>
-                    <div className="text-[10px] text-white/40 mt-0.5">{t('settings.hintIntensityDesc')}</div>
+                    <div className="fs-10 text-white/40 mt-0.5">{t('settings.hintIntensityDesc')}</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -313,19 +313,19 @@ export default function SettingsPanel() {
                 <div className="text-lg font-bold text-nebula-cyan">
                   {progress.constellations}/{progress.totalConstellations}
                 </div>
-                <div className="text-[10px] text-white/50 mt-1">{t('settings.constellations')}</div>
+                <div className="fs-10 text-white/50 mt-1">{t('settings.constellations')}</div>
               </div>
               <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
                 <div className="text-lg font-bold text-star-gold">
                   {progress.achievements}/{progress.totalAchievements}
                 </div>
-                <div className="text-[10px] text-white/50 mt-1">{t('settings.achievements')}</div>
+                <div className="fs-10 text-white/50 mt-1">{t('settings.achievements')}</div>
               </div>
               <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
                 <div className="text-lg font-bold text-nebula-purple">
                   {progress.logs}
                 </div>
-                <div className="text-[10px] text-white/50 mt-1">{t('settings.logs')}</div>
+                <div className="fs-10 text-white/50 mt-1">{t('settings.logs')}</div>
               </div>
             </div>
           </section>
@@ -349,7 +349,7 @@ export default function SettingsPanel() {
                   <span className="text-2xl">📦</span>
                   <div>
                     <div className="text-sm text-white">离线数据管理</div>
-                    <div className="text-[11px] text-white/40 mt-0.5">
+                    <div className="fs-11 text-white/40 mt-0.5">
                       管理星座数据、图鉴、成就的离线缓存，保证弱网环境下核心功能可用
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export default function SettingsPanel() {
             </div>
           </section>
 
-          <div className="text-center text-[10px] text-white/20 py-2">
+          <div className="text-center fs-10 text-white/20 py-2">
             StarConnect v1.0.0 · Made with ✨ for stargazers
           </div>
         </div>
@@ -470,7 +470,7 @@ function SettingToggle({ label, icon, description, value, onChange }) {
         <div>
           <div className="text-sm text-white">{label}</div>
           {description && (
-            <div className="text-[10px] text-white/40 mt-0.5">{description}</div>
+            <div className="fs-10 text-white/40 mt-0.5">{description}</div>
           )}
         </div>
       </div>

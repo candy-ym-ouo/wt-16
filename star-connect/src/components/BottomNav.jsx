@@ -213,13 +213,13 @@ export default function BottomNav() {
                   {item.icon}
                 </span>
                 <span className={`mt-0.5 ${
-                  item.isHome ? 'text-[10px] font-medium' : 'text-[9px]'
+                  item.isHome ? 'fs-10 font-medium' : 'fs-9'
                 }`}>
                   {item.label}
                 </span>
                 {item.badge && !isActive && (
                   <span className={`absolute -top-0.5 -right-0.5 px-1 h-4 min-w-[16px] rounded-full
-                                 text-[8px] font-bold flex items-center justify-center
+                                 fs-8 font-bold flex items-center justify-center
                                  ${item.badgeColor || 'bg-star-gold text-space-900'}`}>
                     {item.badge.length > 3 ? '99+' : item.badge}
                   </span>

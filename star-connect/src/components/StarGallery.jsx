@@ -285,19 +285,19 @@ export default function StarGallery() {
     <div className="grid grid-cols-4 gap-2 mb-4">
       <div className="p-3 rounded-xl bg-gradient-to-br from-nebula-purple/20 to-nebula-cyan/20 border border-nebula-purple/30 text-center">
         <div className="text-xl font-display text-nebula-cyan">{stats.totalPhotos}</div>
-        <div className="text-[9px] text-white/50">作品总数</div>
+        <div className="fs-9 text-white/50">作品总数</div>
       </div>
       <div className="p-3 rounded-xl bg-gradient-to-br from-star-gold/20 to-nebula-orange/20 border border-star-gold/30 text-center">
         <div className="text-xl font-display text-star-gold">{stats.featuredCount}</div>
-        <div className="text-[9px] text-white/50">精选作品</div>
+        <div className="fs-9 text-white/50">精选作品</div>
       </div>
       <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 text-center">
         <div className="text-xl font-display text-green-400">{stats.constellationCoverage}</div>
-        <div className="text-[9px] text-white/50">覆盖星座</div>
+        <div className="fs-9 text-white/50">覆盖星座</div>
       </div>
       <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-pink-500/30 text-center">
         <div className="text-xl font-display text-pink-400">{stats.discoveredWithPhotos}</div>
-        <div className="text-[9px] text-white/50">已发现</div>
+        <div className="fs-9 text-white/50">已发现</div>
       </div>
     </div>
   )
@@ -332,7 +332,7 @@ export default function StarGallery() {
           <button
             key={opt.value}
             onClick={() => setGalleryFilters({ category: opt.value })}
-            className={`px-3 py-1.5 rounded-full text-[10px] flex items-center gap-1 transition-all ${
+            className={`px-3 py-1.5 rounded-full fs-10 flex items-center gap-1 transition-all ${
               galleryFilters.category === opt.value
                 ? 'bg-nebula-purple/30 text-nebula-cyan border border-nebula-purple/50'
                 : 'bg-space-700/30 text-white/50 border border-transparent hover:bg-space-600/30'
@@ -349,7 +349,7 @@ export default function StarGallery() {
           <button
             key={opt.value}
             onClick={() => setGalleryFilters({ season: opt.value })}
-            className={`px-2.5 py-1 rounded-lg text-[10px] flex items-center gap-1 transition-all ${
+            className={`px-2.5 py-1 rounded-lg fs-10 flex items-center gap-1 transition-all ${
               galleryFilters.season === opt.value
                 ? 'bg-white/15 text-white border border-white/20'
                 : 'bg-space-700/30 text-white/50 hover:bg-space-600/30'
@@ -367,7 +367,7 @@ export default function StarGallery() {
             <button
               key={opt.value}
               onClick={() => setGalleryFilters({ difficulty: opt.value })}
-              className={`px-2 py-1 rounded text-[9px] flex items-center gap-0.5 transition-all ${
+              className={`px-2 py-1 rounded fs-9 flex items-center gap-0.5 transition-all ${
                 galleryFilters.difficulty === opt.value
                   ? 'bg-gradient-to-r ' + DIFFICULTY_LABELS[opt.value]?.color + ' text-white'
                   : 'bg-space-700/30 text-white/50 hover:bg-space-600/30'
@@ -386,13 +386,13 @@ export default function StarGallery() {
             onChange={(e) => setGalleryFilters({ featuredOnly: e.target.checked })}
             className="w-3.5 h-3.5 rounded bg-space-700 border-white/20 text-star-gold focus:ring-star-gold"
           />
-          <span className="text-[10px] text-white/50">仅显示精选</span>
+          <span className="fs-10 text-white/50">仅显示精选</span>
         </label>
 
         <select
           value={galleryFilters.sortBy}
           onChange={(e) => setGalleryFilters({ sortBy: e.target.value })}
-          className="px-2 py-1 rounded bg-space-700/50 border border-white/10 text-white text-[10px] focus:outline-none"
+          className="px-2 py-1 rounded bg-space-700/50 border border-white/10 text-white fs-10 focus:outline-none"
         >
           {sortOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -401,7 +401,7 @@ export default function StarGallery() {
       </div>
 
       {stats.mostPhotographedSeason && (
-        <div className="flex gap-2 text-[10px] text-white/40">
+        <div className="flex gap-2 fs-10 text-white/40">
           <span>📊 统计：</span>
           <span>最爱季节 {SEASONS[stats.mostPhotographedSeason]?.icon} {SEASONS[stats.mostPhotographedSeason]?.name}</span>
           {stats.mostPhotographedCategory && (
@@ -440,21 +440,21 @@ export default function StarGallery() {
         <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <h4 className="text-white text-sm font-display truncate">{photo.title}</h4>
           <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[9px] text-white/60">{formatDate(photo.shootingDate)}</span>
+            <span className="fs-9 text-white/60">{formatDate(photo.shootingDate)}</span>
             <span className="text-white/30">·</span>
-            <span className="text-[9px] text-white/60">{photo.location}</span>
+            <span className="fs-9 text-white/60">{photo.location}</span>
           </div>
           <div className="flex items-center gap-1 mt-1.5">
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+            <span className="fs-9 px-1.5 py-0.5 rounded bg-white/10 text-white/70">
               {categoryConfig?.icon} {categoryConfig?.label}
             </span>
             {constellation && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-nebula-purple/20 text-nebula-cyan">
+              <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-purple/20 text-nebula-cyan">
                 ✨ {constellation.name}
               </span>
             )}
             {seasonConfig && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+              <span className="fs-9 px-1.5 py-0.5 rounded bg-white/10 text-white/70">
                 {seasonConfig.icon}
               </span>
             )}
@@ -468,11 +468,11 @@ export default function StarGallery() {
         )}
 
         <div className="absolute top-2 left-2 flex items-center gap-1">
-          <div className="px-1.5 py-0.5 rounded bg-black/50 backdrop-blur-sm text-[9px] text-white/80 flex items-center gap-0.5">
+          <div className="px-1.5 py-0.5 rounded bg-black/50 backdrop-blur-sm fs-9 text-white/80 flex items-center gap-0.5">
             <span>👁️</span>
             <span>{photo.views}</span>
           </div>
-          <div className="px-1.5 py-0.5 rounded bg-black/50 backdrop-blur-sm text-[9px] text-white/80 flex items-center gap-0.5">
+          <div className="px-1.5 py-0.5 rounded bg-black/50 backdrop-blur-sm fs-9 text-white/80 flex items-center gap-0.5">
             <span>❤️</span>
             <span>{photo.likes}</span>
           </div>
@@ -497,7 +497,7 @@ export default function StarGallery() {
                 <h4 className="text-white font-display text-sm">
                   发现新星座：{prefillFormForConstellation.constellation.name}！
                 </h4>
-                <p className="text-[11px] text-white/50 mt-0.5">
+                <p className="fs-11 text-white/50 mt-0.5">
                   快来记录你的拍摄成果吧
                 </p>
               </div>
@@ -583,7 +583,7 @@ export default function StarGallery() {
           </button>
 
           <div className="absolute bottom-4 left-4 flex items-center gap-2">
-            <div className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-[11px] text-white/90 flex items-center gap-1">
+            <div className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm fs-11 text-white/90 flex items-center gap-1">
               <span>👁️</span>
               <span>{selectedPhoto.views} 次浏览</span>
             </div>
@@ -592,7 +592,7 @@ export default function StarGallery() {
                 e.stopPropagation()
                 likePhoto(selectedPhoto.id)
               }}
-              className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-[11px] text-white/90 flex items-center gap-1 hover:bg-pink-500/50 transition-all"
+              className="px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm fs-11 text-white/90 flex items-center gap-1 hover:bg-pink-500/50 transition-all"
             >
               <span>❤️</span>
               <span>{selectedPhoto.likes}</span>
@@ -622,17 +622,17 @@ export default function StarGallery() {
             <h3 className="text-xl font-display text-white">{selectedPhoto.title}</h3>
             <div className="flex items-center gap-2 mt-1">
               {seasonConfig && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full ${seasonConfig.bgColor} ${seasonConfig.textColor} ${seasonConfig.borderColor} border`}>
+                <span className={`fs-10 px-2 py-0.5 rounded-full ${seasonConfig.bgColor} ${seasonConfig.textColor} ${seasonConfig.borderColor} border`}>
                   {seasonConfig.icon} {seasonConfig.name}
                 </span>
               )}
               {categoryConfig && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/10">
+                <span className="fs-10 px-2 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/10">
                   {categoryConfig.icon} {categoryConfig.label}
                 </span>
               )}
               {difficultyConfig && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r ${difficultyConfig.color} text-white`}>
+                <span className={`fs-10 px-2 py-0.5 rounded-full bg-gradient-to-r ${difficultyConfig.color} text-white`}>
                   {difficultyConfig.icon} {difficultyConfig.label}
                 </span>
               )}
@@ -658,7 +658,7 @@ export default function StarGallery() {
                 <span>⚙️</span>
                 <span>拍摄参数</span>
               </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 fs-11">
                 {selectedPhoto.metadata.camera && (
                   <div>
                     <span className="text-white/40">相机：</span>
@@ -718,25 +718,25 @@ export default function StarGallery() {
                     <div className="flex items-center gap-2">
                       <h4 className="font-display text-white text-sm">关联星座</h4>
                       {isDiscovered && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
+                        <span className="fs-9 px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
                           ✓ 已发现
                         </span>
                       )}
                     </div>
                     <div className="text-sm text-white/80 mt-0.5">{constellation.name}</div>
-                    <div className="text-[11px] text-white/40 mt-0.5">{constellation.nameEn} · {constellation.description}</div>
+                    <div className="fs-11 text-white/40 mt-0.5">{constellation.nameEn} · {constellation.description}</div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <button
                     onClick={(e) => handleViewConstellation(constellation.id, e)}
-                    className="px-2.5 py-1.5 rounded-lg bg-space-700/50 text-white/60 text-[10px] hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all"
+                    className="px-2.5 py-1.5 rounded-lg bg-space-700/50 text-white/60 fs-10 hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all"
                   >
                     📚 图鉴详情
                   </button>
                   <button
                     onClick={(e) => handleStartObservation(constellation.id, e)}
-                    className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-nebula-purple to-nebula-cyan text-white text-[10px] hover:shadow-lg transition-all"
+                    className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-nebula-purple to-nebula-cyan text-white fs-10 hover:shadow-lg transition-all"
                   >
                     🔭 开始观测
                   </button>
@@ -750,7 +750,7 @@ export default function StarGallery() {
               {selectedPhoto.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-2 py-0.5 rounded-full bg-white/5 text-white/50 text-[10px] border border-white/5"
+                  className="px-2 py-0.5 rounded-full bg-white/5 text-white/50 fs-10 border border-white/5"
                 >
                   #{tag}
                 </span>
@@ -796,7 +796,7 @@ export default function StarGallery() {
               <h2 className="text-lg font-display text-white">
                 {isEdit ? '✏️ 编辑作品' : '📷 新增拍摄记录'}
               </h2>
-              <p className="text-[11px] text-white/50 mt-0.5">
+              <p className="fs-11 text-white/50 mt-0.5">
                 {isEdit ? '修改你的星空摄影记录' : '记录你与星空的美妙邂逅'}
               </p>
             </div>
@@ -820,7 +820,7 @@ export default function StarGallery() {
                     <div className="text-sm text-white font-medium">
                       关联星座：{prefillFormForConstellation.constellation.name}
                     </div>
-                    <div className="text-[10px] text-white/50">
+                    <div className="fs-10 text-white/50">
                       发现新星座后，自动为你关联拍摄记录
                     </div>
                   </div>
@@ -829,7 +829,7 @@ export default function StarGallery() {
             )}
 
             <div>
-              <label className="block text-[11px] text-white/60 mb-1.5">作品标题 *</label>
+              <label className="block fs-11 text-white/60 mb-1.5">作品标题 *</label>
               <input
                 type="text"
                 value={formData.title}
@@ -841,7 +841,7 @@ export default function StarGallery() {
             </div>
 
             <div>
-              <label className="block text-[11px] text-white/60 mb-1.5">图片链接 *</label>
+              <label className="block fs-11 text-white/60 mb-1.5">图片链接 *</label>
               <div className="flex gap-2">
                 <input
                   type="url"
@@ -873,7 +873,7 @@ export default function StarGallery() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-white/60 mb-1.5">关联星座</label>
+                <label className="block fs-11 text-white/60 mb-1.5">关联星座</label>
                 <select
                   value={formData.constellationId}
                   onChange={(e) => handleFormChange('constellationId', e.target.value)}
@@ -890,7 +890,7 @@ export default function StarGallery() {
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] text-white/60 mb-1.5">拍摄分类</label>
+                <label className="block fs-11 text-white/60 mb-1.5">拍摄分类</label>
                 <select
                   value={formData.category}
                   onChange={(e) => handleFormChange('category', e.target.value)}
@@ -905,7 +905,7 @@ export default function StarGallery() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-white/60 mb-1.5">拍摄地点</label>
+                <label className="block fs-11 text-white/60 mb-1.5">拍摄地点</label>
                 <input
                   type="text"
                   value={formData.location}
@@ -915,7 +915,7 @@ export default function StarGallery() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-white/60 mb-1.5">拍摄日期</label>
+                <label className="block fs-11 text-white/60 mb-1.5">拍摄日期</label>
                 <input
                   type="date"
                   value={formData.shootingDate}
@@ -926,7 +926,7 @@ export default function StarGallery() {
             </div>
 
             <div>
-              <label className="block text-[11px] text-white/60 mb-1.5">作品描述</label>
+              <label className="block fs-11 text-white/60 mb-1.5">作品描述</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleFormChange('description', e.target.value)}
@@ -937,7 +937,7 @@ export default function StarGallery() {
             </div>
 
             <div className="p-4 rounded-2xl bg-space-800/30 border border-white/5">
-              <h4 className="text-[11px] font-display text-white/70 mb-3 flex items-center gap-1.5">
+              <h4 className="fs-11 font-display text-white/70 mb-3 flex items-center gap-1.5">
                 <span>⚙️</span>
                 <span>拍摄参数（可选）</span>
               </h4>
@@ -951,7 +951,7 @@ export default function StarGallery() {
                   { key: 'stackCount', label: '叠加张数', placeholder: '30' }
                 ].map(field => (
                   <div key={field.key}>
-                    <label className="block text-[9px] text-white/40 mb-1">{field.label}</label>
+                    <label className="block fs-9 text-white/40 mb-1">{field.label}</label>
                     <input
                       type="text"
                       value={formData.metadata[field.key] || ''}
@@ -965,7 +965,7 @@ export default function StarGallery() {
             </div>
 
             <div>
-              <label className="block text-[11px] text-white/60 mb-1.5">标签</label>
+              <label className="block fs-11 text-white/60 mb-1.5">标签</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -988,7 +988,7 @@ export default function StarGallery() {
                   {formData.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="px-2 py-0.5 rounded-full bg-nebula-purple/20 text-nebula-cyan text-[10px] flex items-center gap-1"
+                      className="px-2 py-0.5 rounded-full bg-nebula-purple/20 text-nebula-cyan fs-10 flex items-center gap-1"
                     >
                       #{tag}
                       <button

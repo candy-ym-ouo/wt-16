@@ -32,9 +32,9 @@ export default {
       },
       animation: {
         'twinkle': 'twinkle 2s ease-in-out infinite',
-        'pulse-slow': 'pulse 4s ease-in-out infinite',
+        'pulse-slow': 'pulse var(--hint-pulse-speed, 1.2s) ease-in-out infinite',
         'float': 'float 6s ease-in-out infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate'
+        'glow': 'glow var(--hint-pulse-speed, 1.2s) ease-in-out infinite alternate'
       },
       keyframes: {
         twinkle: {

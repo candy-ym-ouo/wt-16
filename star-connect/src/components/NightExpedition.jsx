@@ -67,7 +67,7 @@ export default function NightExpedition() {
           />
         </div>
         {nextRecovery !== null && (
-          <div className="text-[10px] text-indigo-300/60 mt-1.5 text-right">
+          <div className="fs-10 text-indigo-300/60 mt-1.5 text-right">
             下次恢复: {nextRecovery} 分钟
           </div>
         )}
@@ -82,7 +82,7 @@ export default function NightExpedition() {
           <span className="text-4xl">🌙</span>
           <div>
             <h3 className="font-display text-lg text-violet-200">夜间远征</h3>
-            <p className="text-[11px] text-white/50">连续闯关，挑战星空极限</p>
+            <p className="fs-11 text-white/50">连续闯关，挑战星空极限</p>
           </div>
         </div>
         <p className="text-xs text-white/60 leading-relaxed">
@@ -112,7 +112,7 @@ export default function NightExpedition() {
           <span className="flex items-center justify-center gap-2">
             <span>🚀</span>
             <span>开始远征</span>
-            <span className="text-[10px] opacity-70">（消耗 {STAMINA_CONFIG.stageCost} 体力）</span>
+            <span className="fs-10 opacity-70">（消耗 {STAMINA_CONFIG.stageCost} 体力）</span>
           </span>
         ) : (
           <span className="flex items-center justify-center gap-2">
@@ -125,19 +125,19 @@ export default function NightExpedition() {
       <div className="grid grid-cols-2 gap-2">
         <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
           <div className="text-lg font-mono text-violet-300">{expeditionProgress.totalCompleted}</div>
-          <div className="text-[10px] text-white/40 mt-0.5">远征次数</div>
+          <div className="fs-10 text-white/40 mt-0.5">远征次数</div>
         </div>
         <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
           <div className="text-lg font-mono text-indigo-300">{expeditionProgress.highestStagesCleared}</div>
-          <div className="text-[10px] text-white/40 mt-0.5">最高关卡</div>
+          <div className="fs-10 text-white/40 mt-0.5">最高关卡</div>
         </div>
         <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
           <div className="text-lg font-mono text-amber-300">{expeditionProgress.totalPerfectStages}</div>
-          <div className="text-[10px] text-white/40 mt-0.5">完美通关</div>
+          <div className="fs-10 text-white/40 mt-0.5">完美通关</div>
         </div>
         <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
           <div className="text-lg font-mono text-star-gold">{expeditionProgress.totalStardustEarned}</div>
-          <div className="text-[10px] text-white/40 mt-0.5">星尘总计</div>
+          <div className="fs-10 text-white/40 mt-0.5">星尘总计</div>
         </div>
       </div>
 
@@ -148,7 +148,7 @@ export default function NightExpedition() {
         </div>
         <div className="space-y-1.5">
           {Object.entries(TOLERANCE_CONFIG).map(([diff, config]) => (
-            <div key={diff} className="flex items-center justify-between text-[11px]">
+            <div key={diff} className="flex items-center justify-between fs-11">
               <span className="text-white/50">难度 {diff}</span>
               <span className="text-white/70">
                 允许 {config.allowedMistakes} 次失误 · {config.label}
@@ -169,10 +169,10 @@ export default function NightExpedition() {
               <span className="text-base">{tier.icon}</span>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-white/80">{tier.name}</span>
-                  <span className="text-[10px] text-white/40">通过 {tier.stagesCleared} 关</span>
+                  <span className="fs-11 text-white/80">{tier.name}</span>
+                  <span className="fs-10 text-white/40">通过 {tier.stagesCleared} 关</span>
                 </div>
-                <div className="text-[10px] text-white/40">{tier.description}</div>
+                <div className="fs-10 text-white/40">{tier.description}</div>
               </div>
             </div>
           ))}
@@ -207,7 +207,7 @@ export default function NightExpedition() {
                 第 {stageProgress} / {totalStages} 关
               </span>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
+            <span className="fs-10 px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
               远征进行中
             </span>
           </div>
@@ -222,17 +222,17 @@ export default function NightExpedition() {
           <div className="grid grid-cols-3 gap-2">
             <div className="p-2 rounded-lg bg-space-900/40 text-center">
               <div className="text-sm font-mono text-violet-200">{run.clearedStages.length}</div>
-              <div className="text-[9px] text-white/40">已通过</div>
+              <div className="fs-9 text-white/40">已通过</div>
             </div>
             <div className="p-2 rounded-lg bg-space-900/40 text-center">
               <div className={`text-sm font-mono ${mistakesLeft > 0 ? 'text-amber-300' : 'text-red-400'}`}>
                 {mistakesLeft}
               </div>
-              <div className="text-[9px] text-white/40">容错剩余</div>
+              <div className="fs-9 text-white/40">容错剩余</div>
             </div>
             <div className="p-2 rounded-lg bg-space-900/40 text-center">
               <div className="text-sm font-mono text-star-gold">{run.perfectCount}</div>
-              <div className="text-[9px] text-white/40">完美通关</div>
+              <div className="fs-9 text-white/40">完美通关</div>
             </div>
           </div>
         </div>
@@ -251,12 +251,12 @@ export default function NightExpedition() {
             </div>
             <div className="flex-1">
               <p className="text-sm text-white">{currentStage.constellationName}</p>
-              <p className="text-[10px] text-white/40">
+              <p className="fs-10 text-white/40">
                 容错 {currentStage.allowedMistakes} 次 · {TOLERANCE_CONFIG[currentStage.difficulty].label}
               </p>
             </div>
             {run.mistakesInStage > 0 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+              <span className="fs-10 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
                 已失误 {run.mistakesInStage}
               </span>
             )}
@@ -271,7 +271,7 @@ export default function NightExpedition() {
             return (
               <div
                 key={idx}
-                className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-mono border transition-all ${
+                className={`w-7 h-7 rounded-lg flex items-center justify-center fs-10 font-mono border transition-all ${
                   cleared
                     ? 'bg-violet-500/20 border-violet-500/40 text-violet-200'
                     : isCurrent
@@ -330,15 +330,15 @@ export default function NightExpedition() {
         <div className="grid grid-cols-3 gap-2">
           <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
             <div className="text-lg font-mono text-star-gold">{r.rewards.stardust}</div>
-            <div className="text-[9px] text-white/40 mt-0.5">星尘</div>
+            <div className="fs-9 text-white/40 mt-0.5">星尘</div>
           </div>
           <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
             <div className="text-lg font-mono text-indigo-300">{r.rewards.xp}</div>
-            <div className="text-[9px] text-white/40 mt-0.5">经验</div>
+            <div className="fs-9 text-white/40 mt-0.5">经验</div>
           </div>
           <div className="p-3 rounded-xl border border-white/10 bg-space-700/20 text-center">
             <div className="text-lg font-mono text-violet-300">{r.perfectCount}</div>
-            <div className="text-[9px] text-white/40 mt-0.5">完美</div>
+            <div className="fs-9 text-white/40 mt-0.5">完美</div>
           </div>
         </div>
 
@@ -352,9 +352,9 @@ export default function NightExpedition() {
               {r.rewards.tierRewards.map((tier) => (
                 <div key={tier.id} className="flex items-center gap-2">
                   <span className="text-base">{tier.icon}</span>
-                  <span className="text-[11px] text-white/80">{tier.name}</span>
+                  <span className="fs-11 text-white/80">{tier.name}</span>
                   {tier.bonus.stardust > 0 && (
-                    <span className="text-[10px] text-star-gold ml-auto">+{tier.bonus.stardust} 星尘</span>
+                    <span className="fs-10 text-star-gold ml-auto">+{tier.bonus.stardust} 星尘</span>
                   )}
                 </div>
               ))}
@@ -377,8 +377,8 @@ export default function NightExpedition() {
           </div>
           <div className="space-y-1.5">
             {r.clearedStages.map((stage, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-[11px]">
-                <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px]
+              <div key={idx} className="flex items-center gap-2 fs-11">
+                <span className={`w-5 h-5 rounded flex items-center justify-center fs-9
                                 ${stage.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                                   stage.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                                   'bg-red-500/20 text-red-300'}`}>
@@ -437,12 +437,12 @@ export default function NightExpedition() {
                     通过 {entry.stagesCleared} / {entry.totalStages} 关
                   </span>
                   {entry.perfectCount > 0 && (
-                    <span className="text-[10px] text-violet-300">★ {entry.perfectCount}</span>
+                    <span className="fs-10 text-violet-300">★ {entry.perfectCount}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3 mt-0.5">
-                  <span className="text-[11px] text-star-gold">✦ {entry.rewards.stardust}</span>
-                  <span className="text-[11px] text-white/40">
+                  <span className="fs-11 text-star-gold">✦ {entry.rewards.stardust}</span>
+                  <span className="fs-11 text-white/40">
                     {formatDate(entry.endTime)}
                   </span>
                 </div>

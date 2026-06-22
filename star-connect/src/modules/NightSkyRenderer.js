@@ -120,25 +120,37 @@ export class NightSkyRenderer {
   createStarLabel() {
     this.starLabelEl = document.createElement('div')
     this.starLabelEl.className = 'star-label'
+    this.updateStarLabelStyle()
+    this.container.appendChild(this.starLabelEl)
+  }
+
+  updateStarLabelStyle() {
+    if (!this.starLabelEl) return
+    const textScale = this.settings.textScale || 1.0
+    const baseFontSize = 12 * textScale
+    const subFontSize = 10 * textScale
+    const padding = `${Math.round(4 * textScale)}px ${Math.round(10 * textScale)}px`
+    const borderRadius = `${Math.round(8 * textScale)}px`
+
     this.starLabelEl.style.cssText = `
       position: absolute;
       pointer-events: none;
       z-index: 10;
-      padding: 4px 10px;
+      padding: ${padding};
       background: rgba(10, 14, 31, 0.9);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 215, 0, 0.4);
-      border-radius: 8px;
+      border-radius: ${borderRadius};
       color: #ffd700;
       font-family: Georgia, serif;
-      font-size: 12px;
+      font-size: ${baseFontSize}px;
       white-space: nowrap;
       transform: translate(-50%, -140%);
       opacity: 0;
       transition: opacity 0.2s ease;
       box-shadow: 0 2px 12px rgba(255, 215, 0, 0.2);
     `
-    this.container.appendChild(this.starLabelEl)
+    this._starLabelSubFontSize = subFontSize
   }
 
   updateStarLabel(show, starData, clientX, clientY) {
@@ -149,9 +161,10 @@ export class NightSkyRenderer {
 
     if (show && starData) {
       const rect = this.container.getBoundingClientRect()
+      const subFontSize = this._starLabelSubFontSize || 10
       this.starLabelEl.innerHTML = `
         <div style="font-weight: bold; color: #ffd700;">${starData.starName || '未知'}</div>
-        ${starData.starId ? `<div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;">${starData.starId}</div>` : ''}
+        ${starData.starId ? `<div style="font-size: ${subFontSize}px; color: rgba(255,255,255,0.5); margin-top: 2px;">${starData.starId}</div>` : ''}
       `
       this.starLabelEl.style.left = `${clientX - rect.left}px`
       this.starLabelEl.style.top = `${clientY - rect.top}px`
@@ -1270,6 +1283,11 @@ export class NightSkyRenderer {
     if (newSettings.hintIntensity !== undefined &&
         newSettings.hintIntensity !== oldSettings.hintIntensity) {
       this.hintConfig = HINT_INTENSITY_OPTIONS[newSettings.hintIntensity] || HINT_INTENSITY_OPTIONS.medium
+    }
+
+    if (newSettings.textScale !== undefined &&
+        newSettings.textScale !== oldSettings.textScale) {
+      this.updateStarLabelStyle()
     }
 
     if (newSettings.workshop !== undefined) {

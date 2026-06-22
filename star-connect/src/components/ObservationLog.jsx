@@ -132,7 +132,7 @@ export default function ObservationLog() {
           return (
             <span
               key={tagId}
-              className={`text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5
+              className={`fs-9 px-1.5 py-0.5 rounded-full flex items-center gap-0.5
                          bg-gradient-to-r ${category?.color || 'from-gray-500 to-slate-400'}
                          text-white/80 cursor-pointer hover:opacity-80 transition-opacity`}
               onClick={(e) => {
@@ -147,7 +147,7 @@ export default function ObservationLog() {
           )
         })}
         {tags.length > 5 && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/50">
+          <span className="fs-9 px-1.5 py-0.5 rounded-full bg-white/10 text-white/50">
             +{tags.length - 5}
           </span>
         )}
@@ -186,15 +186,15 @@ export default function ObservationLog() {
                     {getLocalizedConstellationName(log.constellationId)}
                   </span>
                   {log.perfect && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-star-gold/20 text-star-gold">
+                    <span className="fs-10 px-1.5 py-0.5 rounded-full bg-star-gold/20 text-star-gold">
                       {t('log.perfect')}
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-white/40 mt-0.5">
+                <div className="fs-11 text-white/40 mt-0.5">
                   {getLocalizedConstellationNameEn(log.constellationId)} · {isDiscovery ? t('log.firstDiscovery') : t('log.reobservation')}
                 </div>
-                <div className="text-[10px] text-white/30 mt-1 font-mono">
+                <div className="fs-10 text-white/30 mt-1 font-mono">
                   {formatDate(log.timestamp)}
                 </div>
                 {renderLogTags(log, originalIndex)}
@@ -206,7 +206,7 @@ export default function ObservationLog() {
                   e.stopPropagation()
                   setShowTagSelector(showTagSelector === originalIndex ? null : originalIndex)
                 }}
-                className="px-2 py-1 rounded-lg bg-space-600/50 text-white/50 text-[10px]
+                className="px-2 py-1 rounded-lg bg-space-600/50 text-white/50 fs-10
                          hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
                          flex-shrink-0"
                 title={t('log.addTag')}
@@ -215,7 +215,7 @@ export default function ObservationLog() {
               </button>
               <button
                 onClick={() => handleViewInAtlas(log.constellationId)}
-                className="px-2 py-1 rounded-lg bg-space-600/50 text-white/50 text-[10px]
+                className="px-2 py-1 rounded-lg bg-space-600/50 text-white/50 fs-10
                          hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
                          flex-shrink-0"
                 title={t('detail.backToAtlas')}
@@ -226,7 +226,7 @@ export default function ObservationLog() {
           </div>
           {showTagSelector === originalIndex && (
             <div className="mt-3 pt-3 border-t border-white/10">
-              <div className="text-[10px] text-white/50 mb-2">{t('log.addTag')}:</div>
+              <div className="fs-10 text-white/50 mb-2">{t('log.addTag')}:</div>
               <div className="flex flex-wrap gap-1">
                 {getAllTags().map(tag => {
                   const logTags = getLogTags(log)
@@ -242,7 +242,7 @@ export default function ObservationLog() {
                           handleAddTagToLog(originalIndex, tag.id)
                         }
                       }}
-                      className={`text-[10px] px-2 py-1 rounded-full flex items-center gap-1
+                      className={`fs-10 px-2 py-1 rounded-full flex items-center gap-1
                                  transition-all ${
                         isSelected
                           ? `bg-gradient-to-r ${tag.color} text-white`
@@ -282,10 +282,10 @@ export default function ObservationLog() {
               <div className="font-display text-star-gold text-sm">
                 {t('log.achievementUnlocked')} · {achName}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {achDesc}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -315,10 +315,10 @@ export default function ObservationLog() {
               <div className={`font-display text-sm ${s.textColor}`}>
                 {t('log.seasonReward')} · {log.rewardName}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {t('log.stageComplete', { name: seasonName, phase: phaseName })}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -343,11 +343,11 @@ export default function ObservationLog() {
               <div className="font-display text-nebula-cyan text-sm">
                 {t('log.quizComplete')}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {t('log.correctCount', { correct: log.correct, total: log.total })} · {t('log.earnedPoints', { points: log.points })}
                 {log.isPerfect && <span className="text-star-gold ml-1">{t('log.allCorrect')}</span>}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -372,10 +372,10 @@ export default function ObservationLog() {
               <div className="font-display text-star-gold text-sm">
                 {t('log.quizPerfect')} · {t('log.questionsAllCorrect', { count: log.questions })}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {t('log.bonusPoints', { points: log.bonusPoints })}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -400,10 +400,10 @@ export default function ObservationLog() {
               <div className="font-display text-pink-300 text-sm">
                 {t('log.quizExchange')} · {log.rewardName}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {t('log.costPoints', { cost: log.cost })}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -439,10 +439,10 @@ export default function ObservationLog() {
                 {t('log.routeComplete')} · {log.routeName}
                 {log.perfect && <span className="ml-1">💎 {t('log.perfect')}!</span>}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {t('log.completedSteps', { count: log.completedSteps })}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -466,11 +466,11 @@ export default function ObservationLog() {
               <div className="font-display text-yellow-300 text-sm">
                 {t('log.eventReward')} · {log.eventName}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 {log.message || t('log.gotEventReward')}
                 {log.stardust && <span className="text-yellow-300"> 💫 {log.stardust}</span>}
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -507,10 +507,10 @@ export default function ObservationLog() {
               <div className={`font-display ${colors.text} text-sm`}>
                 委托完成 · {log.commissionName}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 完成每日观测委托，可领取 💫 {log.reward} 星尘
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -545,10 +545,10 @@ export default function ObservationLog() {
                 夜间远征完成 · 通关 {log.stagesCleared}/{log.totalStages} 关
                 {log.perfectCount > 0 && <span className="ml-1">💎 {log.perfectCount}次完美!</span>}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 获得 💫 {log.stardustEarned} 星尘
               </div>
-              <div className="text-[10px] text-white/30 mt-1 font-mono">
+              <div className="fs-10 text-white/30 mt-1 font-mono">
                 {formatDate(log.timestamp)}
               </div>
               {renderLogTags(log, originalIndex)}
@@ -573,19 +573,19 @@ export default function ObservationLog() {
             <div className="text-xl font-bold text-nebula-purple">
               {logSummary.stats.total}
             </div>
-            <div className="text-[10px] text-white/50 mt-1">{t('log.totalLogs')}</div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.totalLogs')}</div>
           </div>
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
             <div className="text-xl font-bold text-nebula-cyan">
               {logSummary.stats.activeDays}
             </div>
-            <div className="text-[10px] text-white/50 mt-1">{t('log.activeDays')}</div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.activeDays')}</div>
           </div>
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
             <div className="text-xl font-bold text-star-gold">
               {logSummary.stats.uniqueConstellations.length}
             </div>
-            <div className="text-[10px] text-white/50 mt-1">{t('log.uniqueConstellations')}</div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.uniqueConstellations')}</div>
           </div>
         </div>
 
@@ -594,19 +594,19 @@ export default function ObservationLog() {
             <div className="text-xl font-bold text-purple-400">
               {logSummary.stats.discoveries}
             </div>
-            <div className="text-[10px] text-white/50 mt-1">{t('log.firstDiscovery')}</div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.firstDiscovery')}</div>
           </div>
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
             <div className="text-xl font-bold text-cyan-400">
               {logSummary.stats.reobservations}
             </div>
-            <div className="text-[10px] text-white/50 mt-1">{t('log.reobservation')}</div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.reobservation')}</div>
           </div>
           <div className="p-3 rounded-xl bg-space-800/40 text-center">
             <div className="text-xl font-bold text-yellow-400">
               {logSummary.stats.perfectRuns}
             </div>
-            <div className="text-[10px] text-white/50 mt-1">{t('log.perfect')}</div>
+            <div className="fs-10 text-white/50 mt-1">{t('log.perfect')}</div>
           </div>
         </div>
       </div>
@@ -624,7 +624,7 @@ export default function ObservationLog() {
                 <div className={`text-xs font-medium ${insight.color}`}>
                   {insight.title}
                 </div>
-                <div className="text-[11px] text-white/50 mt-0.5">
+                <div className="fs-11 text-white/50 mt-0.5">
                   {insight.content}
                 </div>
               </div>
@@ -639,7 +639,7 @@ export default function ObservationLog() {
             <span className="text-lg">🏆</span>
             <h3 className="font-display text-white/90 text-sm">{t('log.achievementsProgress')}</h3>
           </div>
-          <span className="text-[10px] text-white/40">
+          <span className="fs-10 text-white/40">
             {progress.achievements} / {progress.totalAchievements}
           </span>
         </div>
@@ -653,7 +653,7 @@ export default function ObservationLog() {
             }}
           />
         </div>
-        <div className="grid grid-cols-2 gap-2 text-[10px] text-white/50">
+        <div className="grid grid-cols-2 gap-2 fs-10 text-white/50">
           <div className="flex items-center gap-1">
             <span>✨</span>
             <span>发现: {progress.constellations}/{progress.totalConstellations}</span>
@@ -677,7 +677,7 @@ export default function ObservationLog() {
               <div key={seasonId} className="flex items-center gap-2">
                 <span className="text-base">{season.icon}</span>
                 <div className="flex-1">
-                  <div className="flex justify-between text-[10px] mb-0.5">
+                  <div className="flex justify-between fs-10 mb-0.5">
                     <span className="text-white/70">{season.name}</span>
                     <span className="text-white/50 font-mono">{stats.overallPercentage}%</span>
                   </div>
@@ -704,7 +704,7 @@ export default function ObservationLog() {
             {logSummary.topTags.map((item, i) => (
               <div
                 key={i}
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r ${item.tag.color} text-white text-[10px]`}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r ${item.tag.color} text-white fs-10`}
               >
                 <span>{item.tag.icon}</span>
                 <span>{item.tag.name}</span>
@@ -726,7 +726,7 @@ export default function ObservationLog() {
               <div className="text-sm text-emerald-300 font-medium">
                 {formatDate(logSummary.stats.mostActiveDay.date.getTime())}
               </div>
-              <div className="text-[11px] text-white/50 mt-0.5">
+              <div className="fs-11 text-white/50 mt-0.5">
                 共 {logSummary.stats.mostActiveDay.count} 条记录
               </div>
             </div>
@@ -759,7 +759,7 @@ export default function ObservationLog() {
             <button
               key={range.id}
               onClick={() => setFilters(prev => ({ ...prev, timeRange: range.id }))}
-              className={`py-1.5 px-2 rounded-lg text-[11px] transition-all ${
+              className={`py-1.5 px-2 rounded-lg fs-11 transition-all ${
                 filters.timeRange === range.id
                   ? 'bg-nebula-purple/30 text-nebula-cyan border border-nebula-purple/50'
                   : 'bg-space-800/40 text-white/60 border border-transparent hover:bg-space-700/50'
@@ -782,7 +782,7 @@ export default function ObservationLog() {
             <button
               key={type.id}
               onClick={() => setFilters(prev => ({ ...prev, type: type.id }))}
-              className={`py-1.5 px-2 rounded-lg text-[10px] transition-all flex items-center justify-center gap-1 ${
+              className={`py-1.5 px-2 rounded-lg fs-10 transition-all flex items-center justify-center gap-1 ${
                 filters.type === type.id
                   ? 'bg-nebula-purple/30 text-nebula-cyan border border-nebula-purple/50'
                   : 'bg-space-800/40 text-white/60 border border-transparent hover:bg-space-700/50'
@@ -799,7 +799,7 @@ export default function ObservationLog() {
         <div className="text-xs text-white/60 mb-2">{t('log.filterByTag')}</div>
         {Object.entries(LOG_TAG_CATEGORIES).filter(([id]) => id !== 'custom').map(([categoryId, category]) => (
           <div key={categoryId} className="mb-3">
-            <div className="text-[10px] text-white/40 mb-1.5 flex items-center gap-1">
+            <div className="fs-10 text-white/40 mb-1.5 flex items-center gap-1">
               <span>{category.icon}</span>
               <span>{t(`log.tagCategories.${categoryId}`)}</span>
             </div>
@@ -810,7 +810,7 @@ export default function ObservationLog() {
                   <button
                     key={tag.id}
                     onClick={() => toggleTagFilter(tag.id)}
-                    className={`text-[10px] px-2 py-1 rounded-full flex items-center gap-1
+                    className={`fs-10 px-2 py-1 rounded-full flex items-center gap-1
                                transition-all ${
                       isSelected
                         ? `bg-gradient-to-r ${category.color} text-white`
@@ -879,7 +879,7 @@ export default function ObservationLog() {
     return (
       <div className="space-y-3">
         {hasActiveFilters && (
-          <div className="text-[11px] text-white/40 mb-2">
+          <div className="fs-11 text-white/40 mb-2">
             显示 {filteredLogs.length} 条结果
             {filteredLogs.length !== observationLogs.length && ` / 共 ${observationLogs.length} 条`}
           </div>
@@ -931,31 +931,31 @@ export default function ObservationLog() {
               <div className="text-lg font-bold text-nebula-purple">
                 {observationLogs.filter(l => l.type === 'discovery').length}
               </div>
-              <div className="text-[10px] text-white/50">{t('log.firstDiscovery')}</div>
+              <div className="fs-10 text-white/50">{t('log.firstDiscovery')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-nebula-cyan">
                 {observationLogs.filter(l => l.type === 'reobservation').length}
               </div>
-              <div className="text-[10px] text-white/50">{t('log.reobservation')}</div>
+              <div className="fs-10 text-white/50">{t('log.reobservation')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-star-gold">
                 {observationLogs.filter(l => l.type === 'achievement').length}
               </div>
-              <div className="text-[10px] text-white/50">{t('log.achievementUnlocked')}</div>
+              <div className="fs-10 text-white/50">{t('log.achievementUnlocked')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-pink-300">
                 {seasonRewardsClaimed.length}
               </div>
-              <div className="text-[10px] text-white/50">{t('log.seasonReward')}</div>
+              <div className="fs-10 text-white/50">{t('log.seasonReward')}</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-blue-400">
                 {observationLogs.filter(l => l.type?.startsWith('event_')).length}
               </div>
-              <div className="text-[10px] text-white/50">{t('log.nightEvents')}</div>
+              <div className="fs-10 text-white/50">{t('log.nightEvents')}</div>
             </div>
           </div>
 

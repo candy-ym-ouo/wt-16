@@ -165,25 +165,25 @@ export default function StarAtlas() {
               <div className="text-lg font-bold text-nebula-cyan">
                 {stats.discovered}
               </div>
-              <div className="text-[10px] text-white/50">已发现</div>
+              <div className="fs-10 text-white/50">已发现</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-white/80">
                 {stats.total}
               </div>
-              <div className="text-[10px] text-white/50">总星座</div>
+              <div className="fs-10 text-white/50">总星座</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-star-gold">
                 {stats.favorites}
               </div>
-              <div className="text-[10px] text-white/50">收藏</div>
+              <div className="fs-10 text-white/50">收藏</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-lg font-bold text-nebula-purple">
                 {Math.round((stats.discovered / stats.total) * 100)}%
               </div>
-              <div className="text-[10px] text-white/50">完成度</div>
+              <div className="fs-10 text-white/50">完成度</div>
             </div>
           </div>
 
@@ -366,18 +366,18 @@ export default function StarAtlas() {
                           <span className="text-star-gold text-xs">✓</span>
                         )}
                       </div>
-                      <p className="text-[10px] text-white/40 truncate">
+                      <p className="fs-10 text-white/40 truncate">
                         {c.nameEn}
                       </p>
                       <div className="mt-2 flex items-center gap-1.5">
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                        <span className={`fs-9 px-1.5 py-0.5 rounded ${
                           c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                           c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-red-500/20 text-red-300'
                         }`}>
                           {DIFFICULTY_CONFIG[c.difficulty].label}
                         </span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
+                        <span className="fs-9 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
                           {seasonInfo?.icon} {c.season}
                         </span>
                       </div>
@@ -419,24 +419,24 @@ export default function StarAtlas() {
                             <span className="text-star-gold text-sm">✓</span>
                           )}
                         </div>
-                        <p className="text-[11px] text-white/40">
+                        <p className="fs-11 text-white/40">
                           {c.nameEn}
                         </p>
                         <p className="text-xs text-white/60 mt-1 line-clamp-2">
                           {c.description}
                         </p>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          <span className={`fs-10 px-1.5 py-0.5 rounded ${
                             c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                             c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                             'bg-red-500/20 text-red-300'
                           }`}>
                             {DIFFICULTY_CONFIG[c.difficulty].label}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
+                          <span className="fs-10 px-1.5 py-0.5 rounded bg-space-600/50 text-white/50">
                             {seasonInfo?.icon} {c.season}季
                           </span>
-                          <span className="text-[10px] text-white/40">
+                          <span className="fs-10 text-white/40">
                             ✦ {c.stars.length} 星
                           </span>
                         </div>

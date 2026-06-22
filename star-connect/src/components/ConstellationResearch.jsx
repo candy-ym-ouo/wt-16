@@ -198,8 +198,8 @@ export default function ConstellationResearch() {
             <div key={item.label} className="p-3 rounded-xl border border-white/10 bg-space-700/30 text-center">
               <div className="text-xl mb-1">{item.icon}</div>
               <div className="font-display text-white text-sm font-mono">{item.value}</div>
-              <div className="text-[10px] text-white/40 mt-0.5">{item.sub}</div>
-              <div className="text-[9px] text-white/30">{item.label}</div>
+              <div className="fs-10 text-white/40 mt-0.5">{item.sub}</div>
+              <div className="fs-9 text-white/30">{item.label}</div>
             </div>
           ))}
         </div>
@@ -234,7 +234,7 @@ export default function ConstellationResearch() {
           <div className="grid grid-cols-6 mt-2">
             {Object.values(RESEARCHER_RANKS).map(rank => (
               <div key={rank.id} className="text-center">
-                <div className={`text-[9px] ${
+                <div className={`fs-9 ${
                   currentRank.level >= rank.level ? 'text-white/60' : 'text-white/30'
                 }`}>
                   {rank.name.replace('研究员', '').replace('星空', '')}
@@ -272,11 +272,11 @@ export default function ConstellationResearch() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-white/90">{topic.title}</span>
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded ${cat.bg} ${cat.text}`}>
+                            <span className={`fs-9 px-1.5 py-0.5 rounded ${cat.bg} ${cat.text}`}>
                               {cat.label}
                             </span>
                           </div>
-                          <span className="text-[10px] font-mono text-white/50">{progress.percentage}%</span>
+                          <span className="fs-10 font-mono text-white/50">{progress.percentage}%</span>
                         </div>
                         <div className="mt-1.5 h-1 bg-space-900/60 rounded-full overflow-hidden">
                           <div
@@ -323,7 +323,7 @@ export default function ConstellationResearch() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-display text-lg text-white">{topic.title}</h3>
-                <span className={`text-[10px] px-2 py-0.5 rounded ${cat.bg} ${cat.text} border ${cat.border}`}>
+                <span className={`fs-10 px-2 py-0.5 rounded ${cat.bg} ${cat.text} border ${cat.border}`}>
                   {cat.label}
                 </span>
               </div>
@@ -335,7 +335,7 @@ export default function ConstellationResearch() {
             <div className="text-right">
               <div className="text-xs text-white/40">完成奖励</div>
               <div className={`font-mono text-lg ${cat.text}`}>+{topic.xpReward}</div>
-              <div className="text-[9px] text-white/30">XP</div>
+              <div className="fs-9 text-white/30">XP</div>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-white/10">
@@ -390,19 +390,19 @@ export default function ConstellationResearch() {
                               style={{ width: `${p.percentage}%` }}
                             />
                           </div>
-                          <span className="text-[9px] font-mono text-white/50">
+                          <span className="fs-9 font-mono text-white/50">
                             {p.current}/{p.target}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className={`text-[10px] font-mono ${
+                      <div className={`fs-10 font-mono ${
                         p.completed ? 'text-green-300' : 'text-star-gold'
                       }`}>
                         {p.completed ? `✓ ${obj.reward}` : obj.reward}
                       </div>
-                      <div className="text-[9px] text-white/30">XP</div>
+                      <div className="fs-9 text-white/30">XP</div>
                     </div>
                   </div>
                 </div>
@@ -416,7 +416,7 @@ export default function ConstellationResearch() {
             <div className="flex items-center gap-2 mb-3">
               <span>📚</span>
               <h4 className="font-display text-white/90 text-sm">参考资料</h4>
-              <span className="text-[10px] text-white/40 ml-auto">解锁后阅读可获 XP</span>
+              <span className="fs-10 text-white/40 ml-auto">解锁后阅读可获 XP</span>
             </div>
             <div className="space-y-2">
               {materials.map(mat => {
@@ -450,10 +450,10 @@ export default function ConstellationResearch() {
                           }`}>
                             {mat.title}
                           </span>
-                          {isRead && <span className="text-[9px] text-green-400/70">✓ 已读</span>}
-                          {!accessible && <span className="text-[9px] text-white/30">🔒 未解锁</span>}
+                          {isRead && <span className="fs-9 text-green-400/70">✓ 已读</span>}
+                          {!accessible && <span className="fs-9 text-white/30">🔒 未解锁</span>}
                         </div>
-                        <div className="text-[10px] mt-0.5 text-white/40">
+                        <div className="fs-10 mt-0.5 text-white/40">
                           {mat.type === 'guide' ? '指南' : mat.type === 'article' ? '文章' : '资料'}
                         </div>
                       </div>
@@ -484,16 +484,16 @@ export default function ConstellationResearch() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-white">{exam.title}</span>
                     {progress.examPassed && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
+                      <span className="fs-10 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
                         ✓ 已通过
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-white/50 mt-1">
+                  <div className="fs-11 text-white/50 mt-1">
                     {exam.questions.length} 题 · 及格线 {exam.passScore}分 · 通过奖励 +{exam.xpReward} XP
                   </div>
                   {examBest && (
-                    <div className="text-[10px] text-white/40 mt-1">
+                    <div className="fs-10 text-white/40 mt-1">
                       历史最高分：<span className="font-mono text-star-gold">{examBest.percentage}分</span>
                     </div>
                   )}
@@ -593,33 +593,33 @@ export default function ConstellationResearch() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h5 className="font-display text-sm text-white/90">{topic.title}</h5>
                             {isCompleted && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-300">
+                              <span className="fs-9 px-1.5 py-0.5 rounded bg-green-500/20 text-green-300">
                                 ✓ 已完成
                               </span>
                             )}
                             {!canStart && (
-                              <span className="text-[9px] text-white/30">
+                              <span className="fs-9 text-white/30">
                                 🔒 {requiredRank.icon} {requiredRank.name}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-white/50 mt-1 line-clamp-2">
+                          <p className="fs-11 text-white/50 mt-1 line-clamp-2">
                             {topic.summary}
                           </p>
                           <div className="flex items-center gap-3 mt-2 flex-wrap">
-                            <span className="text-[10px] text-white/40">
+                            <span className="fs-10 text-white/40">
                               {requiredRank.icon} {requiredRank.name}
                             </span>
-                            <span className="text-[10px] text-white/40">
+                            <span className="fs-10 text-white/40">
                               🎯 {topic.objectives.length}项目标
                             </span>
-                            <span className="text-[10px] font-mono text-star-gold">
+                            <span className="fs-10 font-mono text-star-gold">
                               +{topic.xpReward} XP
                             </span>
                           </div>
                           {isStarted && progress && (
                             <div className="mt-2">
-                              <div className="flex justify-between text-[9px] mb-1">
+                              <div className="flex justify-between fs-9 mb-1">
                                 <span className="text-white/40">进度</span>
                                 <span className="text-white/50 font-mono">{progress.percentage}%</span>
                               </div>
@@ -639,13 +639,13 @@ export default function ConstellationResearch() {
                                 e.stopPropagation()
                                 handleStartTopic(topic.id)
                               }}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-medium bg-gradient-to-r ${cat.color} text-white hover:shadow-md active:scale-95 transition-all`}
+                              className={`px-3 py-1.5 rounded-lg fs-10 font-medium bg-gradient-to-r ${cat.color} text-white hover:shadow-md active:scale-95 transition-all`}
                             >
                               开始
                             </button>
                           )}
                           {isStarted && (
-                            <span className="text-[10px] text-white/40">查看 →</span>
+                            <span className="fs-10 text-white/40">查看 →</span>
                           )}
                         </div>
                       </div>
@@ -682,11 +682,11 @@ export default function ConstellationResearch() {
             <div className="flex-1 min-w-0">
               <h3 className="font-display text-lg text-white">{material.title}</h3>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] px-2 py-0.5 rounded bg-nebula-purple/20 text-nebula-cyan/80">
+                <span className="fs-10 px-2 py-0.5 rounded bg-nebula-purple/20 text-nebula-cyan/80">
                   {material.type === 'guide' ? '📖 指南' : '📄 文章'}
                 </span>
                 {isRead && (
-                  <span className="text-[10px] text-green-400/70">✓ 已阅读</span>
+                  <span className="fs-10 text-green-400/70">✓ 已阅读</span>
                 )}
               </div>
             </div>
@@ -728,7 +728,7 @@ export default function ConstellationResearch() {
               <span>📚</span>
               <h4 className="font-display text-white/90 text-sm">研究资料库</h4>
             </div>
-            <span className="text-[10px] text-white/40">
+            <span className="fs-10 text-white/40">
               已解锁 {accessibleCount} / {allMaterials.length}
             </span>
           </div>
@@ -767,15 +767,15 @@ export default function ConstellationResearch() {
                         }`}>
                           {mat.title}
                         </span>
-                        {isRead && <span className="text-[9px] text-green-400/70">✓</span>}
-                        {!isAccessible && <span className="text-[9px] text-white/30">🔒 跟随课题解锁</span>}
+                        {isRead && <span className="fs-9 text-green-400/70">✓</span>}
+                        {!isAccessible && <span className="fs-9 text-white/30">🔒 跟随课题解锁</span>}
                       </div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-[9px] text-white/40">
+                        <span className="fs-9 text-white/40">
                           {mat.type === 'guide' ? '指南' : '文章'}
                         </span>
                         {relatedTopic && (
-                          <span className={`text-[9px] ${cat?.text || 'text-white/40'}`}>
+                          <span className={`fs-9 ${cat?.text || 'text-white/40'}`}>
                             {cat?.icon} {relatedTopic.title}
                           </span>
                         )}
@@ -826,7 +826,7 @@ export default function ConstellationResearch() {
             <div className="text-base text-white font-medium leading-relaxed">
               {currentQ.question}
             </div>
-            <div className="text-[10px] text-white/30 mt-2">（本题 {currentQ.score} 分）</div>
+            <div className="fs-10 text-white/30 mt-2">（本题 {currentQ.score} 分）</div>
           </div>
 
           {currentQ.type === 'single' && (
@@ -844,7 +844,7 @@ export default function ConstellationResearch() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[11px] ${
+                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center fs-11 ${
                         selected
                           ? 'border-nebula-cyan bg-nebula-cyan text-space-900'
                           : 'border-white/20 text-white/50'
@@ -904,7 +904,7 @@ export default function ConstellationResearch() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded border flex items-center justify-center text-[11px] ${
+                      <div className={`w-6 h-6 rounded border flex items-center justify-center fs-11 ${
                         selected
                           ? 'border-nebula-cyan bg-nebula-cyan text-space-900'
                           : 'border-white/20 text-white/50'
@@ -1005,7 +1005,7 @@ export default function ConstellationResearch() {
                       : 'border-red-500/20 bg-red-500/5'
                   }`}>
                     <div className="flex items-start gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5 ${
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center fs-10 flex-shrink-0 mt-0.5 ${
                         isCorrect ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'
                       }`}>
                         {isCorrect ? '✓' : '✕'}
@@ -1016,22 +1016,22 @@ export default function ConstellationResearch() {
                           {q.question}
                         </div>
                         {!isCorrect && q.type === 'single' && (
-                          <div className="text-[10px] text-green-400/70 mt-1">
+                          <div className="fs-10 text-green-400/70 mt-1">
                             正确答案：{String.fromCharCode(65 + q.answer)} {q.options[q.answer]}
                           </div>
                         )}
                         {!isCorrect && q.type === 'true_false' && (
-                          <div className="text-[10px] text-green-400/70 mt-1">
+                          <div className="fs-10 text-green-400/70 mt-1">
                             正确答案：{q.answer ? '正确' : '错误'}
                           </div>
                         )}
                         {!isCorrect && q.type === 'multiple' && (
-                          <div className="text-[10px] text-green-400/70 mt-1">
+                          <div className="fs-10 text-green-400/70 mt-1">
                             正确答案：{q.answer.map(i => String.fromCharCode(65 + i)).join('、')}
                           </div>
                         )}
                       </div>
-                      <div className={`text-[10px] font-mono ${
+                      <div className={`fs-10 font-mono ${
                         isCorrect ? 'text-green-300' : 'text-red-300'
                       }`}>
                         {isCorrect ? `+${q.score}` : '0'}
@@ -1086,7 +1086,7 @@ export default function ConstellationResearch() {
               <span>📝</span>
               <h4 className="font-display text-white/90 text-sm">阶段考核中心</h4>
             </div>
-            <span className="text-[10px] text-white/40">
+            <span className="fs-10 text-white/40">
               已通过 {research.passedExams.length} / {allExams.length}
             </span>
           </div>
@@ -1119,25 +1119,25 @@ export default function ConstellationResearch() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h5 className="font-display text-sm text-white/90">{exam.title}</h5>
                           {passed && (
-                            <span className="text-[9px] px-2 py-0.5 rounded bg-green-500/20 text-green-300">
+                            <span className="fs-9 px-2 py-0.5 rounded bg-green-500/20 text-green-300">
                               ✓ 已通过
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          <span className="text-[10px] text-white/40">
+                          <span className="fs-10 text-white/40">
                             {exam.questions.length}题
                           </span>
-                          <span className="text-[10px] text-white/40">
+                          <span className="fs-10 text-white/40">
                             及格 {exam.passScore}分
                           </span>
                           {best && (
-                            <span className="text-[10px] text-star-gold/80">
+                            <span className="fs-10 text-star-gold/80">
                               最高 {best.percentage}分
                             </span>
                           )}
                           {topic && (
-                            <span className={`text-[10px] ${cat?.text || 'text-white/40'}`}>
+                            <span className={`fs-10 ${cat?.text || 'text-white/40'}`}>
                               {cat?.icon} {topic.title}
                             </span>
                           )}
@@ -1154,7 +1154,7 @@ export default function ConstellationResearch() {
                           }
                         }}
                         disabled={!canStart}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
+                        className={`px-3 py-1.5 rounded-lg fs-10 font-medium transition-all ${
                           canStart
                             ? `bg-gradient-to-r ${cat?.color || 'from-nebula-purple to-nebula-cyan'} text-white hover:shadow-md active:scale-95`
                             : 'bg-space-700/50 text-white/30 cursor-not-allowed'
@@ -1230,11 +1230,11 @@ export default function ConstellationResearch() {
                       </div>
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
                         {c && (
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-nebula-purple/20 text-nebula-cyan/80">
+                          <span className="fs-10 px-2 py-0.5 rounded bg-nebula-purple/20 text-nebula-cyan/80">
                             {c.icon} {c.name}
                           </span>
                         )}
-                        <span className="text-[10px] text-white/30">
+                        <span className="fs-10 text-white/30">
                           {new Date(note.createdAt).toLocaleString('zh-CN', {
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                           })}
@@ -1278,7 +1278,7 @@ export default function ConstellationResearch() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-display text-white">星座研究院</h2>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] ${currentRank.bgColor} ${currentRank.textColor} border ${currentRank.borderColor}`}>
+                <span className={`px-2 py-0.5 rounded-full fs-10 ${currentRank.bgColor} ${currentRank.textColor} border ${currentRank.borderColor}`}>
                   {currentRank.icon} {currentRank.name}
                 </span>
               </div>

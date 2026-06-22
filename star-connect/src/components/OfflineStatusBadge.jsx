@@ -88,7 +88,7 @@ export default function OfflineStatusBadge({ onClick }) {
             </div>
             <div className="text-xs text-white/50 mt-0.5">{config.sublabel}</div>
             {networkStatus.quality !== 'unknown' && (
-              <div className="text-[10px] text-white/40 mt-1 font-mono">
+              <div className="fs-10 text-white/40 mt-1 font-mono">
                 连接类型: {networkStatus.quality?.toUpperCase()}
               </div>
             )}
@@ -99,25 +99,25 @@ export default function OfflineStatusBadge({ onClick }) {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-white/70">离线数据包</span>
                 {status.package.isCurrent ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                  <span className="fs-10 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
                     ✓ 最新
                   </span>
                 ) : status.package.installed ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
+                  <span className="fs-10 px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
                     需更新
                   </span>
                 ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
+                  <span className="fs-10 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
                     未安装
                   </span>
                 )}
               </div>
               {status.package.version && (
-                <div className="text-[10px] text-white/40 font-mono mb-2">
+                <div className="fs-10 text-white/40 font-mono mb-2">
                   版本: {status.package.version}
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+              <div className="grid grid-cols-3 gap-2 text-center fs-10">
                 <div className="p-1.5 rounded-lg bg-space-600/40">
                   <div className="text-nebula-cyan font-bold">{status.package.constellationCount || 0}</div>
                   <div className="text-white/40">星座</div>
@@ -152,7 +152,7 @@ export default function OfflineStatusBadge({ onClick }) {
             <div className="mb-3 p-3 rounded-xl bg-space-700/40 border border-white/5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-white/70">图片缓存</span>
-                <span className="text-[10px] text-white/40">
+                <span className="fs-10 text-white/40">
                   {status.imageCache.totalSizeMB} / {status.imageCache.maxSizeMB} MB
                 </span>
               </div>
@@ -168,7 +168,7 @@ export default function OfflineStatusBadge({ onClick }) {
                   style={{ width: `${status.imageCache.usagePercent}%` }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2 text-[10px] text-white/50">
+              <div className="grid grid-cols-2 gap-2 fs-10 text-white/50">
                 <div>📦 {status.imageCache.totalItems} 张图片</div>
                 <div>⏰ {status.imageCache.expiredCount} 张过期</div>
               </div>
@@ -180,17 +180,17 @@ export default function OfflineStatusBadge({ onClick }) {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-white/70">数据同步</span>
                 {status.sync.pendingCount === 0 ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                  <span className="fs-10 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
                     已同步
                   </span>
                 ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">
+                  <span className="fs-10 px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300">
                     {status.sync.pendingCount} 待同步
                   </span>
                 )}
               </div>
               {status.sync.lastSync && (
-                <div className="text-[10px] text-white/40 mt-1">
+                <div className="fs-10 text-white/40 mt-1">
                   上次同步: {new Date(status.sync.lastSync).toLocaleString('zh-CN', {
                     month: 'short',
                     day: 'numeric',

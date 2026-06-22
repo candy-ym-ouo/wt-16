@@ -79,7 +79,7 @@ export default function ObservationReport() {
           <div key={i} className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
             <div className="text-lg mb-1">{stat.icon}</div>
             <div className={`text-xl font-bold ${stat.color}`}>{stat.value}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">{stat.label}</div>
+            <div className="fs-10 text-white/50 mt-0.5">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -107,7 +107,7 @@ export default function ObservationReport() {
                   <div className={`text-xs font-medium ${insight.color}`}>
                     {insight.title}
                   </div>
-                  <div className="text-[11px] text-white/60 mt-0.5">
+                  <div className="fs-11 text-white/60 mt-0.5">
                     {insight.content}
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function ObservationReport() {
 
         {journey.discoveredConstellations.length > 0 && (
           <div className="mb-3">
-            <div className="text-[11px] text-white/50 mb-2">{t('report.newDiscoveries')}</div>
+            <div className="fs-11 text-white/50 mb-2">{t('report.newDiscoveries')}</div>
             <div className="flex flex-wrap gap-2">
               {journey.discoveredConstellations.map(id => {
                 const c = getConstellationById(id)
@@ -159,7 +159,7 @@ export default function ObservationReport() {
 
         {journey.reobservedConstellations.length > 0 && (
           <div>
-            <div className="text-[11px] text-white/50 mb-2">{t('report.reobservations')}</div>
+            <div className="fs-11 text-white/50 mb-2">{t('report.reobservations')}</div>
             <div className="flex flex-wrap gap-2">
               {journey.reobservedConstellations.map(id => {
                 const c = getConstellationById(id)
@@ -201,7 +201,7 @@ export default function ObservationReport() {
         <h4 className="font-display text-white/90 text-sm mb-3 flex items-center gap-2">
           <span>🏆</span>
           <span>{t('report.achievementMilestones')}</span>
-          <span className="text-[10px] text-white/40 ml-auto">
+          <span className="fs-10 text-white/40 ml-auto">
             {milestones.newlyUnlockedCount + milestones.seasonMilestonesCount}
           </span>
         </h4>
@@ -220,10 +220,10 @@ export default function ObservationReport() {
                   <div className="text-xs font-medium text-star-gold">
                     {achievement.name}
                   </div>
-                  <div className="text-[10px] text-white/50 mt-0.5">
+                  <div className="fs-10 text-white/50 mt-0.5">
                     {achievement.description}
                   </div>
-                  <div className="text-[9px] text-white/30 mt-1 font-mono">
+                  <div className="fs-9 text-white/30 mt-1 font-mono">
                     {formatDate(achievement.unlockedAt)}
                   </div>
                 </div>
@@ -245,10 +245,10 @@ export default function ObservationReport() {
                   <div className="text-xs font-medium text-white/90">
                     🎁 {milestone.name}
                   </div>
-                  <div className="text-[10px] text-white/50 mt-0.5">
+                  <div className="fs-10 text-white/50 mt-0.5">
                     {milestone.description}
                   </div>
-                  <div className="text-[9px] text-white/30 mt-1 font-mono">
+                  <div className="fs-9 text-white/30 mt-1 font-mono">
                     {formatDate(milestone.unlockedAt)}
                   </div>
                 </div>
@@ -291,7 +291,7 @@ export default function ObservationReport() {
                     <div className="text-xs text-white/90 font-medium">
                       {getLocalizedConstellationName(c.id)}
                     </div>
-                    <div className="text-[9px] text-white/40">
+                    <div className="fs-9 text-white/40">
                       {c.nameEn}
                     </div>
                   </div>
@@ -301,7 +301,7 @@ export default function ObservationReport() {
                     {item.count} 次
                   </div>
                   {item.perfect > 0 && (
-                    <div className="text-[9px] text-star-gold">
+                    <div className="fs-9 text-star-gold">
                       💎 {item.perfect} 次完美
                     </div>
                   )}
@@ -338,7 +338,7 @@ export default function ObservationReport() {
                    moment.type === 'event' ? '🎉' : '💎'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] text-white/80">
+                  <div className="fs-11 text-white/80">
                     {moment.type === 'event' ? (
                       <>
                         <span className="text-yellow-300">{moment.eventName}</span>
@@ -353,7 +353,7 @@ export default function ObservationReport() {
                       </>
                     )}
                   </div>
-                  <div className="text-[9px] text-white/30 mt-0.5 font-mono">
+                  <div className="fs-9 text-white/30 mt-0.5 font-mono">
                     {formatDate(moment.timestamp)}
                   </div>
                 </div>
@@ -373,7 +373,7 @@ export default function ObservationReport() {
         <h4 className="font-display text-white/90 text-sm mb-3 flex items-center gap-2">
           <span>📝</span>
           <span>{t('report.notesSection')}</span>
-          <span className="text-[10px] text-white/40 ml-auto">
+          <span className="fs-10 text-white/40 ml-auto">
             {report.summary.notes.length}
           </span>
         </h4>
@@ -392,12 +392,12 @@ export default function ObservationReport() {
                     {note.title || note.type}
                   </div>
                   {(note.content || note.note) && (
-                    <div className="text-[11px] text-white/50 mt-0.5 line-clamp-2">
+                    <div className="fs-11 text-white/50 mt-0.5 line-clamp-2">
                       {note.content || note.note}
                     </div>
                   )}
                   {note._dateKey && (
-                    <div className="text-[9px] text-white/30 mt-1">
+                    <div className="fs-9 text-white/30 mt-1">
                       {note._dateKey}
                     </div>
                   )}
@@ -434,7 +434,7 @@ export default function ObservationReport() {
             <div key={i} className="p-2.5 rounded-lg bg-space-800/50 border border-white/5 text-center">
               <div className="text-base">{stat.icon}</div>
               <div className="text-sm font-bold text-white/90 mt-0.5">{stat.value}</div>
-              <div className="text-[9px] text-white/40">{stat.label}</div>
+              <div className="fs-9 text-white/40">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -494,7 +494,7 @@ export default function ObservationReport() {
                     }`}
                   >
                     <div className="text-xl mb-1">{temp.icon}</div>
-                    <div className="text-[11px] text-white/80">{t(`report.${temp.id}`)}</div>
+                    <div className="fs-11 text-white/80">{t(`report.${temp.id}`)}</div>
                   </button>
                 ))}
               </div>
@@ -521,35 +521,35 @@ export default function ObservationReport() {
                     <div className="text-lg font-bold text-white">
                       {report.journey.discoveries}
                     </div>
-                    <div className="text-[9px] text-white/70">{t('report.newDiscoveriesLabel')}</div>
+                    <div className="fs-9 text-white/70">{t('report.newDiscoveriesLabel')}</div>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-white/10">
                     <div className="text-lg font-bold text-white">
                       {report.journey.perfectRuns}
                     </div>
-                    <div className="text-[9px] text-white/70">{t('report.perfectRuns')}</div>
+                    <div className="fs-9 text-white/70">{t('report.perfectRuns')}</div>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-white/10">
                     <div className="text-lg font-bold text-white">
                       {report.journey.activeDays}
                     </div>
-                    <div className="text-[9px] text-white/70">{t('report.activeDays')}</div>
+                    <div className="fs-9 text-white/70">{t('report.activeDays')}</div>
                   </div>
                 </div>
 
                 {report.insights.length > 0 && (
                   <div className="p-3 rounded-lg bg-white/10">
-                    <div className="text-[11px] text-white/90 font-medium mb-1">
+                    <div className="fs-11 text-white/90 font-medium mb-1">
                       {report.insights[0].icon} {report.insights[0].title}
                     </div>
-                    <div className="text-[10px] text-white/70">
+                    <div className="fs-10 text-white/70">
                       {report.insights[0].content}
                     </div>
                   </div>
                 )}
 
                 <div className="mt-4 pt-4 border-t border-white/20 text-center">
-                  <div className="text-[10px] text-white/60">
+                  <div className="fs-10 text-white/60">
                     #StarConnect
                   </div>
                 </div>
@@ -644,7 +644,7 @@ export default function ObservationReport() {
               <div className="text-lg font-display text-white">
                 {report.title}
               </div>
-              <div className="text-[11px] text-white/60 mt-0.5">
+              <div className="fs-11 text-white/60 mt-0.5">
                 {report.subtitle}
               </div>
             </div>

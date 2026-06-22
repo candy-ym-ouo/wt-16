@@ -138,7 +138,7 @@ export default function OfflinePackagePanel({ onClose }) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-sm font-medium text-white">数据安装</h4>
-            <p className="text-[11px] text-white/40 mt-0.5">
+            <p className="fs-11 text-white/40 mt-0.5">
               {isOnline
                 ? isWeakConnection
                   ? '网络较弱，建议仅安装核心数据'
@@ -168,15 +168,15 @@ export default function OfflinePackagePanel({ onClose }) {
               className="flex items-center justify-between py-2"
             >
               <div className="flex items-center gap-3">
-                <span className={`px-2 py-0.5 rounded text-[10px] ${priorityLabels[cat.priority].color}`}>
+                <span className={`px-2 py-0.5 rounded fs-10 ${priorityLabels[cat.priority].color}`}>
                   {priorityLabels[cat.priority].label}
                 </span>
                 <div>
                   <div className="text-xs text-white/80">{cat.name}</div>
-                  <div className="text-[10px] text-white/40">{cat.description} · {cat.size}</div>
+                  <div className="fs-10 text-white/40">{cat.description} · {cat.size}</div>
                 </div>
               </div>
-              <span className="text-[10px] text-white/50 font-mono">
+              <span className="fs-10 text-white/50 font-mono">
                 {status?.storeCounts?.[cat.store] || 0} 条
               </span>
             </div>
@@ -206,7 +206,7 @@ export default function OfflinePackagePanel({ onClose }) {
           </div>
           <button
             onClick={() => clearCache({ imagesOnly: true })}
-            className="px-3 py-1.5 rounded-lg text-[11px] bg-space-600/60 text-white/70
+            className="px-3 py-1.5 rounded-lg fs-11 bg-space-600/60 text-white/70
                      hover:bg-red-500/20 hover:text-red-300 border border-white/5 transition-all"
           >
             清理图片
@@ -242,7 +242,7 @@ export default function OfflinePackagePanel({ onClose }) {
         <div className="pt-2 border-t border-white/5 flex gap-2">
           <button
             onClick={() => clearCache()}
-            className="flex-1 py-2 rounded-xl text-[11px]
+            className="flex-1 py-2 rounded-xl fs-11
                      bg-space-600/60 text-white/60 hover:bg-orange-500/20 hover:text-orange-300
                      border border-white/5 transition-all"
           >
@@ -254,7 +254,7 @@ export default function OfflinePackagePanel({ onClose }) {
                 clearCache({ allData: true })
               }
             }}
-            className="flex-1 py-2 rounded-xl text-[11px]
+            className="flex-1 py-2 rounded-xl fs-11
                      bg-space-600/60 text-white/60 hover:bg-red-500/20 hover:text-red-300
                      border border-white/5 transition-all"
           >

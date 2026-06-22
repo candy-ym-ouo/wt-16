@@ -79,7 +79,7 @@ export default function StarRoute() {
                 >
                   <div className="text-2xl mb-2">{type.icon}</div>
                   <h5 className="text-sm font-display text-white mb-1">{type.name}</h5>
-                  <p className="text-[10px] text-white/40 leading-tight">{type.description}</p>
+                  <p className="fs-10 text-white/40 leading-tight">{type.description}</p>
                 </button>
               ))}
             </div>
@@ -94,7 +94,7 @@ export default function StarRoute() {
                 </div>
                 <div>
                   <h4 className="font-display text-white">{ROUTE_TYPES[selectedType].name}</h4>
-                  <p className="text-[11px] text-white/50">难度偏好：{preference.label}</p>
+                  <p className="fs-11 text-white/50">难度偏好：{preference.label}</p>
                 </div>
               </div>
               <p className="text-xs text-white/60 mb-4">{ROUTE_TYPES[selectedType].description}</p>
@@ -128,7 +128,7 @@ export default function StarRoute() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h5 className="text-sm font-medium text-white">{pref.label}</h5>
-                      <p className="text-[10px] text-white/40 mt-0.5">{pref.description}</p>
+                      <p className="fs-10 text-white/40 mt-0.5">{pref.description}</p>
                     </div>
                     {starRoute.difficultyPreference === id && (
                       <span className="text-nebula-cyan">✓</span>
@@ -159,7 +159,7 @@ export default function StarRoute() {
               </div>
               <div>
                 <h3 className="font-display text-white text-base">{currentRoute.name}</h3>
-                <p className="text-[11px] text-white/50">
+                <p className="fs-11 text-white/50">
                   {routeProgress.completed} / {routeProgress.total} 步 · {routeProgress.percentage}%
                 </p>
               </div>
@@ -170,7 +170,7 @@ export default function StarRoute() {
                   abandonRoute()
                 }
               }}
-              className="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-400
+              className="fs-10 px-2 py-1 rounded-lg bg-red-500/10 text-red-400
                        hover:bg-red-500/20 transition-all"
             >
               放弃
@@ -227,11 +227,11 @@ export default function StarRoute() {
                           {c.name}
                         </h5>
                         {step.perfect && (
-                          <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                          <span className="fs-9 px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
                             完美
                           </span>
                         )}
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                        <span className={`fs-9 px-1.5 py-0.5 rounded ${
                           c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                           c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-red-500/20 text-red-300'
@@ -239,7 +239,7 @@ export default function StarRoute() {
                           {DIFFICULTY_CONFIG[c.difficulty].label}
                         </span>
                       </div>
-                      <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      <p className="fs-10 text-white/40 truncate mt-0.5">
                         {c.description}
                       </p>
                     </div>
@@ -288,7 +288,7 @@ export default function StarRoute() {
           >
             <div className="text-lg mb-1">📋</div>
             <h5 className="text-xs font-medium text-white">任务面板</h5>
-            <p className="text-[10px] text-white/40 mt-0.5">查看所有星座任务</p>
+            <p className="fs-10 text-white/40 mt-0.5">查看所有星座任务</p>
           </button>
           <button
             onClick={() => setActivePanel('log')}
@@ -297,7 +297,7 @@ export default function StarRoute() {
           >
             <div className="text-lg mb-1">📖</div>
             <h5 className="text-xs font-medium text-white">观测日志</h5>
-            <p className="text-[10px] text-white/40 mt-0.5">查看探索记录</p>
+            <p className="fs-10 text-white/40 mt-0.5">查看探索记录</p>
           </button>
         </div>
       </div>
@@ -342,12 +342,12 @@ export default function StarRoute() {
                   <div className="flex items-center gap-2">
                     <h5 className="text-sm font-display text-white truncate">{route.name}</h5>
                     {perfect && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-star-gold/20 text-star-gold">
+                      <span className="fs-10 px-1.5 py-0.5 rounded-full bg-star-gold/20 text-star-gold">
                         完美路线
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-white/40 mt-0.5">
+                  <p className="fs-10 text-white/40 mt-0.5">
                     {progress.completed}/{progress.total} 步 · {formatDate(route.completedAt)}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
@@ -357,7 +357,7 @@ export default function StarRoute() {
                         style={{ width: `${progress.percentage}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-white/50 font-mono">
+                    <span className="fs-10 text-white/50 font-mono">
                       {progress.percentage}%
                     </span>
                   </div>
@@ -377,25 +377,25 @@ export default function StarRoute() {
           <div className="text-2xl font-bold text-nebula-cyan mb-1">
             {routeStats.totalCompleted}
           </div>
-          <div className="text-[11px] text-white/50">完成路线</div>
+          <div className="fs-11 text-white/50">完成路线</div>
         </div>
         <div className="p-4 rounded-xl border border-white/10 bg-space-700/20">
           <div className="text-2xl font-bold text-star-gold mb-1">
             {routeStats.perfectRoutes}
           </div>
-          <div className="text-[11px] text-white/50">完美路线</div>
+          <div className="fs-11 text-white/50">完美路线</div>
         </div>
         <div className="p-4 rounded-xl border border-white/10 bg-space-700/20">
           <div className="text-2xl font-bold text-nebula-purple mb-1">
             {routeStats.totalSteps}
           </div>
-          <div className="text-[11px] text-white/50">总步数</div>
+          <div className="fs-11 text-white/50">总步数</div>
         </div>
         <div className="p-4 rounded-xl border border-white/10 bg-space-700/20">
           <div className="text-2xl font-bold text-emerald-400 mb-1">
             {routeStats.perfectRate}%
           </div>
-          <div className="text-[11px] text-white/50">完美率</div>
+          <div className="fs-11 text-white/50">完美率</div>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ export default function StarRoute() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-white/70">{type.name}</span>
-                    <span className="text-[10px] text-white/40">{count} 条</span>
+                    <span className="fs-10 text-white/40">{count} 条</span>
                   </div>
                   <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
                     <div
@@ -459,19 +459,19 @@ export default function StarRoute() {
               <div className="text-base font-bold text-nebula-cyan">
                 {routeStats.totalCompleted}
               </div>
-              <div className="text-[9px] text-white/50">已完成</div>
+              <div className="fs-9 text-white/50">已完成</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-base font-bold text-star-gold">
                 {routeStats.perfectRoutes}
               </div>
-              <div className="text-[9px] text-white/50">完美</div>
+              <div className="fs-9 text-white/50">完美</div>
             </div>
             <div className="p-2 rounded-lg bg-space-700/40">
               <div className="text-base font-bold text-emerald-400">
                 {routeStats.perfectRate}%
               </div>
-              <div className="text-[9px] text-white/50">完美率</div>
+              <div className="fs-9 text-white/50">完美率</div>
             </div>
           </div>
 

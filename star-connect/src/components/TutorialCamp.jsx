@@ -188,12 +188,12 @@ export default function TutorialCamp() {
                 </div>
                 <div className="flex-1">
                   <h4 className="font-display text-white/90 text-sm">{info.name}</h4>
-                  <p className="text-[10px] text-white/40">
+                  <p className="fs-10 text-white/40">
                     {completedCount} / {steps.length} 完成
                   </p>
                 </div>
                 {isActive && (
-                  <span className="text-[10px] px-2 py-1 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
+                  <span className="fs-10 px-2 py-1 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
                     进行中
                   </span>
                 )}
@@ -231,14 +231,14 @@ export default function TutorialCamp() {
                           }`}>
                             {step.title}
                           </p>
-                          <p className="text-[10px] text-white/40 mt-0.5 leading-tight">
+                          <p className="fs-10 text-white/40 mt-0.5 leading-tight">
                             {step.description}
                           </p>
                         </div>
                         {isCurrent && !step.autoAdvance && (
                           <button
                             onClick={() => handleStepComplete(step.id)}
-                            className="text-[10px] px-2.5 py-1 rounded-lg bg-star-gold/20 text-star-gold
+                            className="fs-10 px-2.5 py-1 rounded-lg bg-star-gold/20 text-star-gold
                                      hover:bg-star-gold/30 transition-all flex-shrink-0"
                           >
                             完成
@@ -258,7 +258,7 @@ export default function TutorialCamp() {
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🎯</span>
           <h4 className="font-display text-white/90 text-sm">进阶任务</h4>
-          <span className="text-[10px] text-white/40 ml-auto">
+          <span className="fs-10 text-white/40 ml-auto">
             {tutorial.advancedTasksCompleted.length} / {ADVANCED_TASKS.length}
           </span>
         </div>
@@ -288,12 +288,12 @@ export default function TutorialCamp() {
                     }`}>
                       {task.title}
                     </p>
-                    <p className="text-[10px] text-white/40 mt-0.5">
+                    <p className="fs-10 text-white/40 mt-0.5">
                       {task.description}
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className={`text-[10px] ${
+                    <span className={`fs-10 ${
                       isCompleted ? 'text-green-300' : 'text-star-gold/80'
                     }`}>
                       {isCompleted ? '✓ 已完成' : `+${task.reward.stardust} 💫`}
@@ -314,7 +314,7 @@ export default function TutorialCamp() {
               setViewMode('overview')
             }
           }}
-          className="w-full text-[11px] text-white/30 hover:text-red-400/70 transition-colors py-2"
+          className="w-full fs-11 text-white/30 hover:text-red-400/70 transition-colors py-2"
         >
           重新开始训练营
         </button>
@@ -378,7 +378,7 @@ export default function TutorialCamp() {
                   }`}>
                     {reward.name}
                   </p>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                  <span className={`fs-9 px-1.5 py-0.5 rounded ${
                     reward.type === 'badge'
                       ? 'bg-nebula-purple/20 text-nebula-cyan'
                       : 'bg-star-gold/20 text-star-gold'
@@ -386,22 +386,22 @@ export default function TutorialCamp() {
                     {reward.type === 'badge' ? '徽章' : '称号'}
                   </span>
                 </div>
-                <p className="text-[11px] text-white/50 mt-1">{reward.description}</p>
+                <p className="fs-11 text-white/50 mt-1">{reward.description}</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className={`text-[10px] ${
+                  <span className={`fs-10 ${
                     isClaimed ? 'text-green-300/70' : canClaim ? 'text-star-gold/80' : 'text-white/30'
                   }`}>
                     💫 +{reward.stardust} 星尘
                   </span>
                   {reward.unlockTitle && (
-                    <span className={`text-[10px] ${
+                    <span className={`fs-10 ${
                       isClaimed ? 'text-green-300/70' : canClaim ? 'text-star-gold/80' : 'text-white/30'
                     }`}>
                       🏷️ {reward.unlockTitle}
                     </span>
                   )}
                 </div>
-                <p className={`text-[10px] mt-1.5 ${
+                <p className={`fs-10 mt-1.5 ${
                   canClaim ? 'text-star-gold/70' : 'text-white/30'
                 }`}>
                   条件：{requirement}
@@ -409,7 +409,7 @@ export default function TutorialCamp() {
               </div>
               <div className="flex-shrink-0">
                 {isClaimed ? (
-                  <span className="text-[11px] text-green-400/80">✓ 已领取</span>
+                  <span className="fs-11 text-green-400/80">✓ 已领取</span>
                 ) : (
                   <button
                     onClick={() => handleClaimReward(key)}
@@ -439,28 +439,28 @@ export default function TutorialCamp() {
           <div className="text-2xl font-display text-white font-mono">
             {stats.completedStepsCount} / {stats.totalSteps}
           </div>
-          <div className="text-[10px] text-white/50">课程完成</div>
+          <div className="fs-10 text-white/50">课程完成</div>
         </div>
         <div className="p-4 rounded-2xl border border-star-gold/30 bg-star-gold/10">
           <div className="text-2xl mb-1">🎯</div>
           <div className="text-2xl font-display text-white font-mono">
             {stats.advancedTasksCompleted} / {stats.totalAdvancedTasks}
           </div>
-          <div className="text-[10px] text-white/50">任务完成</div>
+          <div className="fs-10 text-white/50">任务完成</div>
         </div>
         <div className="p-4 rounded-2xl border border-green-500/30 bg-green-500/10">
           <div className="text-2xl mb-1">🎁</div>
           <div className="text-2xl font-display text-white font-mono">
             {stats.rewardsClaimed} / {stats.totalRewards}
           </div>
-          <div className="text-[10px] text-white/50">奖励领取</div>
+          <div className="fs-10 text-white/50">奖励领取</div>
         </div>
         <div className="p-4 rounded-2xl border border-nebula-cyan/30 bg-nebula-cyan/10">
           <div className="text-2xl mb-1">❌</div>
           <div className="text-2xl font-display text-white font-mono">
             {stats.mistakesDuringTutorial}
           </div>
-          <div className="text-[10px] text-white/50">学习中的错误</div>
+          <div className="fs-10 text-white/50">学习中的错误</div>
         </div>
       </div>
 
@@ -582,10 +582,10 @@ export default function TutorialCamp() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-nebula-purple/20 text-nebula-cyan">
+                  <span className="fs-10 px-2 py-0.5 rounded-full bg-nebula-purple/20 text-nebula-cyan">
                     第 {currentStep.order} 步
                   </span>
-                  <span className="text-[10px] text-white/40">
+                  <span className="fs-10 text-white/40">
                     {CATEGORY_INFO[currentStep.category]?.name}
                   </span>
                 </div>
@@ -594,7 +594,7 @@ export default function TutorialCamp() {
                 {currentStep.tips && currentStep.tips.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {currentStep.tips.map((tip, i) => (
-                      <p key={i} className="text-[10px] text-star-gold/70">
+                      <p key={i} className="fs-10 text-star-gold/70">
                         💡 {tip}
                       </p>
                     ))}
@@ -639,7 +639,7 @@ export default function TutorialCamp() {
               </div>
             )}
             {currentStep.autoAdvance && (
-              <p className="mt-3 text-[10px] text-center text-white/40">
+              <p className="mt-3 fs-10 text-center text-white/40">
                 {currentStep.duration ? `将在${currentStep.duration / 1000}秒后自动继续...` : '请完成操作后继续'}
               </p>
             )}
@@ -657,7 +657,7 @@ export default function TutorialCamp() {
                 {tutorial.lastErrorHint.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] text-red-300 uppercase tracking-wider font-semibold">
+                <div className="fs-10 text-red-300 uppercase tracking-wider font-semibold">
                   {tutorial.lastErrorHint.title}
                 </div>
                 <div className="text-white/90 text-sm font-medium">
@@ -665,7 +665,7 @@ export default function TutorialCamp() {
                 </div>
                 {tutorial.lastErrorHint.tips && tutorial.lastErrorHint.tips.length > 0 && (
                   <div className="mt-1">
-                    <p className="text-[10px] text-white/50">
+                    <p className="fs-10 text-white/50">
                       💡 {tutorial.lastErrorHint.tips[0]}
                     </p>
                   </div>

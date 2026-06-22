@@ -121,7 +121,7 @@ export default function ObservationCalendar() {
               {currentMonth.year}年 {MONTH_NAMES[currentMonth.month]}
             </h3>
             {!isSameDay(new Date(currentMonth.year, currentMonth.month, 1), new Date(today.getFullYear(), today.getMonth(), 1)) && (
-              <button onClick={goToToday} className="text-[10px] text-nebula-cyan mt-0.5 hover:underline">
+              <button onClick={goToToday} className="fs-10 text-nebula-cyan mt-0.5 hover:underline">
                 回到今天
               </button>
             )}
@@ -131,7 +131,7 @@ export default function ObservationCalendar() {
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-white/40 mb-1">
+        <div className="grid grid-cols-7 gap-1 text-center fs-10 text-white/40 mb-1">
           {WEEKDAY_NAMES.map((w, i) => (
             <div key={i} className={`py-1 ${i === 0 || i === 6 ? 'text-red-300/50' : ''}`}>
               {w}
@@ -185,16 +185,16 @@ export default function ObservationCalendar() {
         </div>
 
         <div className="flex flex-wrap gap-3 justify-center pt-2 border-t border-white/5">
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
+          <div className="flex items-center gap-1.5 fs-10 text-white/50">
             <span className="w-1.5 h-1.5 rounded-full bg-star-gold" /> 签到
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
+          <div className="flex items-center gap-1.5 fs-10 text-white/50">
             <span className="w-1.5 h-1.5 rounded-full bg-nebula-purple" /> 新发现
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
+          <div className="flex items-center gap-1.5 fs-10 text-white/50">
             <span className="w-1.5 h-1.5 rounded-full bg-nebula-cyan" /> 再观测
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
+          <div className="flex items-center gap-1.5 fs-10 text-white/50">
             <span className="w-1.5 h-1.5 rounded-full bg-pink-400" /> 笔记
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function ObservationCalendar() {
               {todayStatus.checkedIn ? '今日已签到' : '立即签到'}
             </h3>
           </div>
-          <div className="text-[11px] text-white/50 mb-2">
+          <div className="fs-11 text-white/50 mb-2">
             连续签到 <span className="text-nebula-cyan font-bold">{streakInfo.currentStreak}</span> 天
             {streakInfo.nextMilestone && streakInfo.daysToNext > 0 && (
               <span className="text-white/40 ml-2">
@@ -237,7 +237,7 @@ export default function ObservationCalendar() {
                 title={`${m.days}天 - ${m.label}`}
               >
                 <span className="text-sm">{m.icon}</span>
-                <span className={`text-[8px] ${m.achieved ? 'text-star-gold' : 'text-white/40'}`}>
+                <span className={`fs-8 ${m.achieved ? 'text-star-gold' : 'text-white/40'}`}>
                   {m.days}天
                 </span>
               </div>
@@ -258,7 +258,7 @@ export default function ObservationCalendar() {
             {todayStatus.checkedIn ? '已签到' : '+签到'}
           </button>
           <div className="text-center mt-1.5">
-            <span className="text-[10px] text-star-gold/70 flex items-center justify-center gap-0.5">
+            <span className="fs-10 text-star-gold/70 flex items-center justify-center gap-0.5">
               💫 {observationCalendar.stardust} 星尘
             </span>
           </div>
@@ -275,7 +275,7 @@ export default function ObservationCalendar() {
               <p className="text-sm text-white font-medium">签到成功！连续 {checkinResult.streak} 天</p>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {checkinResult.rewards.map((r, i) => (
-                  <span key={i} className={`text-[10px] px-2 py-0.5 rounded-full ${
+                  <span key={i} className={`fs-10 px-2 py-0.5 rounded-full ${
                     r.type === 'stardust'
                       ? 'bg-star-gold/15 text-star-gold'
                       : 'bg-nebula-purple/20 text-nebula-purple'
@@ -284,7 +284,7 @@ export default function ObservationCalendar() {
                   </span>
                 ))}
               </div>
-              <p className="text-[11px] text-white/60 mt-1.5">
+              <p className="fs-11 text-white/60 mt-1.5">
                 {checkinResult.zodiac?.icon} {checkinResult.zodiac?.name} ·{' '}
                 {'⭐'.repeat(checkinResult.luckyStars)}{'☆'.repeat(5 - checkinResult.luckyStars)}
                 {' '}<span className="text-nebula-cyan">{checkinResult.luckyMessage}</span>
@@ -308,7 +308,7 @@ export default function ObservationCalendar() {
             <span className="text-lg">🎯</span>
             <h3 className={`font-display text-sm ${rec.season.textColor}`}>今日推荐</h3>
           </div>
-          <div className={`text-[10px] px-2 py-0.5 rounded-full ${rec.season.bgColor} ${rec.season.textColor} border ${rec.season.borderColor}`}>
+          <div className={`fs-10 px-2 py-0.5 rounded-full ${rec.season.bgColor} ${rec.season.textColor} border ${rec.season.borderColor}`}>
             {rec.season.icon} {rec.season.name}
           </div>
         </div>
@@ -322,28 +322,28 @@ export default function ObservationCalendar() {
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="font-display text-white text-base">{rec.constellationName}</span>
               {rec.isNew && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-nebula-purple/30 text-nebula-purple">
+                <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-purple/30 text-nebula-purple">
                   待发现
                 </span>
               )}
               {rec.isPerfect && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                <span className="fs-9 px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold">
                   完美 ✓
                 </span>
               )}
               {!rec.isNew && !rec.isPerfect && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-nebula-cyan/20 text-nebula-cyan">
+                <span className="fs-9 px-1.5 py-0.5 rounded bg-nebula-cyan/20 text-nebula-cyan">
                   已发现
                 </span>
               )}
               {rec.observedCount > 1 && (
-                <span className="text-[9px] text-white/40">×{rec.observedCount}</span>
+                <span className="fs-9 text-white/40">×{rec.observedCount}</span>
               )}
             </div>
-            <p className="text-[11px] text-white/70 leading-relaxed mb-2">
+            <p className="fs-11 text-white/70 leading-relaxed mb-2">
               {rec.description}
             </p>
-            <p className="text-[10px] text-white/40">
+            <p className="fs-10 text-white/40">
               💡 {rec.tips}
             </p>
           </div>
@@ -376,17 +376,17 @@ export default function ObservationCalendar() {
             <div className="flex items-center gap-2">
               <span className="text-xl">{zodiac.icon}</span>
               <div className="flex-1 min-w-0">
-                <span className="text-[11px] text-white/60">
+                <span className="fs-11 text-white/60">
                   {zodiac.name} {zodiac.period}
                 </span>
-                <div className="text-[10px] text-white/40 mt-0.5">
+                <div className="fs-10 text-white/40 mt-0.5">
                   {zodiac.element}象 · {zodiac.ruler}守护
                   {' '}· 今日幸运指数：{'⭐'.repeat(todayStatus.record.luckyStars)}
                 </div>
               </div>
             </div>
             {todayStatus.record.luckyMessage && (
-              <p className="text-[11px] text-nebula-cyan/80 mt-2 pl-9">
+              <p className="fs-11 text-nebula-cyan/80 mt-2 pl-9">
                 "{todayStatus.record.luckyMessage}"
               </p>
             )}
@@ -430,25 +430,25 @@ export default function ObservationCalendar() {
               <h3 className="font-display text-white text-sm">
                 {isToday ? '今天 · ' : ''}{dateKey.replace(/-/g, '.')}
               </h3>
-              <p className="text-[10px] text-white/40 mt-0.5">
+              <p className="fs-10 text-white/40 mt-0.5">
                 {zodiac?.icon} {zodiac?.name} · 星期{['日','一','二','三','四','五','六'][selectedDate.getDay()]}
               </p>
             </div>
             <div className="flex items-center gap-2">
               {status.checkedIn && (
-                <span className="text-[10px] px-2 py-1 rounded-full bg-star-gold/15 text-star-gold">
+                <span className="fs-10 px-2 py-1 rounded-full bg-star-gold/15 text-star-gold">
                   ✓ 已签到
                 </span>
               )}
               {!status.checkedIn && !isToday && (
-                <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/40">
+                <span className="fs-10 px-2 py-1 rounded-full bg-white/5 text-white/40">
                   未签到
                 </span>
               )}
               {!status.checkedIn && isToday && status.canCheckin && (
                 <button
                   onClick={handleCheckin}
-                  className="text-[10px] px-2 py-1 rounded-full bg-star-gold/20 text-star-gold hover:bg-star-gold/30 transition-all"
+                  className="fs-10 px-2 py-1 rounded-full bg-star-gold/20 text-star-gold hover:bg-star-gold/30 transition-all"
                 >
                   签到 +
                 </button>
@@ -462,27 +462,27 @@ export default function ObservationCalendar() {
                 {logs.observationLogs.filter(l => l.type === 'discovery').length +
                  logs.customLogs.filter(l => l.type === 'discovery').length}
               </div>
-              <div className="text-[9px] text-white/40">新发现</div>
+              <div className="fs-9 text-white/40">新发现</div>
             </div>
             <div className="p-2 rounded-lg bg-space-800/40">
               <div className="text-sm font-bold text-nebula-cyan">
                 {logs.observationLogs.filter(l => l.type === 'reobservation').length +
                  logs.customLogs.filter(l => l.type === 'observation').length}
               </div>
-              <div className="text-[9px] text-white/40">再观测</div>
+              <div className="fs-9 text-white/40">再观测</div>
             </div>
             <div className="p-2 rounded-lg bg-space-800/40">
               <div className="text-sm font-bold text-star-gold">
                 {logs.observationLogs.filter(l => l.perfect).length +
                  logs.customLogs.filter(l => (l.type === 'discovery' || l.type === 'observation') && l.perfect).length}
               </div>
-              <div className="text-[9px] text-white/40">完美</div>
+              <div className="fs-9 text-white/40">完美</div>
             </div>
             <div className="p-2 rounded-lg bg-space-800/40">
               <div className="text-sm font-bold text-pink-300">
                 {logs.customLogs.length}
               </div>
-              <div className="text-[9px] text-white/40">笔记</div>
+              <div className="fs-9 text-white/40">笔记</div>
             </div>
           </div>
         </div>
@@ -494,7 +494,7 @@ export default function ObservationCalendar() {
           </h4>
           <button
             onClick={openNewLog}
-            className="text-[11px] px-3 py-1.5 rounded-lg bg-nebula-purple/20 text-nebula-purple
+            className="fs-11 px-3 py-1.5 rounded-lg bg-nebula-purple/20 text-nebula-purple
                      hover:bg-nebula-purple/30 transition-all flex items-center gap-1"
           >
             + 补录笔记
@@ -509,7 +509,7 @@ export default function ObservationCalendar() {
               {isToday || selectedDate < today ? (
                 <button
                   onClick={openNewLog}
-                  className="mt-2 text-[11px] text-nebula-cyan hover:underline"
+                  className="mt-2 fs-11 text-nebula-cyan hover:underline"
                 >
                   补录一条观星笔记 →
                 </button>
@@ -542,18 +542,18 @@ export default function ObservationCalendar() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs font-medium text-white">{c.name}</span>
-                            <span className={`text-[9px] px-1 py-0.5 rounded ${
+                            <span className={`fs-9 px-1 py-0.5 rounded ${
                               isDisc ? 'bg-nebula-purple/20 text-nebula-purple' : 'bg-white/10 text-white/60'
                             }`}>
                               {isDisc ? '首次发现' : '再次观测'}
                             </span>
                             {log.perfect && (
-                              <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                              <span className="fs-9 px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
                                 完美
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-white/30 mt-0.5 font-mono">
+                          <p className="fs-10 text-white/30 mt-0.5 font-mono">
                             {formatDate(log.timestamp)}
                           </p>
                         </div>
@@ -570,10 +570,10 @@ export default function ObservationCalendar() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-xs font-medium text-star-gold">每日签到</span>
-                          <span className="text-[9px] text-white/40 ml-2">连续 {log.streak} 天</span>
+                          <span className="fs-9 text-white/40 ml-2">连续 {log.streak} 天</span>
                           <div className="flex gap-1 mt-1">
                             {log.rewards?.map((r, ri) => (
-                              <span key={ri} className="text-[9px] px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80">
+                              <span key={ri} className="fs-9 px-1.5 py-0.5 rounded bg-star-gold/10 text-star-gold/80">
                                 {r.icon} {r.type === 'stardust' ? `+${r.amount}` : r.name}
                               </span>
                             ))}
@@ -602,18 +602,18 @@ export default function ObservationCalendar() {
                               {log.title || logType.label}
                             </span>
                             {c && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
+                              <span className="fs-9 px-1.5 py-0.5 rounded bg-white/10 text-white/60">
                                 {c.name}
                               </span>
                             )}
                             {log.mood && (
-                              <span className="text-[10px]">{'😊'.repeat(log.mood)}{'😐'.repeat(Math.max(0, 3 - log.mood))}</span>
+                              <span className="fs-10">{'😊'.repeat(log.mood)}{'😐'.repeat(Math.max(0, 3 - log.mood))}</span>
                             )}
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                               onClick={() => openEditLog(log)}
-                              className="w-6 h-6 rounded-md bg-white/5 text-white/50 text-[10px]
+                              className="w-6 h-6 rounded-md bg-white/5 text-white/50 fs-10
                                        hover:bg-white/10 hover:text-white transition-all"
                             >
                               ✏️
@@ -624,7 +624,7 @@ export default function ObservationCalendar() {
                                   deleteCustomLog(selectedDate, log.id)
                                 }
                               }}
-                              className="w-6 h-6 rounded-md bg-red-500/5 text-red-300/60 text-[10px]
+                              className="w-6 h-6 rounded-md bg-red-500/5 text-red-300/60 fs-10
                                        hover:bg-red-500/10 hover:text-red-300 transition-all"
                             >
                               🗑️
@@ -632,11 +632,11 @@ export default function ObservationCalendar() {
                           </div>
                         </div>
                         {log.content && (
-                          <p className="text-[11px] text-white/60 mt-1.5 leading-relaxed whitespace-pre-wrap">
+                          <p className="fs-11 text-white/60 mt-1.5 leading-relaxed whitespace-pre-wrap">
                             {log.content}
                           </p>
                         )}
-                        <p className="text-[10px] text-white/30 mt-1 font-mono">
+                        <p className="fs-10 text-white/30 mt-1 font-mono">
                           {formatDate(log.createdAt)}
                           {log.weather && ` · ${log.weather}`}
                         </p>
@@ -665,23 +665,23 @@ export default function ObservationCalendar() {
         <div className="grid grid-cols-4 gap-2">
           <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
             <div className="text-2xl font-bold text-star-gold">{s.checkinDays}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">签到天数</div>
-            <div className="text-[9px] text-white/30 mt-0.5">{s.checkinRate}%</div>
+            <div className="fs-10 text-white/50 mt-0.5">签到天数</div>
+            <div className="fs-9 text-white/30 mt-0.5">{s.checkinRate}%</div>
           </div>
           <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
             <div className="text-2xl font-bold text-nebula-purple">{s.discoveryCount}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">新发现</div>
-            <div className="text-[9px] text-white/30 mt-0.5">首次</div>
+            <div className="fs-10 text-white/50 mt-0.5">新发现</div>
+            <div className="fs-9 text-white/30 mt-0.5">首次</div>
           </div>
           <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
             <div className="text-2xl font-bold text-nebula-cyan">{s.reobservationCount}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">再次观测</div>
-            <div className="text-[9px] text-white/30 mt-0.5">累计</div>
+            <div className="fs-10 text-white/50 mt-0.5">再次观测</div>
+            <div className="fs-9 text-white/30 mt-0.5">累计</div>
           </div>
           <div className="p-3 rounded-xl bg-space-700/30 border border-white/5 text-center">
             <div className="text-2xl font-bold text-pink-300">{s.activeDays}</div>
-            <div className="text-[10px] text-white/50 mt-0.5">活跃天数</div>
-            <div className="text-[9px] text-white/30 mt-0.5">{s.activityRate}%</div>
+            <div className="fs-10 text-white/50 mt-0.5">活跃天数</div>
+            <div className="fs-9 text-white/30 mt-0.5">{s.activityRate}%</div>
           </div>
         </div>
 
@@ -690,7 +690,7 @@ export default function ObservationCalendar() {
             <h4 className="font-display text-white/80 text-xs flex items-center gap-1.5">
               <span>📊</span> 月度活动热力图
             </h4>
-            <span className="text-[10px] text-white/40">
+            <span className="fs-10 text-white/40">
               {isCurrentMonth ? `进行中 ${s.daysInMonth - today.getDate() + 1}天` : '已结束'}
             </span>
           </div>
@@ -701,7 +701,7 @@ export default function ObservationCalendar() {
               return (
                 <div
                   key={i}
-                  className={`aspect-square rounded-md flex items-center justify-center text-[8px] relative
+                  className={`aspect-square rounded-md flex items-center justify-center fs-8 relative
                     ${level === 0 ? 'bg-space-800/40' : ''}
                     ${level === 1 ? 'bg-nebula-cyan/15' : ''}
                     ${level === 2 ? 'bg-nebula-cyan/30' : ''}
@@ -719,7 +719,7 @@ export default function ObservationCalendar() {
             })}
           </div>
           <div className="flex items-center justify-between mt-2 px-1">
-            <span className="text-[9px] text-white/30">少</span>
+            <span className="fs-9 text-white/30">少</span>
             <div className="flex gap-1">
               {[0, 1, 2, 3, 4].map(l => (
                 <div key={l} className={`w-3 h-3 rounded-sm ${
@@ -730,7 +730,7 @@ export default function ObservationCalendar() {
                 }`} />
               ))}
             </div>
-            <span className="text-[9px] text-white/30">多</span>
+            <span className="fs-9 text-white/30">多</span>
           </div>
         </div>
 
@@ -738,20 +738,20 @@ export default function ObservationCalendar() {
           <div className="p-3 rounded-xl bg-gradient-to-br from-star-gold/10 to-transparent border border-star-gold/20">
             <div className="text-lg mb-1">🏆</div>
             <div className="text-xs text-star-gold font-bold">{s.summary.perfectRate}%</div>
-            <div className="text-[9px] text-white/40">完美率</div>
-            <div className="text-[9px] text-white/30 mt-0.5">{s.perfectCount} 次完美</div>
+            <div className="fs-9 text-white/40">完美率</div>
+            <div className="fs-9 text-white/30 mt-0.5">{s.perfectCount} 次完美</div>
           </div>
           <div className="p-3 rounded-xl bg-gradient-to-br from-nebula-cyan/10 to-transparent border border-nebula-cyan/20">
             <div className="text-lg mb-1">🔭</div>
             <div className="text-xs text-nebula-cyan font-bold">{s.summary.avgObservationsPerActiveDay}</div>
-            <div className="text-[9px] text-white/40">日均观测</div>
-            <div className="text-[9px] text-white/30 mt-0.5">次/活跃天</div>
+            <div className="fs-9 text-white/40">日均观测</div>
+            <div className="fs-9 text-white/30 mt-0.5">次/活跃天</div>
           </div>
           <div className="p-3 rounded-xl bg-gradient-to-br from-nebula-purple/10 to-transparent border border-nebula-purple/20">
             <div className="text-lg mb-1">🌌</div>
             <div className="text-xs text-nebula-purple font-bold">{s.uniqueConstellations}</div>
-            <div className="text-[9px] text-white/40">探索星座</div>
-            <div className="text-[9px] text-white/30 mt-0.5">{s.totalCustomLogs} 篇笔记</div>
+            <div className="fs-9 text-white/40">探索星座</div>
+            <div className="fs-9 text-white/30 mt-0.5">{s.totalCustomLogs} 篇笔记</div>
           </div>
         </div>
 
@@ -760,7 +760,7 @@ export default function ObservationCalendar() {
             <h4 className="font-display text-white/80 text-xs flex items-center gap-1.5">
               <span>💫</span> 本月星尘收支
             </h4>
-            <span className="text-[10px] text-star-gold">余额 {observationCalendar.stardust}</span>
+            <span className="fs-10 text-star-gold">余额 {observationCalendar.stardust}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2.5 bg-space-900/60 rounded-full overflow-hidden">
@@ -773,7 +773,7 @@ export default function ObservationCalendar() {
               +{s.stardustEarned}
             </span>
           </div>
-          <p className="text-[10px] text-white/40 mt-1.5">通过签到获得星尘，用于解锁更多奖励和功能</p>
+          <p className="fs-10 text-white/40 mt-1.5">通过签到获得星尘，用于解锁更多奖励和功能</p>
         </div>
 
         {s.totalObservations > 0 && (
@@ -812,7 +812,7 @@ export default function ObservationCalendar() {
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
     const maxCount = sorted[0]?.[1] || 1
 
-    if (sorted.length === 0) return <div className="text-[10px] text-white/40">暂无数据</div>
+    if (sorted.length === 0) return <div className="fs-10 text-white/40">暂无数据</div>
 
     return (
       <div className="space-y-1.5">
@@ -820,7 +820,7 @@ export default function ObservationCalendar() {
           const c = getConstellationById(id)
           return (
             <div key={id} className="flex items-center gap-2">
-              <span className="text-[10px] text-white/40 w-4 flex-shrink-0">{i + 1}</span>
+              <span className="fs-10 text-white/40 w-4 flex-shrink-0">{i + 1}</span>
               <span className="text-xs text-white/80 w-14 truncate flex-shrink-0">{c?.name || id}</span>
               <div className="flex-1 h-1.5 bg-space-900/60 rounded-full overflow-hidden">
                 <div
@@ -828,7 +828,7 @@ export default function ObservationCalendar() {
                   style={{ width: `${(count / maxCount) * 100}%` }}
                 />
               </div>
-              <span className="text-[10px] text-nebula-cyan font-bold w-6 text-right flex-shrink-0">{count}</span>
+              <span className="fs-10 text-nebula-cyan font-bold w-6 text-right flex-shrink-0">{count}</span>
             </div>
           )
         })}
@@ -860,20 +860,20 @@ export default function ObservationCalendar() {
               </h3>
               <button onClick={() => setShowLogEditor(false)} className="icon-btn">✕</button>
             </div>
-            <p className="text-[11px] text-white/40 mt-1">
+            <p className="fs-11 text-white/40 mt-1">
               {formatDateKey(selectedDate).replace(/-/g, '.')} · 星期{['日','一','二','三','四','五','六'][selectedDate.getDay()]}
             </p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             <div>
-              <label className="text-[11px] text-white/60 mb-1.5 block">类型</label>
+              <label className="fs-11 text-white/60 mb-1.5 block">类型</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {LOG_TYPES.map(t => (
                   <button
                     key={t.id}
                     onClick={() => setLogForm(f => ({ ...f, type: t.id }))}
-                    className={`p-2 rounded-lg text-[11px] transition-all flex flex-col items-center gap-0.5 ${
+                    className={`p-2 rounded-lg fs-11 transition-all flex flex-col items-center gap-0.5 ${
                       logForm.type === t.id
                         ? 'bg-white/10 border border-white/20 text-white'
                         : 'bg-space-800/40 border border-transparent text-white/50 hover:bg-white/5'
@@ -887,7 +887,7 @@ export default function ObservationCalendar() {
             </div>
 
             <div>
-              <label className="text-[11px] text-white/60 mb-1.5 block">关联星座 (可选)</label>
+              <label className="fs-11 text-white/60 mb-1.5 block">关联星座 (可选)</label>
               <select
                 value={logForm.constellationId || ''}
                 onChange={(e) => setLogForm(f => ({ ...f, constellationId: e.target.value || null }))}
@@ -902,7 +902,7 @@ export default function ObservationCalendar() {
             </div>
 
             <div>
-              <label className="text-[11px] text-white/60 mb-1.5 block">标题</label>
+              <label className="fs-11 text-white/60 mb-1.5 block">标题</label>
               <input
                 type="text"
                 value={logForm.title}
@@ -915,7 +915,7 @@ export default function ObservationCalendar() {
             </div>
 
             <div>
-              <label className="text-[11px] text-white/60 mb-1.5 block">内容</label>
+              <label className="fs-11 text-white/60 mb-1.5 block">内容</label>
               <textarea
                 value={logForm.content}
                 onChange={(e) => setLogForm(f => ({ ...f, content: e.target.value }))}
@@ -926,14 +926,14 @@ export default function ObservationCalendar() {
                          resize-none"
                 maxLength={500}
               />
-              <div className="text-right text-[10px] text-white/30 mt-1">
+              <div className="text-right fs-10 text-white/30 mt-1">
                 {logForm.content.length}/500
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] text-white/60 mb-1.5 block">心情指数</label>
+                <label className="fs-11 text-white/60 mb-1.5 block">心情指数</label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map(n => (
                     <button
@@ -949,7 +949,7 @@ export default function ObservationCalendar() {
                 </div>
               </div>
               <div>
-                <label className="text-[11px] text-white/60 mb-1.5 block">天气状况</label>
+                <label className="fs-11 text-white/60 mb-1.5 block">天气状况</label>
                 <select
                   value={logForm.weather}
                   onChange={(e) => setLogForm(f => ({ ...f, weather: e.target.value }))}
@@ -1017,21 +1017,21 @@ export default function ObservationCalendar() {
                 <div className="text-2xl font-bold text-star-gold leading-none">
                   {streakInfo.currentStreak}
                 </div>
-                <div className="text-[9px] text-white/40 mt-0.5">连续签到</div>
+                <div className="fs-9 text-white/40 mt-0.5">连续签到</div>
               </div>
               <div className="w-px h-8 bg-white/10" />
               <div className="text-center">
                 <div className="text-2xl font-bold text-nebula-cyan leading-none">
                   {streakInfo.totalDays}
                 </div>
-                <div className="text-[9px] text-white/40 mt-0.5">累计天数</div>
+                <div className="fs-9 text-white/40 mt-0.5">累计天数</div>
               </div>
               <div className="w-px h-8 bg-white/10" />
               <div className="text-center">
                 <div className="text-2xl font-bold text-nebula-purple leading-none">
                   💫{observationCalendar.stardust}
                 </div>
-                <div className="text-[9px] text-white/40 mt-0.5">星尘</div>
+                <div className="fs-9 text-white/40 mt-0.5">星尘</div>
               </div>
             </div>
             <div className="flex items-center gap-1">

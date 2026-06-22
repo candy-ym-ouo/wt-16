@@ -105,4 +105,28 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r 
            from-star-gold via-nebula-cyan to-nebula-purple;
   }
+
+  .fs-8  { font-size: calc(8px  * var(--text-scale)); }
+  .fs-9  { font-size: calc(9px  * var(--text-scale)); }
+  .fs-10 { font-size: calc(10px * var(--text-scale)); }
+  .fs-11 { font-size: calc(11px * var(--text-scale)); }
+  .fs-12 { font-size: calc(12px * var(--text-scale)); }
+  .fs-13 { font-size: calc(13px * var(--text-scale)); }
+  .fs-14 { font-size: calc(14px * var(--text-scale)); }
+
+  .animate-pulse {
+    animation: pulse calc(var(--hint-pulse-speed, 1.2s) * 1.67) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse calc(var(--hint-pulse-speed, 1.2s) * 3.33) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-glow {
+    animation: glow var(--hint-pulse-speed, 1.2s) ease-in-out infinite alternate;
+  }
+
+  .hint-glow {
+    box-shadow: 0 0 calc(5px + var(--hint-value, 0.6) * 15px) rgba(255, 215, 0, calc(0.3 * var(--hint-value, 0.6) + 0.1));
+  }
 }

@@ -108,22 +108,22 @@ export default function ObservationTeam() {
             <div className="p-3 rounded-xl bg-white/5 border border-white/10">
               <div className="text-xl mb-1">🤝</div>
               <p className="text-xs text-white/80 font-medium">成员协作</p>
-              <p className="text-[10px] text-white/50">组队探索星空</p>
+              <p className="fs-10 text-white/50">组队探索星空</p>
             </div>
             <div className="p-3 rounded-xl bg-white/5 border border-white/10">
               <div className="text-xl mb-1">📋</div>
               <p className="text-xs text-white/80 font-medium">任务分工</p>
-              <p className="text-[10px] text-white/50">共同完成目标</p>
+              <p className="fs-10 text-white/50">共同完成目标</p>
             </div>
             <div className="p-3 rounded-xl bg-white/5 border border-white/10">
               <div className="text-xl mb-1">📝</div>
               <p className="text-xs text-white/80 font-medium">共享日志</p>
-              <p className="text-[10px] text-white/50">记录每一次发现</p>
+              <p className="fs-10 text-white/50">记录每一次发现</p>
             </div>
             <div className="p-3 rounded-xl bg-white/5 border border-white/10">
               <div className="text-xl mb-1">🏆</div>
               <p className="text-xs text-white/80 font-medium">团队成就</p>
-              <p className="text-[10px] text-white/50">解锁荣耀徽章</p>
+              <p className="fs-10 text-white/50">解锁荣耀徽章</p>
             </div>
           </div>
           <button
@@ -203,7 +203,7 @@ export default function ObservationTeam() {
                     }}
                   >
                     <h2 className="text-xl font-display text-white">{team.teamName}</h2>
-                    <p className="text-[10px] text-white/50">点击修改队伍名称</p>
+                    <p className="fs-10 text-white/50">点击修改队伍名称</p>
                   </div>
                 )}
               </div>
@@ -220,24 +220,24 @@ export default function ObservationTeam() {
           <div className="grid grid-cols-4 gap-2 text-center mb-4">
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-amber-400">Lv.{stats.teamLevel}</p>
-              <p className="text-[10px] text-white/50">队伍等级</p>
+              <p className="fs-10 text-white/50">队伍等级</p>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-white">{stats.memberCount}</p>
-              <p className="text-[10px] text-white/50">成员数</p>
+              <p className="fs-10 text-white/50">成员数</p>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-cyan-400">{stats.discoveries}</p>
-              <p className="text-[10px] text-white/50">发现星座</p>
+              <p className="fs-10 text-white/50">发现星座</p>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <p className="text-lg font-display text-star-gold">{stats.achievements}</p>
-              <p className="text-[10px] text-white/50">团队成就</p>
+              <p className="fs-10 text-white/50">团队成就</p>
             </div>
           </div>
 
           <div>
-            <div className="flex justify-between text-[10px] mb-1">
+            <div className="flex justify-between fs-10 mb-1">
               <span className="text-white/50">队伍经验</span>
               <span className="text-amber-400 font-mono">
                 {stats.teamXP} / {stats.teamLevel * 500}
@@ -256,7 +256,7 @@ export default function ObservationTeam() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 px-2 rounded-lg text-[11px] transition-all flex items-center justify-center gap-1
+                className={`flex-1 py-2 px-2 rounded-lg fs-11 transition-all flex items-center justify-center gap-1
                            ${activeTab === tab.id
                              ? 'bg-white/10 text-white shadow-sm'
                              : 'text-white/50 hover:text-white/80'}`}
@@ -283,7 +283,7 @@ export default function ObservationTeam() {
                   {[...Array(7)].map((_, i) => (
                     <div
                       key={i}
-                      className={`flex-1 h-8 rounded-md flex items-center justify-center text-[10px]
+                      className={`flex-1 h-8 rounded-md flex items-center justify-center fs-10
                                  ${i < stats.streakDays
                                    ? 'bg-gradient-to-t from-amber-500 to-yellow-400 text-white'
                                    : 'bg-white/5 text-white/30'}`}
@@ -300,7 +300,7 @@ export default function ObservationTeam() {
                   <h3 className="text-sm font-display text-white">队伍成员</h3>
                   <button
                     onClick={() => setActiveTab('members')}
-                    className="ml-auto text-[10px] text-nebula-cyan hover:underline"
+                    className="ml-auto fs-10 text-nebula-cyan hover:underline"
                   >
                     查看全部 →
                   </button>
@@ -318,7 +318,7 @@ export default function ObservationTeam() {
                       >
                         {member.avatar}
                         {member.isSelf && (
-                          <span className="absolute -bottom-1 -right-1 text-[8px]">👑</span>
+                          <span className="absolute -bottom-1 -right-1 fs-8">👑</span>
                         )}
                       </div>
                     )
@@ -336,7 +336,7 @@ export default function ObservationTeam() {
                     暂无进行中的任务
                     <button
                       onClick={() => setActiveTab('tasks')}
-                      className="block mx-auto mt-2 text-nebula-cyan text-[11px]"
+                      className="block mx-auto mt-2 text-nebula-cyan fs-11"
                     >
                       去接取任务 →
                     </button>
@@ -356,7 +356,7 @@ export default function ObservationTeam() {
                             <span className="text-xs text-white font-medium flex-1">
                               {progress.task.name}
                             </span>
-                            <span className="text-[10px] text-nebula-cyan">
+                            <span className="fs-10 text-nebula-cyan">
                               {progress.percentage}%
                             </span>
                           </div>
@@ -394,7 +394,7 @@ export default function ObservationTeam() {
                                      bg-opacity-20 border border-white/10 text-center flex-1`}
                         >
                           <div className="text-2xl mb-1">{achievement.icon}</div>
-                          <p className="text-[10px] text-white/80 font-medium truncate">
+                          <p className="fs-10 text-white/80 font-medium truncate">
                             {achievement.name}
                           </p>
                         </div>
@@ -425,7 +425,7 @@ export default function ObservationTeam() {
                   <h4 className="text-sm font-display text-white mb-3">邀请新成员</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[11px] text-white/60 mb-1 block">成员名称</label>
+                      <label className="fs-11 text-white/60 mb-1 block">成员名称</label>
                       <input
                         type="text"
                         value={newMemberName}
@@ -437,7 +437,7 @@ export default function ObservationTeam() {
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-white/60 mb-2 block">选择角色</label>
+                      <label className="fs-11 text-white/60 mb-2 block">选择角色</label>
                       <div className="grid grid-cols-3 gap-2">
                         {Object.entries(TEAM_ROLES).filter(([id]) => id !== 'leader').map(([id, role]) => (
                           <button
@@ -449,7 +449,7 @@ export default function ObservationTeam() {
                                          : 'bg-white/5 border border-transparent hover:bg-white/10'}`}
                           >
                             <div className="text-xl mb-1">{role.icon}</div>
-                            <p className="text-[10px] text-white/80">{role.name}</p>
+                            <p className="fs-10 text-white/80">{role.name}</p>
                           </button>
                         ))}
                       </div>
@@ -502,18 +502,18 @@ export default function ObservationTeam() {
                           </h4>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full
+                          <span className={`fs-10 px-2 py-0.5 rounded-full
                                            bg-gradient-to-r ${role?.color || 'from-gray-500 to-gray-600'}
                                            text-white/90`}>
                             {role?.icon} {role?.name || '成员'}
                           </span>
-                          <span className="text-[10px] text-white/40">
+                          <span className="fs-10 text-white/40">
                             Lv.{member.level}
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] text-white/40">经验值</p>
+                        <p className="fs-10 text-white/40">经验值</p>
                         <p className="text-sm font-mono text-amber-400">{member.xp}</p>
                       </div>
                     </div>
@@ -525,24 +525,24 @@ export default function ObservationTeam() {
                             <p className="text-base font-display text-cyan-400">
                               {member.discoveries?.length || 0}
                             </p>
-                            <p className="text-[9px] text-white/50">发现星座</p>
+                            <p className="fs-9 text-white/50">发现星座</p>
                           </div>
                           <div className="p-2 rounded-lg bg-white/5">
                             <p className="text-base font-display text-green-400">
                               {member.level}
                             </p>
-                            <p className="text-[9px] text-white/50">当前等级</p>
+                            <p className="fs-9 text-white/50">当前等级</p>
                           </div>
                           <div className="p-2 rounded-lg bg-white/5">
                             <p className="text-base font-display text-amber-400">
                               {member.xp}
                             </p>
-                            <p className="text-[9px] text-white/50">累计经验</p>
+                            <p className="fs-9 text-white/50">累计经验</p>
                           </div>
                         </div>
 
                         <div>
-                          <p className="text-[10px] text-white/50 mb-1">
+                          <p className="fs-10 text-white/50 mb-1">
                             升级还需 {(member.level * 100) - member.xp} 经验
                           </p>
                           <div className="h-1.5 bg-space-900/60 rounded-full overflow-hidden">
@@ -563,7 +563,7 @@ export default function ObservationTeam() {
                                 const nextRole = roles[(currentIndex + 1) % roles.length]
                                 changeMemberRole(member.id, nextRole)
                               }}
-                              className="flex-1 py-2 rounded-lg text-[11px] text-white/80 bg-white/10
+                              className="flex-1 py-2 rounded-lg fs-11 text-white/80 bg-white/10
                                          hover:bg-white/20 transition-all"
                             >
                               更换角色
@@ -576,7 +576,7 @@ export default function ObservationTeam() {
                                   setSelectedMember(null)
                                 }
                               }}
-                              className="flex-1 py-2 rounded-lg text-[11px] text-red-400 bg-red-500/10
+                              className="flex-1 py-2 rounded-lg fs-11 text-red-400 bg-red-500/10
                                          hover:bg-red-500/20 transition-all"
                             >
                               移除成员
@@ -584,7 +584,7 @@ export default function ObservationTeam() {
                           </div>
                         )}
 
-                        <p className="text-[10px] text-white/40">
+                        <p className="fs-10 text-white/40">
                           加入时间：{formatDate(member.joinedAt)}
                         </p>
                       </div>
@@ -598,13 +598,13 @@ export default function ObservationTeam() {
           {activeTab === 'tasks' && (
             <div className="space-y-3">
               <div className="flex gap-2 mb-2">
-                <span className="text-[11px] px-3 py-1.5 rounded-full bg-white/10 text-white/80">
+                <span className="fs-11 px-3 py-1.5 rounded-full bg-white/10 text-white/80">
                   进行中：{team.activeTasks.length}
                 </span>
-                <span className="text-[11px] px-3 py-1.5 rounded-full bg-white/10 text-white/80">
+                <span className="fs-11 px-3 py-1.5 rounded-full bg-white/10 text-white/80">
                   已完成：{team.completedTasks.length}
                 </span>
-                <span className="text-[11px] px-3 py-1.5 rounded-full bg-white/10 text-white/80 ml-auto">
+                <span className="fs-11 px-3 py-1.5 rounded-full bg-white/10 text-white/80 ml-auto">
                   🌟 {stats.teamStardust} 星尘
                 </span>
               </div>
@@ -617,13 +617,13 @@ export default function ObservationTeam() {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-medium text-white">{selectedTask.name}</h4>
-                      <p className="text-[11px] text-white/60 mt-1">{selectedTask.description}</p>
+                      <p className="fs-11 text-white/60 mt-1">{selectedTask.description}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white/70">
+                        <span className="fs-10 px-2 py-0.5 rounded bg-white/10 text-white/70">
                           难度 {selectedTask.difficulty}
                         </span>
                         {selectedTask.reward && (
-                          <span className="text-[10px] text-star-gold">
+                          <span className="fs-10 text-star-gold">
                             奖励：{selectedTask.reward.teamXP} XP + {selectedTask.reward.stardust} 星尘
                           </span>
                         )}
@@ -639,7 +639,7 @@ export default function ObservationTeam() {
                 </div>
               )}
 
-              <p className="text-[11px] text-white/50 mb-2">📋 可接取任务</p>
+              <p className="fs-11 text-white/50 mb-2">📋 可接取任务</p>
 
               {TEAM_TASKS.filter(t =>
                 !team.activeTasks.some(at => at.taskId === t.id) &&
@@ -658,7 +658,7 @@ export default function ObservationTeam() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-white">{task.name}</h4>
-                        <p className="text-[11px] text-white/50 mt-0.5 line-clamp-2">
+                        <p className="fs-11 text-white/50 mt-0.5 line-clamp-2">
                           {task.description}
                         </p>
                       </div>
@@ -667,14 +667,14 @@ export default function ObservationTeam() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {task.requiredRoles && task.requiredRoles.length > 0 && (
                         <div className="flex items-center gap-1 w-full">
-                          <span className="text-[10px] text-white/50">所需角色：</span>
+                          <span className="fs-10 text-white/50">所需角色：</span>
                           {task.requiredRoles.map((roleId) => {
                             const role = TEAM_ROLES[roleId]
                             const hasRole = team.members.some(m => m.role === roleId)
                             return (
                               <span
                                 key={roleId}
-                                className={`text-[10px] px-1.5 py-0.5 rounded
+                                className={`fs-10 px-1.5 py-0.5 rounded
                                            ${hasRole
                                              ? 'bg-green-500/20 text-green-400'
                                              : 'bg-red-500/20 text-red-400'}`}
@@ -686,12 +686,12 @@ export default function ObservationTeam() {
                         </div>
                       )}
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-[10px] text-star-gold">
+                        <span className="fs-10 text-star-gold">
                           🎁 {task.reward?.teamXP || 0} XP + {task.reward?.stardust || 0} 星尘
                         </span>
                         <button
                           onClick={() => handleStartTask(task.id)}
-                          className="px-3 py-1.5 rounded-lg text-[11px] text-white
+                          className="px-3 py-1.5 rounded-lg fs-11 text-white
                                      bg-gradient-to-r from-nebula-purple to-nebula-cyan
                                      hover:shadow-md active:scale-95 transition-all"
                         >
@@ -705,7 +705,7 @@ export default function ObservationTeam() {
 
               {team.completedTasks.length > 0 && (
                 <>
-                  <p className="text-[11px] text-white/50 mt-6 mb-2">✅ 已完成任务</p>
+                  <p className="fs-11 text-white/50 mt-6 mb-2">✅ 已完成任务</p>
                   {team.completedTasks.slice(0, 5).map((ct) => {
                     const task = TEAM_TASKS.find(t => t.id === ct.taskId)
                     if (!task) return null
@@ -723,13 +723,13 @@ export default function ObservationTeam() {
                               {task.name}
                               <span className="text-green-400">✓</span>
                             </h4>
-                            <p className="text-[10px] text-white/50">
+                            <p className="fs-10 text-white/50">
                               完成于 {formatDate(ct.completedAt)}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] text-amber-400">+{ct.xp} XP</p>
-                            <p className="text-[10px] text-star-gold">+{ct.stardust} 星尘</p>
+                            <p className="fs-10 text-amber-400">+{ct.xp} XP</p>
+                            <p className="fs-10 text-star-gold">+{ct.stardust} 星尘</p>
                           </div>
                         </div>
                       </div>
@@ -747,7 +747,7 @@ export default function ObservationTeam() {
                   <button
                     key={type}
                     onClick={() => setLogFilter(type)}
-                    className={`px-3 py-1.5 rounded-full text-[10px] transition-all
+                    className={`px-3 py-1.5 rounded-full fs-10 transition-all
                                ${logFilter === type
                                  ? 'bg-white/15 text-white'
                                  : 'bg-white/5 text-white/50 hover:text-white/80'}`}
@@ -781,10 +781,10 @@ export default function ObservationTeam() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`text-[10px] font-medium ${logType?.color || 'text-white/70'}`}>
+                              <span className={`fs-10 font-medium ${logType?.color || 'text-white/70'}`}>
                                 {logType?.name || '动态'}
                               </span>
-                              <span className="text-[9px] text-white/40 font-mono">
+                              <span className="fs-9 text-white/40 font-mono">
                                 {formatDate(log.timestamp)}
                               </span>
                             </div>
@@ -814,7 +814,7 @@ export default function ObservationTeam() {
                               {log.message && log.message}
                             </p>
                             {log.perfect && (
-                              <span className="inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded
+                              <span className="inline-block mt-1 fs-9 px-1.5 py-0.5 rounded
                                               bg-star-gold/20 text-star-gold">
                                 完美观测
                               </span>
@@ -832,7 +832,7 @@ export default function ObservationTeam() {
           {activeTab === 'achievements' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] text-white/60">
+                <p className="fs-11 text-white/60">
                   已解锁 {stats.achievements} / {stats.totalAchievements}
                 </p>
                 <div className="flex-1 mx-4 h-2 bg-space-900/60 rounded-full overflow-hidden">
@@ -861,7 +861,7 @@ export default function ObservationTeam() {
 
                 return (
                   <div key={category}>
-                    <h4 className="text-[11px] text-white/60 mb-2 font-medium">
+                    <h4 className="fs-11 text-white/60 mb-2 font-medium">
                       {categoryNames[category] || category}
                     </h4>
                     <div className="grid grid-cols-2 gap-2">
@@ -884,14 +884,14 @@ export default function ObservationTeam() {
                                               ${unlocked ? 'text-white' : 'text-white/50'}`}>
                                   {achievement.name}
                                 </p>
-                                <p className="text-[9px] text-white/50 line-clamp-2">
+                                <p className="fs-9 text-white/50 line-clamp-2">
                                   {achievement.description}
                                 </p>
                               </div>
                             </div>
                             {unlocked && (
                               <div className="mt-2 flex items-center justify-end">
-                                <span className="text-[9px] text-green-400 flex items-center gap-1">
+                                <span className="fs-9 text-green-400 flex items-center gap-1">
                                   ✓ 已解锁
                                 </span>
                               </div>

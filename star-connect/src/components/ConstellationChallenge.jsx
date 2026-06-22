@@ -23,7 +23,7 @@ function ChallengeHome({ onStart }) {
               <h3 className={`font-display text-lg ${season.textColor}`}>
                 {season.name}挑战赛
               </h3>
-              <p className="text-[11px] text-white/50">
+              <p className="fs-11 text-white/50">
                 {currentTier ? `${currentTier.name}段位` : '尚未参赛'} · 累计 {seasonScore} 分
               </p>
             </div>
@@ -56,7 +56,7 @@ function ChallengeHome({ onStart }) {
                 }`}
               >
                 <div className="text-lg">{tier.icon}</div>
-                <div className={`text-[9px] ${reached ? 'text-white' : 'text-white/40'}`}>
+                <div className={`fs-9 ${reached ? 'text-white' : 'text-white/40'}`}>
                   {tier.name}
                 </div>
               </div>
@@ -88,7 +88,7 @@ function ChallengeHome({ onStart }) {
                   </div>
                   <div>
                     <h4 className="font-display text-white text-sm">{diff.name}</h4>
-                    <p className="text-[10px] text-white/40 mt-0.5">
+                    <p className="fs-10 text-white/40 mt-0.5">
                       {diff.constellationCount}关 · {diff.timeLimit}秒 · 允许{diff.allowedMistakes}次失误
                     </p>
                   </div>
@@ -104,7 +104,7 @@ function ChallengeHome({ onStart }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-white/40">剩余次数</span>
+                    <span className="fs-10 text-white/40">剩余次数</span>
                     <div className="flex gap-0.5">
                       {Array.from({ length: diff.dailyAttempts }).map((_, i) => (
                         <div
@@ -116,7 +116,7 @@ function ChallengeHome({ onStart }) {
                       ))}
                     </div>
                   </div>
-                  <div className="text-[10px] text-white/40">
+                  <div className="fs-10 text-white/40">
                     基础分 {diff.baseScore} · 连胜+{diff.streakBonus}
                   </div>
                 </div>
@@ -143,15 +143,15 @@ function ChallengeHome({ onStart }) {
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
               <div className="text-xl font-bold text-white">{stats.totalChallenges}</div>
-              <div className="text-[10px] text-white/40">总挑战次数</div>
+              <div className="fs-10 text-white/40">总挑战次数</div>
             </div>
             <div className="text-center">
               <div className="text-xl font-bold text-star-gold">{stats.totalScore}</div>
-              <div className="text-[10px] text-white/40">累计得分</div>
+              <div className="fs-10 text-white/40">累计得分</div>
             </div>
             <div className="text-center">
               <div className="text-xl font-bold text-nebula-cyan">{stats.perfectStages}</div>
-              <div className="text-[10px] text-white/40">完美通关</div>
+              <div className="fs-10 text-white/40">完美通关</div>
             </div>
           </div>
         </div>
@@ -241,7 +241,7 @@ function ChallengeInPlay({ onResult }) {
           style={{ width: `${progressPct}%` }}
         />
       </div>
-      <div className="flex justify-between text-[10px] text-white/40">
+      <div className="flex justify-between fs-10 text-white/40">
         <span>关卡进度</span>
         <span>{challenge.stageIndex + 1} / {challenge.route.length}</span>
       </div>
@@ -251,7 +251,7 @@ function ChallengeInPlay({ onResult }) {
         <h3 className="font-display text-white text-lg">
           {constellation?.name || '???'}
         </h3>
-        <p className="text-[11px] text-white/50 mt-1">
+        <p className="fs-11 text-white/50 mt-1">
           {constellation?.description?.slice(0, 40) || ''}...
         </p>
         <div className="mt-3 flex items-center justify-center gap-4">
@@ -259,19 +259,19 @@ function ChallengeInPlay({ onResult }) {
             <div className={`text-sm font-bold ${challenge.mistakesInStage === 0 ? 'text-green-400' : 'text-red-400'}`}>
               {challenge.mistakesInStage} / {stage?.allowedMistakes || config.allowedMistakes}
             </div>
-            <div className="text-[9px] text-white/40">失误</div>
+            <div className="fs-9 text-white/40">失误</div>
           </div>
           <div className="text-center">
             <div className="text-sm font-bold text-white">
               {challenge.results.filter(r => r.perfect).length}
             </div>
-            <div className="text-[9px] text-white/40">完美</div>
+            <div className="fs-9 text-white/40">完美</div>
           </div>
           <div className="text-center">
             <div className="text-sm font-bold text-star-gold">
               ×{challenge.results.filter(r => r.perfect).length + 1}
             </div>
-            <div className="text-[9px] text-white/40">连胜</div>
+            <div className="fs-9 text-white/40">连胜</div>
           </div>
         </div>
       </div>
@@ -290,7 +290,7 @@ function ChallengeInPlay({ onResult }) {
             return (
               <div
                 key={idx}
-                className={`p-2 rounded-lg text-center border text-[10px] ${
+                className={`p-2 rounded-lg text-center border fs-10 ${
                   idx < challenge.stageIndex
                     ? result?.perfect
                       ? 'border-green-500/30 bg-green-500/10 text-green-300'
@@ -339,12 +339,12 @@ function ChallengeResult({ result, onHome }) {
         <div className="p-4 rounded-2xl bg-gradient-to-br from-star-gold/10 border border-star-gold/20 text-center">
           <div className="text-3xl mb-1">⭐</div>
           <div className="text-2xl font-bold text-star-gold">{result.score}</div>
-          <div className="text-[11px] text-white/50">得分</div>
+          <div className="fs-11 text-white/50">得分</div>
         </div>
         <div className="p-4 rounded-2xl bg-gradient-to-br from-nebula-purple/10 border border-nebula-purple/20 text-center">
           <div className="text-3xl mb-1">💫</div>
           <div className="text-2xl font-bold text-nebula-purple">{Math.floor(result.score / 10)}</div>
-          <div className="text-[11px] text-white/50">星尘奖励</div>
+          <div className="fs-11 text-white/50">星尘奖励</div>
         </div>
       </div>
 
@@ -363,8 +363,8 @@ function ChallengeResult({ result, onHome }) {
                       {r.completed ? (r.perfect ? '✓' : '~') : '✗'}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] text-white/70">{c?.name || '???'}</div>
-                      <div className="text-[10px] text-white/40">
+                      <div className="fs-11 text-white/70">{c?.name || '???'}</div>
+                      <div className="fs-10 text-white/40">
                         {r.completed ? `用时 ${r.timeUsed}s · 失误 ${r.mistakes}` : '未完成'}
                         {r.perfect && ' · 完美!'}
                       </div>
@@ -484,30 +484,30 @@ function RewardsTab() {
                   <span className={`text-sm font-bold ${claimed ? 'text-green-300' : reached ? 'text-white' : 'text-white/40'}`}>
                     {reward.name}
                   </span>
-                  <span className="text-[9px] text-white/30">{tier.icon} {tier.name}</span>
+                  <span className="fs-9 text-white/30">{tier.icon} {tier.name}</span>
                 </div>
-                <p className="text-[10px] text-white/40 mt-0.5">{reward.description}</p>
+                <p className="fs-10 text-white/40 mt-0.5">{reward.description}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] text-star-gold/70">💫 +{reward.stardust} 星尘</span>
-                  <span className="text-[10px] text-white/30">· 需要 {tier.minScore} 分</span>
+                  <span className="fs-10 text-star-gold/70">💫 +{reward.stardust} 星尘</span>
+                  <span className="fs-10 text-white/30">· 需要 {tier.minScore} 分</span>
                 </div>
               </div>
               <div>
                 {claimed ? (
-                  <span className="text-[10px] px-2 py-1 rounded-full bg-green-500/20 text-green-300">
+                  <span className="fs-10 px-2 py-1 rounded-full bg-green-500/20 text-green-300">
                     已领取
                   </span>
                 ) : reached ? (
                   <button
                     onClick={() => claimChallengeSeasonReward(reward.id)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold
+                    className={`px-3 py-1.5 rounded-lg fs-11 font-bold
                                bg-gradient-to-r ${tier.color} text-white
                                hover:shadow-lg active:scale-95 transition-all`}
                   >
                     领取
                   </button>
                 ) : (
-                  <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/30">
+                  <span className="fs-10 px-2 py-1 rounded-full bg-white/5 text-white/30">
                     未达成
                   </span>
                 )}
@@ -554,11 +554,11 @@ function RecordsTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-white">{config.name}</span>
-                  <span className="text-[9px] text-white/30">
+                  <span className="fs-9 text-white/30">
                     {date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
-                <div className="text-[10px] text-white/40 mt-0.5">
+                <div className="fs-10 text-white/40 mt-0.5">
                   通关 {record.completedStages}/{record.totalStages}
                   {record.perfectStages > 0 && ` · 完美 ${record.perfectStages}`}
                 </div>
@@ -643,7 +643,7 @@ export default function ConstellationChallenge() {
             <div className="flex items-center gap-2">
               {view === 'playing' && challenge && (
                 <div className={`px-2.5 py-1 rounded-lg bg-gradient-to-r ${CHALLENGE_DIFFICULTIES[challenge.difficultyId].color}
-                              text-white text-[10px] font-bold`}>
+                              text-white fs-10 font-bold`}>
                   第 {challenge.stageIndex + 1} 关
                 </div>
               )}

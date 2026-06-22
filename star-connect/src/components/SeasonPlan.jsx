@@ -59,11 +59,11 @@ export default function SeasonPlan() {
               <h3 className={`font-display text-lg ${season.textColor}`}>
                 {season.name}观测计划
               </h3>
-              <p className="text-[11px] text-white/50">{season.months} · {season.description}</p>
+              <p className="fs-11 text-white/50">{season.months} · {season.description}</p>
             </div>
           </div>
           {selectedSeason === currentSeason && (
-            <span className="text-[10px] px-2 py-1 rounded-full bg-white/10 text-white/70">
+            <span className="fs-10 px-2 py-1 rounded-full bg-white/10 text-white/70">
               当前季节
             </span>
           )}
@@ -116,18 +116,18 @@ export default function SeasonPlan() {
                     }`}>
                       {phase.name}
                     </h4>
-                    <p className="text-[10px] text-white/40">{phase.description}</p>
+                    <p className="fs-10 text-white/40">{phase.description}</p>
                   </div>
                 </div>
                 {isUnlocked && (
                   <div className="flex items-center gap-1">
                     <span className="text-lg">{reward.icon}</span>
                     {isClaimed ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
+                      <span className="fs-10 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">
                         已领取
                       </span>
                     ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
+                      <span className="fs-10 px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold animate-pulse">
                         可领取
                       </span>
                     )}
@@ -135,7 +135,7 @@ export default function SeasonPlan() {
                 )}
               </div>
 
-              <div className="flex justify-between text-[10px] mb-1.5">
+              <div className="flex justify-between fs-10 mb-1.5">
                 <span className="text-white/50">
                   {phaseId === 'beginner' && `发现 ${phaseProgress.target} 个当季星座`}
                   {phaseId === 'intermediate' && `完美完成 ${phaseProgress.target} 个当季星座`}
@@ -161,11 +161,11 @@ export default function SeasonPlan() {
                       <span className="text-base">{reward.icon}</span>
                       <div>
                         <p className="text-xs text-white/80 font-medium">{reward.name}</p>
-                        <p className="text-[10px] text-white/40">{reward.description}</p>
+                        <p className="fs-10 text-white/40">{reward.description}</p>
                       </div>
                     </div>
                     {isClaimed ? (
-                      <span className="text-[11px] text-green-400/80">✓ 已领取</span>
+                      <span className="fs-11 text-green-400/80">✓ 已领取</span>
                     ) : (
                       <button
                         onClick={() => claimSeasonReward(reward.id)}
@@ -188,7 +188,7 @@ export default function SeasonPlan() {
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">✨</span>
           <h4 className="font-display text-white/90 text-sm">当季星座</h4>
-          <span className="text-[10px] text-white/40 ml-auto">
+          <span className="fs-10 text-white/40 ml-auto">
             {seasonStats.discovered} / {seasonStats.constellations}
           </span>
         </div>
@@ -229,12 +229,12 @@ export default function SeasonPlan() {
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {perfect && (
-                            <span className="text-[9px] px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                            <span className="fs-9 px-1 py-0.5 rounded bg-star-gold/20 text-star-gold">
                               完美
                             </span>
                           )}
                           {observed > 1 && (
-                            <span className="text-[9px] text-white/40">
+                            <span className="fs-9 text-white/40">
                               ×{observed}
                             </span>
                           )}
@@ -245,7 +245,7 @@ export default function SeasonPlan() {
                   <button
                     onClick={(e) => handleViewInAtlas(cId, e)}
                     className="w-6 h-6 flex items-center justify-center rounded-lg
-                             bg-space-600/30 text-white/40 text-[10px]
+                             bg-space-600/30 text-white/40 fs-10
                              hover:bg-nebula-purple/30 hover:text-nebula-cyan transition-all
                              flex-shrink-0"
                     title="在图鉴中查看详情"
@@ -274,10 +274,10 @@ export default function SeasonPlan() {
                 className={`p-2 rounded-lg ${completed ? s.bgColor : 'bg-space-800/40'}`}
               >
                 <div className="text-2xl mb-1">{s.icon}</div>
-                <div className={`text-[11px] ${completed ? s.textColor : 'text-white/50'}`}>
+                <div className={`fs-11 ${completed ? s.textColor : 'text-white/50'}`}>
                   {s.name}
                 </div>
-                <div className="text-[10px] text-white/40 mt-0.5">
+                <div className="fs-10 text-white/40 mt-0.5">
                   {stats[id].overallPercentage}%
                 </div>
               </div>
@@ -317,10 +317,10 @@ export default function SeasonPlan() {
                       </span>
                       <span className="text-base">{reward.icon}</span>
                     </div>
-                    <div className="text-[11px] text-white/50 mt-0.5">
+                    <div className="fs-11 text-white/50 mt-0.5">
                       完成阶段目标，获得「{reward.name}」
                     </div>
-                    <div className="text-[10px] text-white/30 mt-0.5 font-mono">
+                    <div className="fs-10 text-white/30 mt-0.5 font-mono">
                       {formatDate(entry.timestamp)}
                     </div>
                   </div>
@@ -355,7 +355,7 @@ export default function SeasonPlan() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xl">{s.icon}</span>
                 <h4 className={`font-display text-sm ${s.textColor}`}>{s.name}奖励</h4>
-                <span className="text-[10px] text-white/40 ml-auto">
+                <span className="fs-10 text-white/40 ml-auto">
                   {claimedCount} / {seasonRewardsList.length}
                 </span>
               </div>
@@ -380,18 +380,18 @@ export default function SeasonPlan() {
                       }`}>
                         {reward.icon}
                       </div>
-                      <p className={`text-[11px] font-medium ${
+                      <p className={`fs-11 font-medium ${
                         isClaimed ? 'text-green-300' : isUnlocked ? 'text-star-gold' : 'text-white/40'
                       }`}>
                         {reward.name}
                       </p>
-                      <p className="text-[9px] text-white/40 mt-0.5 leading-tight">
+                      <p className="fs-9 text-white/40 mt-0.5 leading-tight">
                         {reward.description}
                       </p>
                       {isUnlocked && !isClaimed && (
                         <button
                           onClick={() => claimSeasonReward(reward.id)}
-                          className={`mt-2 px-2.5 py-1 rounded-md text-[10px] font-medium
+                          className={`mt-2 px-2.5 py-1 rounded-md fs-10 font-medium
                                      bg-gradient-to-r ${s.color} text-white
                                      hover:shadow-md active:scale-95 transition-all`}
                         >
@@ -399,7 +399,7 @@ export default function SeasonPlan() {
                         </button>
                       )}
                       {isClaimed && (
-                        <span className="mt-1.5 inline-block text-[10px] text-green-400/70">
+                        <span className="mt-1.5 inline-block fs-10 text-green-400/70">
                           ✓ 已领取
                         </span>
                       )}
@@ -465,12 +465,12 @@ export default function SeasonPlan() {
                 }`}
               >
                 <div className="text-xl">{s.icon}</div>
-                <div className={`text-[10px] mt-0.5 ${
+                <div className={`fs-10 mt-0.5 ${
                   selectedSeason === id ? s.textColor : 'text-white/50'
                 }`}>
                   {s.name}
                 </div>
-                <div className="text-[9px] text-white/30 mt-0.5">
+                <div className="fs-9 text-white/30 mt-0.5">
                   {stats[id].overallPercentage}%
                 </div>
               </button>

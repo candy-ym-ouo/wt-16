@@ -36,11 +36,11 @@ export default function AchievementToast() {
             {toast.icon}
           </div>
           <div className="flex-1">
-            <div className="text-[10px] text-star-gold uppercase tracking-widest font-semibold">
+            <div className="fs-10 text-star-gold uppercase tracking-widest font-semibold">
               成就解锁
             </div>
             <div className="text-white font-display text-lg">{toast.name}</div>
-            <div className="text-white/50 text-xs">{toast.description}</div>
+            <div className="text-white/50 fs-11">{toast.description}</div>
           </div>
           <div className="text-star-gold text-2xl animate-pulse-slow">✦</div>
         </div>

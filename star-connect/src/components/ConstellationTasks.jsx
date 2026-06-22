@@ -75,11 +75,11 @@ export default function ConstellationTasks() {
                           </span>
                           {completed && <span className="text-star-gold">✓</span>}
                         </div>
-                        <div className="text-[10px] text-white/40 mt-0.5">
+                        <div className="fs-10 text-white/40 mt-0.5">
                           {c.nameEn}
                         </div>
                       </div>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      <span className={`fs-10 px-1.5 py-0.5 rounded ${
                         c.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                         c.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                         'bg-red-500/20 text-red-300'
@@ -109,7 +109,7 @@ export default function ConstellationTasks() {
                   <h3 className="text-lg font-display text-white">
                     {currentConstellation?.name}
                   </h3>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  <span className={`fs-10 px-1.5 py-0.5 rounded ${
                     currentConstellation?.difficulty === 1 ? 'bg-green-500/20 text-green-300' :
                     currentConstellation?.difficulty === 2 ? 'bg-yellow-500/20 text-yellow-300' :
                     'bg-red-500/20 text-red-300'
@@ -122,7 +122,7 @@ export default function ConstellationTasks() {
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-white/50 mt-0.5">
+                <p className="fs-11 text-white/50 mt-0.5">
                   {currentConstellation?.description}
                 </p>
               </div>
@@ -141,7 +141,7 @@ export default function ConstellationTasks() {
             </div>
 
             <div className="mt-3">
-              <div className="flex justify-between text-[11px] mb-1.5">
+              <div className="flex justify-between fs-11 mb-1.5">
                 <span className="text-white/50">
                   连接进度: {new Set(connectionPath).size} / {currentConstellation?.stars.length}
                 </span>

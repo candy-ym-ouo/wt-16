@@ -29,21 +29,21 @@ function QuizHome({ onStart }) {
           <div className="text-2xl font-bold text-nebula-purple">
             {stats.points}
           </div>
-          <div className="text-[10px] text-white/50">学识积分</div>
+          <div className="fs-10 text-white/50">学识积分</div>
         </div>
         <div className="p-4 rounded-2xl bg-gradient-to-br from-nebula-cyan/20 border border-nebula-cyan/30">
           <div className="text-3xl mb-1">📝</div>
           <div className="text-2xl font-bold text-nebula-cyan">
             {stats.totalCompleted}
           </div>
-          <div className="text-[10px] text-white/50">完成轮次</div>
+          <div className="fs-10 text-white/50">完成轮次</div>
         </div>
         <div className="p-4 rounded-2xl bg-gradient-to-br from-star-gold/20 border border-star-gold/30">
           <div className="text-3xl mb-1">🎯</div>
           <div className="text-2xl font-bold text-star-gold">
             {stats.accuracy}%
           </div>
-          <div className="text-[10px] text-white/50">正确率</div>
+          <div className="fs-10 text-white/50">正确率</div>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ function QuizHome({ onStart }) {
             <span className="text-2xl">🌟</span>
             <div>
               <div className="text-sm font-bold text-white">开始星座百科</div>
-              <div className="text-[11px] text-white/50">
+              <div className="fs-11 text-white/50">
                 已发现 {discoveredCount} 个星座
               </div>
             </div>
@@ -128,17 +128,17 @@ function QuizHome({ onStart }) {
           </div>
         </div>
         {discoveredCount === 0 && (
-          <div className="mt-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-300/70 text-[11px]">
+          <div className="mt-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-300/70 fs-11">
             💡 发现更多星座可以解锁更丰富的题目！
           </div>
         )}
         {unlockedAchievements.length >= 3 && (
-          <div className="mt-2 text-[10px] text-white/40">
+          <div className="mt-2 fs-10 text-white/40">
             🏆 已解锁 {unlockedAchievements.length} 个成就，可触发成就专属题目
           </div>
         )}
         {observationLogs.length >= 5 && (
-          <div className="mt-1 text-[10px] text-white/40">
+          <div className="mt-1 fs-10 text-white/40">
             📖 有 {observationLogs.length} 条观测日志，可触发回顾题目
           </div>
         )}
@@ -198,14 +198,14 @@ function QuizQuestion({ question, questionIndex, totalQuestions, earnedPoints, o
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`px-3 py-1 rounded-lg bg-gradient-to-r ${typeInfo.color}/20 border border-white/10`}>
-            <span className="text-[10px] text-white/70 flex items-center gap-1">
+            <span className="fs-10 text-white/70 flex items-center gap-1">
               <span>{typeInfo.icon}</span>
               <span>{typeInfo.label}</span>
             </span>
           </div>
           {constellation && (
             <div className="px-3 py-1 rounded-lg bg-space-700/50 border border-white/10">
-              <span className="text-[10px] text-white/50">
+              <span className="fs-10 text-white/50">
                 {constellation.name}
               </span>
             </div>
@@ -216,7 +216,7 @@ function QuizQuestion({ question, questionIndex, totalQuestions, earnedPoints, o
             <button
               onClick={handleUseHint}
               className="px-2 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30
-                       text-yellow-300 text-[10px] font-medium
+                       text-yellow-300 fs-10 font-medium
                        hover:bg-yellow-500/20 transition-all flex items-center gap-1"
             >
               <span>💡</span>
@@ -245,7 +245,7 @@ function QuizQuestion({ question, questionIndex, totalQuestions, earnedPoints, o
             {Array.from({ length: question.difficulty }).map((_, i) => (
               <span key={i} className="text-star-gold text-xs">⭐</span>
             ))}
-            <span className="text-[10px] text-white/40 ml-2">
+            <span className="fs-10 text-white/40 ml-2">
               答对 +{question.points} 积分
             </span>
           </div>
@@ -305,7 +305,7 @@ function QuizQuestion({ question, questionIndex, totalQuestions, earnedPoints, o
                 {feedback.explanation}
               </div>
               {!feedback.isCorrect && (
-                <div className="mt-2 text-[11px] text-white/40">
+                <div className="mt-2 fs-11 text-white/40">
                   正确答案：<span className="text-white/70">{feedback.correctAnswer}</span>
                 </div>
               )}
@@ -371,14 +371,14 @@ function QuizResult({ result, onRestart, onHome }) {
         <div className="p-4 rounded-2xl bg-gradient-to-br from-star-gold/10 border border-star-gold/20 text-center">
           <div className="text-3xl mb-1">🏆</div>
           <div className="text-2xl font-bold text-star-gold">+{result.points}</div>
-          <div className="text-[11px] text-white/50">获得积分</div>
+          <div className="fs-11 text-white/50">获得积分</div>
         </div>
         <div className="p-4 rounded-2xl bg-gradient-to-br from-nebula-purple/10 border border-nebula-purple/20 text-center">
           <div className="text-3xl mb-1">⏱️</div>
           <div className="text-2xl font-bold text-nebula-purple">
             {Math.round(result.duration / 1000)}s
           </div>
-          <div className="text-[11px] text-white/50">用时</div>
+          <div className="fs-11 text-white/50">用时</div>
         </div>
       </div>
 
@@ -388,7 +388,7 @@ function QuizResult({ result, onRestart, onHome }) {
             <div className="text-3xl">💯</div>
             <div>
               <div className="font-bold text-yellow-300 text-sm">完美奖励</div>
-              <div className="text-[11px] text-yellow-200/70">
+              <div className="fs-11 text-yellow-200/70">
                 全对通关！额外获得 +{result.perfectBonus} 积分奖励
               </div>
             </div>
@@ -407,10 +407,10 @@ function QuizResult({ result, onRestart, onHome }) {
                   {answer.isCorrect ? '✓' : '✗'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] text-white/70 truncate">
+                  <div className="fs-11 text-white/70 truncate">
                     {answer.question.length > 30 ? answer.question.slice(0, 30) + '...' : answer.question}
                   </div>
-                  <div className="text-[10px] text-white/40 mt-0.5">
+                  <div className="fs-10 text-white/40 mt-0.5">
                     {answer.isCorrect
                       ? `+${answer.points}分`
                       : `正确：${answer.correctAnswer}`}
@@ -484,7 +484,7 @@ function RewardShop({ onBack }) {
           <div className="text-3xl">🎁</div>
           <div>
             <div className="font-bold text-white text-sm">积分兑换商店</div>
-            <div className="text-[11px] text-white/50">
+            <div className="fs-11 text-white/50">
               使用答题获得的积分兑换实用奖励
             </div>
           </div>
@@ -527,12 +527,12 @@ function RewardShop({ onBack }) {
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white text-sm">{reward.name}</span>
                     {reward.unique && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                      <span className="fs-9 px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
                         限定
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-white/50 mt-0.5 leading-relaxed">
+                  <div className="fs-11 text-white/50 mt-0.5 leading-relaxed">
                     {reward.description}
                   </div>
                 </div>
@@ -546,7 +546,7 @@ function RewardShop({ onBack }) {
                   <button
                     onClick={() => handleRedeem(reward.id)}
                     disabled={isRedeemed || !canAfford}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                    className={`px-3 py-1 rounded-lg fs-11 font-medium transition-all ${
                       isRedeemed
                         ? 'bg-white/5 text-white/30 cursor-not-allowed'
                         : canAfford

@@ -263,13 +263,13 @@ export default function FamilyMode() {
                   {member.avatar}
                 </div>
                 <div className="text-xs text-white/70 mt-1">{member.name}</div>
-                <div className="text-[10px] text-nebula-cyan font-mono">Lv.{member.level}</div>
+                <div className="fs-10 text-nebula-cyan font-mono">Lv.{member.level}</div>
               </div>
             ))}
           </div>
           <div className="text-right">
             <div className="text-star-gold text-lg font-display">🔥 {familyMode.streakDays} 天</div>
-            <div className="text-[10px] text-white/50">连续打卡</div>
+            <div className="fs-10 text-white/50">连续打卡</div>
             <div className="text-xs text-white/60 mt-1">⏱️ {Math.floor(progress.totalMinutes / 60)}h {progress.totalMinutes % 60}m</div>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function FamilyMode() {
             
             return (
               <div key={roleId} className="bg-space-800/40 rounded-xl p-3">
-                <div className="flex items-center justify-between text-[10px] mb-1">
+                <div className="flex items-center justify-between fs-10 mb-1">
                   <span className="text-white/60">{member.name}经验</span>
                   <span className="text-white/40 font-mono">{member.xp} XP</span>
                 </div>
@@ -308,7 +308,7 @@ export default function FamilyMode() {
           <div key={idx} className="bg-space-700/30 rounded-xl p-3 text-center border border-white/5">
             <div className="text-xl mb-1">{stat.icon}</div>
             <div className="text-sm font-display text-white">{stat.value}</div>
-            <div className="text-[9px] text-white/50">{stat.label}</div>
+            <div className="fs-9 text-white/50">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -329,11 +329,11 @@ export default function FamilyMode() {
                     style={{ height: `${Math.min(100, day.discoveries * 30)}%` }}
                   />
                 </div>
-                <span className="text-[9px] text-white/50">{day.date}</span>
+                <span className="fs-9 text-white/50">{day.date}</span>
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-[10px] text-white/40 mt-2">
+          <div className="flex justify-between fs-10 text-white/40 mt-2">
             <span>共 {growthData.totalSessions} 次探索</span>
             <span>平均每次 {growthData.avgSessionLength} 分钟</span>
           </div>
@@ -369,11 +369,11 @@ export default function FamilyMode() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-white">{task.name}</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
+                      <span className="fs-9 px-1.5 py-0.5 rounded bg-white/10 text-white/60">
                         {typeInfo.icon} {typeInfo.name}
                       </span>
                     </div>
-                    <p className="text-[11px] text-white/50 mt-0.5 truncate">{task.description}</p>
+                    <p className="fs-11 text-white/50 mt-0.5 truncate">{task.description}</p>
                   </div>
                   <span className="text-star-gold text-xs">+{task.reward?.xp || 0} XP</span>
                 </div>
@@ -397,13 +397,13 @@ export default function FamilyMode() {
               <div className="space-y-1">
                 <button
                   onClick={() => handleTellStory(c.id)}
-                  className="w-full text-[10px] py-1.5 rounded-lg bg-nebula-purple/20 text-nebula-purple hover:bg-nebula-purple/30 transition-colors"
+                  className="w-full fs-10 py-1.5 rounded-lg bg-nebula-purple/20 text-nebula-purple hover:bg-nebula-purple/30 transition-colors"
                 >
                   📖 听神话故事
                 </button>
                 <button
                   onClick={() => handleExplainScience(c.id)}
-                  className="w-full text-[10px] py-1.5 rounded-lg bg-nebula-cyan/20 text-nebula-cyan hover:bg-nebula-cyan/30 transition-colors"
+                  className="w-full fs-10 py-1.5 rounded-lg bg-nebula-cyan/20 text-nebula-cyan hover:bg-nebula-cyan/30 transition-colors"
                 >
                   🔬 学科学知识
                 </button>
@@ -419,7 +419,7 @@ export default function FamilyMode() {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-display text-white/90 text-sm">全部任务</h3>
-        <span className="text-[10px] text-white/50">
+        <span className="fs-10 text-white/50">
           已完成 {progress.completedTasks} / {progress.totalTasks}
         </span>
       </div>
@@ -433,7 +433,7 @@ export default function FamilyMode() {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm">{typeInfo.icon}</span>
               <span className="text-xs text-white/70">{typeInfo.name}</span>
-              <span className="text-[10px] text-white/40">{typeInfo.description}</span>
+              <span className="fs-10 text-white/40">{typeInfo.description}</span>
             </div>
             <div className="space-y-2">
               {tasks.map((task) => {
@@ -470,25 +470,25 @@ export default function FamilyMode() {
                           <span className="text-sm font-medium text-white">{task.name}</span>
                           <div className="flex gap-1">
                             {Array.from({ length: task.difficulty }).map((_, i) => (
-                              <span key={i} className="text-[9px] text-star-gold">★</span>
+                              <span key={i} className="fs-9 text-star-gold">★</span>
                             ))}
                           </div>
                         </div>
-                        <p className="text-[11px] text-white/50 mt-0.5">{task.description}</p>
+                        <p className="fs-11 text-white/50 mt-0.5">{task.description}</p>
                         <div className="flex items-center gap-3 mt-2">
-                          <span className="text-[10px] text-star-gold">+{task.reward?.xp || 0} XP</span>
+                          <span className="fs-10 text-star-gold">+{task.reward?.xp || 0} XP</span>
                           {task.steps && (
-                            <span className="text-[10px] text-white/40">{task.steps.length} 步骤</span>
+                            <span className="fs-10 text-white/40">{task.steps.length} 步骤</span>
                           )}
                           {task.questions && (
-                            <span className="text-[10px] text-white/40">{task.questions.length} 题目</span>
+                            <span className="fs-10 text-white/40">{task.questions.length} 题目</span>
                           )}
                         </div>
                       </div>
                     </div>
                     {isActive && (
                       <div className="mt-3 pt-3 border-t border-white/10">
-                        <span className="text-[10px] text-nebula-cyan animate-pulse">
+                        <span className="fs-10 text-nebula-cyan animate-pulse">
                           ⏳ 进行中...
                         </span>
                       </div>
@@ -518,14 +518,14 @@ export default function FamilyMode() {
               <span className="text-2xl">🏅</span>
               <div>
                 <h3 className="font-display text-white text-sm">亲子勋章</h3>
-                <p className="text-[10px] text-white/50">记录你们的每一个美好时刻</p>
+                <p className="fs-10 text-white/50">记录你们的每一个美好时刻</p>
               </div>
             </div>
             <div className="text-right">
               <div className="text-xl font-display text-star-gold">
                 {progress.unlockedAchievements} / {progress.totalAchievements}
               </div>
-              <div className="text-[9px] text-white/40">已解锁</div>
+              <div className="fs-9 text-white/40">已解锁</div>
             </div>
           </div>
           <div className="mt-3 h-2 bg-space-900/60 rounded-full overflow-hidden">
@@ -549,7 +549,7 @@ export default function FamilyMode() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{info.icon}</span>
                 <h3 className="font-display text-white/90 text-sm">{info.name}</h3>
-                <span className="text-[10px] text-white/40 ml-auto">
+                <span className="fs-10 text-white/40 ml-auto">
                   {unlocked} / {list.length}
                 </span>
               </div>
@@ -583,7 +583,7 @@ export default function FamilyMode() {
                           }`}>
                             {achievement.name}
                           </div>
-                          <div className="text-[9px] text-white/40 mt-0.5 leading-tight">
+                          <div className="fs-9 text-white/40 mt-0.5 leading-tight">
                             {achievement.description}
                           </div>
                         </div>
@@ -615,7 +615,7 @@ export default function FamilyMode() {
               <span className="text-2xl">{task.icon}</span>
               <div>
                 <h3 className="font-display text-white">{task.name}</h3>
-                <p className="text-[10px] text-white/50">{task.description}</p>
+                <p className="fs-10 text-white/50">{task.description}</p>
               </div>
             </div>
             <button
@@ -631,7 +631,7 @@ export default function FamilyMode() {
           
           {task.steps && (
             <>
-              <div className="flex justify-between text-[10px] mb-2">
+              <div className="flex justify-between fs-10 mb-2">
                 <span className="text-white/50">任务进度</span>
                 <span className="text-white/60 font-mono">
                   {familyMode.currentStepIndex + 1} / {task.steps.length}
@@ -660,7 +660,7 @@ export default function FamilyMode() {
             </div>
             
             <div className="bg-space-800/40 rounded-xl p-4 mb-4">
-              <div className="text-[10px] text-white/50 mb-1">任务指令</div>
+              <div className="fs-10 text-white/50 mb-1">任务指令</div>
               <div className="text-white/90 text-sm leading-relaxed">
                 {currentStep.instruction}
               </div>
@@ -696,8 +696,8 @@ export default function FamilyMode() {
                 className="p-3 rounded-xl bg-space-800/40 text-left hover:bg-space-700/40 transition-colors border border-white/5"
               >
                 <div className="text-sm font-medium text-white mb-1">{c.name}</div>
-                <div className="text-[9px] text-white/50">{c.description.slice(0, 30)}...</div>
-                <div className="text-[9px] text-nebula-cyan mt-1">💡 观看技巧 →</div>
+                <div className="fs-9 text-white/50">{c.description.slice(0, 30)}...</div>
+                <div className="fs-9 text-nebula-cyan mt-1">💡 观看技巧 →</div>
               </button>
             ))}
           </div>
@@ -750,7 +750,7 @@ export default function FamilyMode() {
                   </span>
                   <div className="flex-1">
                     <div className="text-xs text-white/80">{answer.question}</div>
-                    <div className={`text-[10px] mt-1 ${answer.correct ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`fs-10 mt-1 ${answer.correct ? 'text-green-400' : 'text-red-400'}`}>
                       你的答案: {answer.answer}
                     </div>
                   </div>
@@ -781,7 +781,7 @@ export default function FamilyMode() {
               <span className="text-2xl">🎯</span>
               <div>
                 <h3 className="font-display text-white">{task.name}</h3>
-                <p className="text-[10px] text-white/50">第 {currentQuestion + 1} / {task.questions.length} 题</p>
+                <p className="fs-10 text-white/50">第 {currentQuestion + 1} / {task.questions.length} 题</p>
               </div>
             </div>
             <div className="text-right">
@@ -894,17 +894,17 @@ export default function FamilyMode() {
                         {entry.type === 'quiz_complete' && '完成测验'}
                       </span>
                       {constellation && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+                        <span className="fs-10 px-1.5 py-0.5 rounded bg-white/10 text-white/70">
                           {constellation.name}
                         </span>
                       )}
                       {entry.perfect && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold">
+                        <span className="fs-10 px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold">
                           完美
                         </span>
                       )}
                       {roleInfo && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+                        <span className="fs-10 px-1.5 py-0.5 rounded bg-white/10 text-white/70">
                           {roleInfo.icon} {roleInfo.name}
                         </span>
                       )}
@@ -915,7 +915,7 @@ export default function FamilyMode() {
                     {entry.score !== undefined && (
                       <div className="text-sm text-green-400 mt-1">{entry.score} / {entry.total} 分</div>
                     )}
-                    <div className="text-[9px] text-white/40 mt-1 font-mono">
+                    <div className="fs-9 text-white/40 mt-1 font-mono">
                       {formatDate(entry.timestamp)}
                     </div>
                   </div>

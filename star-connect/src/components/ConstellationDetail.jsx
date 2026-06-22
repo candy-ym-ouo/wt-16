@@ -296,19 +296,19 @@ export default function ConstellationDetail({ constellationId }) {
                 <div className="text-lg font-bold text-white">
                   {constellation.stars.length}
                 </div>
-                <div className="text-[10px] text-white/50">{t('detail.mainStars')}</div>
+                <div className="fs-10 text-white/50">{t('detail.mainStars')}</div>
               </div>
               <div className="p-3 rounded-xl bg-space-700/40 text-center">
                 <div className="text-lg font-bold text-white">
                   {constellation.area}
                 </div>
-                <div className="text-[10px] text-white/50">{t('detail.areaRank')}</div>
+                <div className="fs-10 text-white/50">{t('detail.areaRank')}</div>
               </div>
               <div className="p-3 rounded-xl bg-space-700/40 text-center">
                 <div className="text-lg font-bold text-white">
                   {t('detail.rankFormat', { rank: constellation.ranking })}
                 </div>
-                <div className="text-[10px] text-white/50">{t('detail.skyRank')}</div>
+                <div className="fs-10 text-white/50">{t('detail.skyRank')}</div>
               </div>
             </div>
 
@@ -368,7 +368,7 @@ export default function ConstellationDetail({ constellationId }) {
                     季节观测推荐
                   </h3>
                   {isBestSeason && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold flex items-center gap-1">
+                    <span className="fs-10 px-2 py-0.5 rounded-full bg-star-gold/20 text-star-gold flex items-center gap-1">
                       <span className="animate-pulse">✨</span> 当季最佳
                     </span>
                   )}
@@ -425,12 +425,12 @@ export default function ConstellationDetail({ constellationId }) {
                           }`}
                         >
                           <div className="text-lg mb-1">{season.icon}</div>
-                          <div className={`text-[10px] ${
+                          <div className={`fs-10 ${
                             isCurrent ? season.textColor : 'text-white/50'
                           }`}>
                             {season.name}
                           </div>
-                          <div className={`text-[9px] mt-0.5 ${visInfo?.color || 'text-white/30'}`}>
+                          <div className={`fs-9 mt-0.5 ${visInfo?.color || 'text-white/30'}`}>
                             {visInfo?.label || '未知'}
                           </div>
                         </div>
@@ -466,7 +466,7 @@ export default function ConstellationDetail({ constellationId }) {
                       {seasonRecommendation.relatedConstellations.map((name, index) => (
                         <span
                           key={index}
-                          className="text-[11px] px-2.5 py-1 rounded-full bg-nebula-purple/10 text-nebula-purple/80 border border-nebula-purple/20"
+                          className="fs-11 px-2.5 py-1 rounded-full bg-nebula-purple/10 text-nebula-purple/80 border border-nebula-purple/20"
                         >
                           {name}
                         </span>
@@ -488,7 +488,7 @@ export default function ConstellationDetail({ constellationId }) {
                       resetAtlasState()
                       setActivePanel('tasks')
                     }}
-                    className="text-[11px] text-nebula-cyan hover:text-nebula-cyan/80 transition-colors"
+                    className="fs-11 text-nebula-cyan hover:text-nebula-cyan/80 transition-colors"
                   >
                     查看全部 →
                   </button>
@@ -519,7 +519,7 @@ export default function ConstellationDetail({ constellationId }) {
                               {task.name}
                             </p>
                             {task.matchReason && (
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                              <span className={`fs-9 px-1.5 py-0.5 rounded ${
                                 task.matchReason === '指定星座'
                                   ? 'bg-nebula-cyan/20 text-nebula-cyan border border-nebula-cyan/30'
                                   : task.matchReason === '完美观测'
@@ -536,20 +536,20 @@ export default function ConstellationDetail({ constellationId }) {
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-white/50 mt-0.5">
+                          <p className="fs-11 text-white/50 mt-0.5">
                             {task.description}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-white/40">
+                            <span className="fs-10 text-white/40">
                               进度 {task.current}/{task.target}
                             </span>
-                            <span className="text-[10px] text-star-gold">
+                            <span className="fs-10 text-star-gold">
                               💫 {task.reward}
                             </span>
                           </div>
                         </div>
                         {task.completed && !task.claimed && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold animate-pulse">
+                          <span className="fs-9 px-1.5 py-0.5 rounded bg-star-gold/20 text-star-gold animate-pulse">
                             可领取
                           </span>
                         )}
@@ -630,11 +630,11 @@ export default function ConstellationDetail({ constellationId }) {
                       <p className="text-sm text-white font-medium">
                         {star.name}
                       </p>
-                      <p className="text-[10px] text-white/40">
+                      <p className="fs-10 text-white/40">
                         {t('detail.starMagnitude')}: {star.mag}
                       </p>
                     </div>
-                    <span className="text-[10px] text-white/40">
+                    <span className="fs-10 text-white/40">
                       #{index + 1}
                     </span>
                   </div>
@@ -681,7 +681,7 @@ export default function ConstellationDetail({ constellationId }) {
               <div className="space-y-3">
                 <h3 className="text-sm font-display text-white border-l-2 border-star-gold pl-3 flex items-center justify-between">
                   <span>{t('detail.photoTitle')}</span>
-                  <span className="text-[10px] text-white/40 font-normal">
+                  <span className="fs-10 text-white/40 font-normal">
                     {t('detail.photoCount', { count: constellationPhotos.length })}
                   </span>
                 </h3>
@@ -702,7 +702,7 @@ export default function ConstellationDetail({ constellationId }) {
                             loading="lazy"
                           />
                           {photo.featured && (
-                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-star-gold/90 flex items-center justify-center text-[8px]">
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-star-gold/90 flex items-center justify-center fs-8">
                               ⭐
                             </div>
                           )}
@@ -723,7 +723,7 @@ export default function ConstellationDetail({ constellationId }) {
                     <p className="text-xs text-white/50 mb-1">
                       {t('detail.noPhoto')}
                     </p>
-                    <p className="text-[10px] text-white/30 mb-3">
+                    <p className="fs-10 text-white/30 mb-3">
                       {t('detail.noPhotoDesc', { name: locName })}
                     </p>
                     <button

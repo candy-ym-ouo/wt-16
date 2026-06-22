@@ -80,7 +80,7 @@ export default function Achievements() {
                   <h3 className="font-display text-white/90 text-sm">
                     {info.name}
                   </h3>
-                  <span className="text-[10px] text-white/40 ml-auto">
+                  <span className="fs-10 text-white/40 ml-auto">
                     {unlocked} / {list.length}
                   </span>
                 </div>
@@ -125,7 +125,7 @@ export default function Achievements() {
                             }`}>
                               {displayName}
                             </div>
-                            <div className={`text-[10px] mt-0.5 leading-tight ${
+                            <div className={`fs-10 mt-0.5 leading-tight ${
                               isUnlocked
                                 ? 'text-white/40'
                                 : isHiddenLocked
@@ -138,7 +138,7 @@ export default function Achievements() {
                         </div>
                         {a.hidden && isUnlocked && (
                           <div className="mt-2 flex items-center gap-1">
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            <span className="fs-9 px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
                               🔮 隐藏成就
                             </span>
                           </div>
